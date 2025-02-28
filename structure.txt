@@ -1,0 +1,115 @@
+----qltbdt
+    +---qltbdt-backend
+    |   |   .env
+    |   |   package-lock.json
+    |   |   package.json
+    |   |   
+    |   |           
+    |   \---src
+    |       |   app.js
+    |       |   server.js
+    |       |   
+    |       +---config
+    |       |       cloudinary.js
+    |       |       db.js
+    |       |       
+    |       +---controllers
+    |       |       authController.js
+    |       |       phongController.js
+    |       |       thietbiController.js
+    |       |       userController.js
+    |       |       
+    |       +---middleware
+    |       |       authMiddleware.js
+    |       |       upload.js
+    |       |       
+    |       +---models
+    |       \---routes
+    |               authRoutes.js
+    |               phongRoutes.js
+    |               theloaiRoutes.js
+    |               thietBiRoutes.js
+    |               userRoutes.js
+    |               
+    \---qltbdt-frontent
+        |   .gitignore
+        |   package-lock.json
+        |   package.json
+        |   postcss.config.js
+        |   README.md
+        |   tailwind.config.js
+        |    
+        +---public
+        |       favicon.ico
+        |       index.html
+        |       manifest.json
+        |       robots.txt
+        |       
+        \---src
+            |   api.js
+            |   App.js
+            |   App.test.js
+            |   index.css
+            |   index.js
+            |   setupTests.js
+            |   
+            +---assets
+            +---components
+            |   +---DanhMuc
+            |   |   |   GoiYDanhGia.js
+            |   |   |   Phong.js
+            |   |   |   TheLoai.js
+            |   |   |   ThietBi.js
+            |   |   |   ViPham.js
+            |   |   |   
+            |   |   \---ChiTiet
+            |   |           ChiTietPhong.js
+            |   |           ChiTietTheLoai.js
+            |   |           ChiTietThietBi.js
+            |   |           
+            |   +---forms
+            |   |       FormNhap.js
+            |   |       FormPhieuNhap.js
+            |   |       FormPhong.js
+            |   |       FormTheLoai.js
+            |   |       FormThietBi.js
+            |   |       FormXuat.js
+            |   |       
+            |   +---layout
+            |   |       Footer.js
+            |   |       Header.js
+            |   |       LeftPanel.js
+            |   |       Popup.js
+            |   |       RightPanel.js
+            |   |       Sidebar.js
+            |   |       
+            |   +---NguoiDung
+            |   |       AdminRoute.js
+            |   |       UserRoute.js
+            |   |       UsersInfo.js
+            |   |       
+            |   \---NhapXuat
+            |           BangNhap.js
+            |           BangXuat.js
+            |           ChiTietNhap.js
+            |           ChiTietXuat.js
+            |           
+            +---context
+            |       AuthProvider.js
+            |       
+            +---pages
+            |       BaoHong.js
+            |       BaoTri.js
+            |       DanhMuc.js
+            |       LichTruc.js
+            |       Login.js
+            |       MuonTra.js
+            |       NguoiDung.js
+            |       NhapXuat.js
+            |       ThongKe.js
+            |       
+            \---utils
+                    constants.js
+                    helpers.js
+                    PrivateRoutes.js
+                    
