@@ -1,0 +1,20 @@
+# Bỏ qua thư mục node_modules
+qltbdt-backend/node_modules/
+qltbdt-frontend/node_modules/
+
+# testing
+/coverage
+
+
+# Bỏ qua các file môi trường và dữ liệu tạm thời
+qltbdt-backend/.env
+qltbdt-frontend/.env
+*.log
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bỏ qua build output (nếu có)
+qltbdt-frontend/build/
+qltbdt-backend/dist/
