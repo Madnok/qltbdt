@@ -26,6 +26,6 @@ export const getUserFromApi = async () => {
     return null;
   }
 };
-
+//test push git
 export const getThietBi = () => 
   axios.get(`${API_URL}/api/thietbi`, { withCredentials: true });
