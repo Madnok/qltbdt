@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthProvider";
 import { useRefresh } from "../../utils/helpers";
 
 const UserRoute = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, /*updateUser*/ } = useAuth();
   const [userData, setUserData] = useState(null);
   const [editData, setEditData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -67,6 +67,7 @@ const UserRoute = () => {
       alert("Cập nhật avatar thành công!");
       handleRefresh();
       refreshUser();
+      //updateUser(response.data);
     } catch (error) {
       console.error("Lỗi khi tải ảnh lên:", error);
       alert("Có lỗi xảy ra khi cập nhật avatar!");
@@ -89,6 +90,7 @@ const UserRoute = () => {
         alert("Cập nhật thành công!");
         handleRefresh();
         refreshUser();
+       // updateUser(response.data); // Cập nhật thông tin người dùng ngay lập tức
       })
       .catch((error) => console.error("Lỗi khi cập nhật thông tin:", error));
   };
@@ -247,3 +249,4 @@ const UserRoute = () => {
 };
 
 export default UserRoute;
+

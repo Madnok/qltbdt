@@ -1,8 +1,8 @@
-const RightPanel = ({ activeComponent, onClose }) => {
+const RightPanel = ({ activeComponent}) => {
     if (!activeComponent) return null; // Ẩn RightPanel nếu không có nội dung
 
-    return (
-        <div className="flex flex-col w-2/5 overflow-auto transition-all duration-300 bg-white border-b">
+    return ( 
+        <div className="min-h-0 h-screen overflow-auto bg-white shadow-md transition-all duration-300">
             {/* Hiển thị component được truyền vào */}
             {activeComponent}
         </div>

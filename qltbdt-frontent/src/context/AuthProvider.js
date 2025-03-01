@@ -42,8 +42,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Hàm cập nhật user
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
+
   return (
-    <AuthContext.Provider value={{ user, setUser, logout,refreshUser, loading }}>
+    <AuthContext.Provider value={{ user, setUser, logout,refreshUser, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
