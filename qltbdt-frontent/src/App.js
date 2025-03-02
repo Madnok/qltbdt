@@ -9,30 +9,35 @@ import BaoTri from "./pages/BaoTri";
 import MuonTra from "./pages/MuonTra";
 import LichTruc from "./pages/LichTruc";
 import PrivateRoute from "./utils/PrivateRoutes";
-import { AuthProvider } from "./context/AuthProvider";
+import { AuthProvider } from "../src/context/AuthProvider";
+import AppLayout from "../src/components/layout/AppLayout";
+
 function Layout() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      
-      {/* Route cho admin, nhân viên (ví dụ) */} 
-      <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}> 
-        <Route path="/nhapxuat" element={<NhapXuat />} />
-        <Route path="/muontra" element={<MuonTra />} />
-        <Route path="/baotri" element={<BaoTri />} />
-        <Route path="/danhmuc" element={<DanhMuc />} />
-        <Route path="/lichtruc" element={<LichTruc />} />
+
+      {/* AppLayout */}
+      <Route element={<AppLayout />}>
+        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}> 
+          <Route path="/nhapxuat" element={<NhapXuat />} />
+          <Route path="/muontra" element={<MuonTra />} />
+          <Route path="/baotri" element={<BaoTri />} />
+          <Route path="/danhmuc" element={<DanhMuc />} />
+          <Route path="/lichtruc" element={<LichTruc />} />
+        </Route>
+
+        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}> 
+          <Route path="/baohong" element={<BaoHong />} />
+          <Route path="/nguoidung" element={<NguoiDung />} />
+        </Route>
+
+        <Route element={<PrivateRoute allowedRoles={["admin"]} />}> 
+          <Route path="/thongke" element={<ThongKe />} />
+        </Route>
       </Route>
-      
-      <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}> \n
-        <Route path="/baohong" element={<BaoHong />} />
-        <Route path="/nguoidung" element={<NguoiDung />} />
-      </Route>
-      
-      <Route element={<PrivateRoute allowedRoles={["admin"]} />}> \n
-        <Route path="/thongke" element={<ThongKe />} />
-      </Route>
-      
+
+      {/* 404 */}
       <Route path="*" element={<h1>404 - Không tìm thấy trang</h1>} />
     </Routes>
   );

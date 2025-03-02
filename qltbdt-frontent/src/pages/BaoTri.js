@@ -1,24 +1,10 @@
-
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
-import Footer from "../components/layout/Footer";
 import RightPanel from "../components/layout/RightPanel";
-import { useSidebar,/* useRefresh ,*/ useRightPanel } from "../utils/helpers";
+import { useRightPanel } from "../utils/helpers";
 
 const BaoTri = () => {
-    const { isSidebarOpen, toggleSidebar } = useSidebar();
     const { selectedRecord, activeRightPanel, /* handleOpenRightPanel,*/ handleCloseRightPanel } = useRightPanel();
     return (
-        <div className="flex flex-col h-screen">
-            {/* Header tổng */}
-            <Header toggleSidebar={toggleSidebar} />
-
-            <div className="flex flex-1">
-                {/* Sidebar */}
-                <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-
-                {/* Main Content */}
-                <div className="flex flex-1 p-2 bg-gray-100">
+                <div className="flex flex-1 bg-gray-100">
                     {/* Left Panel - Trang Bảo Trì */}
                     <div className={`bg-white shadow-md flex flex-col transition-all duration-300 ${selectedRecord || activeRightPanel ? "w-3/5" : "w-full"}`}>
                         {/* Header Danh Mục */}
@@ -44,9 +30,6 @@ const BaoTri = () => {
                         </div>
                     } onClose={handleCloseRightPanel} />
                 </div>
-            </div>
-            <Footer />
-        </div>
     );
 };
 

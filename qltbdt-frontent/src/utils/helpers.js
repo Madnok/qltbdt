@@ -48,6 +48,6 @@ export const paginateData = (data, currentPage, itemsPerPage = 10) => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
 
-    return { currentItems, totalPages };
+    return { currentItems, totalPages ,indexOfFirstItem, indexOfLastItem};
 };
 

@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthProvider";
 
 const AdminRoute = ({ setSelectedRecord }) => {
+  // eslint-disable-next-line
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,9 +16,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
       setCurrentPage(pageNumber);
     }
   };
-
-
-
+  
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/user", { withCredentials: true })

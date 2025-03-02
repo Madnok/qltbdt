@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/authRoutes");
 const phongRoutes = require("./routes/phongRoutes");
 const thietbiRoutes = require("./routes/thietBiRoutes");
+const tttbRoutes = require("./routes/tttbRoutes");
 const theloaiRoutes = require("./routes/theloaiRoutes");
 const userRoutes = require("./routes/userRoutes");
 
@@ -23,6 +24,7 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/phong", phongRoutes);
 app.use("/api/thietbi", thietbiRoutes);
+app.use("/api/tttb", tttbRoutes);
 app.use("/api/theloai", theloaiRoutes);
 app.use("/api/user", userRoutes);
 

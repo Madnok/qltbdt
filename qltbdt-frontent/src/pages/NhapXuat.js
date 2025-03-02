@@ -97,9 +97,6 @@
 
 
 import { useMemo, useState } from "react";
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
-import Footer from "../components/layout/Footer";
 import RightPanel from "../components/layout/RightPanel";
 import BangNhap from "../components/NhapXuat/BangNhap";
 import BangXuat from "../components/NhapXuat/BangXuat";
@@ -112,11 +109,8 @@ import { addForms } from "../utils/constants";
 import LeftPanel from "../components/layout/LeftPanel";
 
 const NhapXuat = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("nhap"); // "nhap" hoặc "xuat"
   const { selectedRecord, activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
-
-  const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
   // Xác định component hiển thị trong RightPanel
   const rightPanelComponent = useMemo(() => {
@@ -142,13 +136,7 @@ const NhapXuat = () => {
   );
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header toggleSidebar={toggleSidebar} />
-
-      <div className="flex flex-1">
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-
-        <div className="flex flex-1 p-2 overflow-auto bg-gray-100">
+        <div className="flex flex-1 overflow-auto bg-gray-100">
           {/* Left Panel */}
           <div className={`transition-all duration-300 ${selectedRecord || activeRightPanel ? "w-3/5" : "w-full"}`}>
             {/* Tabs */}
@@ -187,9 +175,6 @@ const NhapXuat = () => {
             </div>
           )}
         </div>
-      </div>
-      <Footer />
-    </div>
   );
 };
 

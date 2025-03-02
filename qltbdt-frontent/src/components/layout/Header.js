@@ -1,18 +1,15 @@
 import { useAuth } from "../../context/AuthProvider";
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import { useNavigate } from "react-router-dom";
+
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout} = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false); // State cho dropdown menu
   const notificationCount = 12; // TODO: Thay bằng số thông báo thực tế từ API
-  const [userData, setUserData] = useState(user); // State để cập nhật user
 
-  useEffect(() => {
-    setUserData(user); // Cập nhật user mỗi khi thay đổi
-  }, [user]);
-
+// bắt đầu sửa
   return (
     <div className="flex items-center justify-between p-3 bg-gray-800 shadow-md">
       {/* Nút Toggle Sidebar */}
@@ -46,9 +43,9 @@ const Header = ({ toggleSidebar }) => {
         >
           {/* Avatar (có badge thông báo) */}
           <div className="relative">
-            {userData?.hinhAnh ? (
+            {user?.hinhAnh ? (
               <img
-                src={userData.hinhAnh}
+                src={user.hinhAnh}
                 alt="Avatar"
                 className="object-cover w-10 h-10 border-2 border-white rounded-full shadow-md"
               />
@@ -68,7 +65,7 @@ const Header = ({ toggleSidebar }) => {
 
           {/* Username + Icon Dropdown */}
           <span className="text-white">
-            {userData?.hoTen || userData?.username || "Khách"}
+            {user?.hoTen || user?.username || "Khách"}
           </span>
           <i className={`text-white fas fa-caret-down transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`}></i>
         </button>
