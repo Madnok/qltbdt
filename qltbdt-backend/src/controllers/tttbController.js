@@ -10,6 +10,22 @@ exports.getAllThongTinThietBi = async (req, res) => {
     }
 };
 
+// Lấy chi tiết tttb theo ID
+exports.getThongTinThietBiById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query("SELECT * FROM thongtinthietbi WHERE id = ?", [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Không tìm thấy thông tin của thiết bị" });
+        }
+
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Lấy ID tiếp theo của bảng thongtinthietbi
 exports.getNextId = async (req, res) => {
     try {
@@ -37,7 +53,7 @@ exports.getListPhong = async (req, res) => {
         const [rows] = await pool.query("SELECT id, toa, tang, soPhong FROM phong");
         const phongList = rows.map(p => ({
             id: p.id,
-            phong: `${p.toa}.${p.tang}.${p.soPhong}`
+            phong: `${p.toa}${p.tang}.${p.soPhong}`
         }));
         res.json(phongList);
     } catch (error) {
@@ -76,11 +92,11 @@ exports.createThongTinThietBi = async (req, res) => {
 // Cập nhật thông tin thiết bị
 exports.updateThongTinThietBi = async (req, res) => {
     const { id } = req.params;
-    const { phong_id, nguoiDuocCap, tinhTrang } = req.body;
+    const {thietbi_id, phong_id, nguoiDuocCap, tinhTrang } = req.body;
     try {
         await pool.query(
-            "UPDATE thongtinthietbi SET phong_id = ?, nguoiDuocCap = ?, tinhTrang = ? WHERE id = ?",
-            [phong_id || null, nguoiDuocCap || null, tinhTrang || 'chua_dung', id]
+            "UPDATE thongtinthietbi SET thietbi_id = ?, phong_id = ?, nguoiDuocCap = ?, tinhTrang = ? WHERE id = ?",
+            [thietbi_id, phong_id || null, nguoiDuocCap || null, tinhTrang || 'chua_dung', id]
         );
         res.json({ message: "Cập nhật thông tin thiết bị thành công!" });
     } catch (error) {

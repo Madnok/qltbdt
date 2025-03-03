@@ -1,4 +1,4 @@
-
+// labels của các nút trong danh mục và Nhập xuất
 export const categoryLabels = {
     Phong: "Phòng",
     TheLoai: "Thể Loại",
@@ -42,4 +42,16 @@ export const maxTangTheoToa = {
 export const toaTheoCoSo = {
     "Chính": ["A", "B", "C", "D", "E", "F", "H", "T", "V", "X", "I", "G", "Bãi giữ xe"],
     "Phụ": ["J", "K", "L"]
+};
+
+//Chuyển đổi tình trạng sang có dấu
+export const getTinhTrangLabel = (tinhTrang) => {
+    switch (tinhTrang) {
+        case "chua_dung":
+            return "Chưa Dùng";
+        case "dang_dung":
+            return "Đang Dùng";
+        default:
+            return tinhTrang;
+    }
 };

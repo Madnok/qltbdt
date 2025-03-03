@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { paginateData } from "../../utils/helpers";
+import { getTinhTrangLabel } from "../../utils/constants";
 import axios from "axios";
 
 const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
     const [data, setData] = useState([]);
     const [phongList, setPhongList] = useState([]);
+    const [thietBiList, setThietBiList] = useState([]);
 
     const fetchData = () => {
         axios.get("http://localhost:5000/api/tttb")
@@ -14,6 +16,10 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
         axios.get("http://localhost:5000/api/tttb/phong-list")
             .then(response => setPhongList(response.data))
             .catch(error => console.error("Lỗi tải danh sách phòng:", error));
+
+            axios.get("http://localhost:5000/api/tttb/thietbi-list")
+            .then(response => setThietBiList(response.data))
+            .catch(error => console.error("Lỗi tải danh sách thiết bị:", error));
     };
 
     useEffect(() => {
@@ -33,10 +39,14 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
         }
     };
 
+    const getTenThietBi = (thietbi_id) => {
+        const thietBi = thietBiList.find(t => Number(t.id) === Number(thietbi_id));
+        return thietBi ? thietBi.tenThietBi : "";
+    };
     // Hàm tìm tên phòng theo phong_id
     const getTenPhong = (phong_id) => {
-        console.log("Danh sách phòng hiện tại:", phongList); 
-        console.log("phong_id nhận vào:", phong_id);
+        // console.log("Danh sách phòng hiện tại:", phongList); 
+        // console.log("phong_id nhận vào:", phong_id);
     
         const phong = phongList.find(p => Number(p.id) === Number(phong_id));
         return phong ? phong.phong : "Chưa có";
@@ -65,11 +75,11 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
                             >
                                 <td className="p-2 border">{indexOfFirstItem + index + 1}</td>
                                 <td className="p-2 border">TTTB{record.id}</td>
-                                <td className="p-2 border">{record.tenThietBi}</td>
+                                <td className="p-2 border">{getTenThietBi(record.thietbi_id)}</td>
                                 <td className="p-2 border">{getTenPhong(record.phong_id)}</td>
                                 <td className="p-2 border">{record.nguoiDuocCap}</td>
                                 <td className="p-2 border">GN{record.phieunhap_id}</td>
-                                <td className="p-2 border">{record.tinhTrang}</td>
+                                <td className="p-2 border">{getTinhTrangLabel(record.tinhTrang)}</td>
                             </tr>
                         ))}
                     </tbody>
