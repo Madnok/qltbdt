@@ -9,6 +9,7 @@ const thietbiRoutes = require("./routes/thietBiRoutes");
 const tttbRoutes = require("./routes/tttbRoutes");
 const theloaiRoutes = require("./routes/theloaiRoutes");
 const userRoutes = require("./routes/userRoutes");
+const nhapRoutes = require("./routes/nhapRoutes")
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/phong", phongRoutes);
 app.use("/api/thietbi", thietbiRoutes);
 app.use("/api/tttb", tttbRoutes);
 app.use("/api/theloai", theloaiRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/user", userRoutes);  
+app.use("/api/nhap", nhapRoutes);
 
 module.exports = app;

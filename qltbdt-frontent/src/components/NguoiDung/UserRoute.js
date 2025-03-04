@@ -105,7 +105,7 @@ const UserRoute = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return "Vui Lòng Thêm Ngày Sinh";
     const [year, month, day] = dateStr.split("-");
-    return `Ngày ${parseInt(day)} tháng ${parseInt(month)} năm ${year}`;
+    return `Ngày ${parseInt(day) + 1 } tháng ${parseInt(month)} năm ${year}`;
   };
 
   if (!userData) {
