@@ -61,7 +61,7 @@ exports.getListPhong = async (req, res) => {
     }
 };
 
-// Thêm mới thông tin thiết bị
+// Thêm mới một thông tin thiết bị
 exports.createThongTinThietBi = async (req, res) => {
     const { thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang } = req.body;
 
@@ -89,6 +89,36 @@ exports.createThongTinThietBi = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Thêm mới nhiều thông tin thiết bị
+exports.createMultipleThongTinThietBi = async (req, res) => {
+    const { danhSachThietBi } = req.body; // Nhận danh sách thiết bị từ client
+
+    if (!Array.isArray(danhSachThietBi) || danhSachThietBi.length === 0) {
+        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ" });
+    }
+
+    try {
+        const values = danhSachThietBi.map(tb => [
+            tb.thietbi_id,
+            tb.phong_id || null,
+            tb.nguoiDuocCap || null,
+            tb.phieunhap_id,
+            tb.tinhTrang || 'chua_dung',
+            tb.tenThietBi
+        ]);
+
+        await pool.query(
+            "INSERT INTO thongtinthietbi (thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi) VALUES ?",
+            [values]
+        );
+
+        res.status(201).json({ message: "Thêm nhiều thiết bị thành công!" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Cập nhật thông tin thiết bị
 exports.updateThongTinThietBi = async (req, res) => {
     const { id } = req.params;

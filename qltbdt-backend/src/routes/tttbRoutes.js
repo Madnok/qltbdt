@@ -11,5 +11,6 @@ router.post("/", tttbController.createThongTinThietBi);
 router.get("/:id", tttbController.getThongTinThietBiById);
 router.put("/:id", tttbController.updateThongTinThietBi);
 router.delete("/:id", tttbController.deleteThongTinThietBi);
+router.post("/multiple",tttbController.createMultipleThongTinThietBi);
 
 module.exports = router;

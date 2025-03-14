@@ -103,7 +103,7 @@ const DanhMuc = () => {
                                     onClick={() => setShowPhieuNhap(true)}
                                     className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
                                 >
-                                    <i className="mr-2 fas fa-plus"></i> Thêm Phiếu Nhập
+                                    <i className="mr-2 fas fa-plus"></i> Thêm Thiết Bị
                                 </button>
                             ) : (
                                 <button

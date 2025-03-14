@@ -6,7 +6,6 @@ import DanhMuc from "./pages/DanhMuc";
 import ThongKe from "./pages/ThongKe";
 import NguoiDung from "./pages/NguoiDung";
 import BaoTri from "./pages/BaoTri";
-import MuonTra from "./pages/MuonTra";
 import LichTruc from "./pages/LichTruc";
 import PrivateRoute from "./utils/PrivateRoutes";
 import { AuthProvider } from "../src/context/AuthProvider";
@@ -21,7 +20,6 @@ function Layout() {
       <Route element={<AppLayout />}>
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}> 
           <Route path="/nhapxuat" element={<NhapXuat />} />
-          <Route path="/muontra" element={<MuonTra />} />
           <Route path="/baotri" element={<BaoTri />} />
           <Route path="/danhmuc" element={<DanhMuc />} />
           <Route path="/lichtruc" element={<LichTruc />} />

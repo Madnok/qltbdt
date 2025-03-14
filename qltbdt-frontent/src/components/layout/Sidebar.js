@@ -25,7 +25,6 @@ const Sidebar = ({ isOpen = true }) => {
 
   const menuItems = [
     { path: "/nhapxuat", icon: "fas fa-exchange-alt", text: "Nhập Xuất", roles: ["admin", "nhanvien"] },
-    { path: "/muontra", icon: "fas fa-undo-alt", text: "Mượn Trả", roles: ["admin", "nhanvien"] },
     { path: "/baotri", icon: "fas fa-tools", text: "Bảo Trì", roles: ["admin", "nhanvien"] },
     { path: "/danhmuc", icon: "fas fa-list", text: "Danh Mục", roles: ["admin", "nhanvien"] },
     { path: "/baohong", icon: "fas fa-exclamation-triangle", text: "Báo Hỏng", roles: ["admin", "nhanvien", "nguoidung"] },

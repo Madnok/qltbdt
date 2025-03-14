@@ -1,55 +1,181 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import FormPhieuNhap from "./FormPhieuNhap";
 
 const FormNhap = ({ onClose }) => {
     const [showPhieuNhap, setShowPhieuNhap] = useState(false);
+    const [phieuNhapId] = useState(null);
+    const [thietBiNhap, setThietBiNhap] = useState([]);
+    const [nguoiTao, setNguoiTao] = useState("");
+    const [ngayTao, setNgayTao] = useState("");
+    const [truongHopNhap, setTruongHopNhap] = useState("muaMoi");
+
+    // useEffect đầu tiên chỉ lấy thông tin người tạo và ngày
+    useEffect(() => {
+        // Lấy ngày tạo theo GMT+7
+        const now = new Date();
+        const vietnamTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        const formattedDate = vietnamTime.toISOString().slice(0, 16).replace("T", " ");
+        setNgayTao(formattedDate);
+
+        // Lấy họ tên người tạo
+        axios.get("http://localhost:5000/api/nhap/user/1")
+            .then((res) => setNguoiTao(res.data.hoTen))
+            .catch((error) => console.error("Lỗi lấy thông tin người tạo:", error));
+    }, []);
+
+    // useEffect thứ hai theo dõi phieuNhapId để lấy danh sách thiết bị
+    useEffect(() => {
+        if (!phieuNhapId) return;
+
+        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`)
+            .then((res) => {
+                console.log("Thiết bị trong phiếu nhập:", res.data);
+                setThietBiNhap(res.data);
+            })
+            .catch((error) => console.error("Lỗi lấy danh sách thiết bị:", error));
+    }, [phieuNhapId]);
+
+    const handleAddThietBi = (newThietBi) => {
+        setThietBiNhap((prev) => [...prev, { 
+            ...newThietBi, 
+            tinhTrang: newThietBi.tinhTrang || "dang_dung" 
+        }]);
+        console.log("Danh sách thiết bị sau khi thêm:", [...thietBiNhap, newThietBi]);
+    };
+    
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (thietBiNhap.length === 0) {
+            alert("Chưa có thiết bị nào để nhập!");
+            return;
+        }
+
+        const data = {
+            userId: 1, // Giả sử user ID là 1 (có thể thay bằng user đăng nhập)
+            truongHopNhap,
+            ngayTao,
+            danhSachThietBi: thietBiNhap, // Gửi luôn danh sách thiết bị nhập
+        };
+
+        try {
+            await axios.post("http://localhost:5000/api/nhap", data);
+            alert("Tạo phiếu nhập thành công!");
+            onClose();
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Lỗi khi tạo phiếu nhập!");
+        }
+    };
+
+
+    const handleSubmitNhieuThietBi = async () => {
+        if (thietBiNhap.length === 0) {
+            alert("Chưa có thiết bị nào để lưu!");
+            return;
+        }
+
+        try {
+            await axios.post("http://localhost:5000/api/tttb/multiple", {
+                danhSachThietBi: thietBiNhap
+            });
+
+            alert("Lưu phiếu nhập thành công!");
+            onClose();
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Lỗi khi lưu phiếu nhập!");
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-white border-l shadow-md">
-            {/* Header */}
             <div className="flex items-center justify-between p-2 bg-white border-b">
                 <h2 className="text-lg font-semibold">Thêm Ghi Nhập</h2>
-                <button className="w-10 h-10 rounded-full hover:bg-gray-300"
-                    onClick={onClose}>
+                <button className="w-10 h-10 rounded-full hover:bg-gray-300" onClick={onClose}>
                     <i className="text-lg text-black fas fa-times"></i>
                 </button>
             </div>
-
-            {/* Form nhập */}
-            <form className="p-4 space-y-4">
-                
+            <form className="p-4 space-y-4" onSubmit={handleSubmit}>
                 <div>
-                    <label className="block font-medium">ID:</label>
-                    <input type="text" value="GN1" disabled className="w-full p-2 mt-1 bg-gray-100 border rounded" />
+                    <label className="block font-medium">ID Phiếu Nhập:</label>
+                    <input type="text" value={phieuNhapId || "Đang tải..."} disabled className="w-full p-2 bg-gray-100 border rounded" />
                 </div>
-              
+
                 <div>
                     <label className="block font-medium">Người Tạo:</label>
-                    <input type="text" value="admin" disabled className="w-full p-2 mt-1 bg-gray-100 border rounded" />
+                    <input type="text" value={nguoiTao || "Đang tải..."} disabled className="w-full p-2 bg-gray-100 border rounded" />
                 </div>
 
                 <div>
                     <label className="block font-medium">Ngày Tạo:</label>
-                    <input type="text" value="26/2/2025 4:26 CH" disabled className="w-full p-2 mt-1 bg-gray-100 border rounded" />
+                    <input type="text" value={ngayTao || "Đang tải..."} disabled className="w-full p-2 bg-gray-100 border rounded" />
                 </div>
 
-                {/* Nút mở form phiếu nhập */}
                 <div>
-                    <label className="block font-medium">Thêm Thiết Bị Nhập</label>
-                    <button type="button"
-                        onClick={() => setShowPhieuNhap(true)}
-                        className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
-                        + Thêm Phiếu Nhập
-                    </button>
+                    <label className="block font-medium">Trường Hợp Nhập:</label>
+                    <div className="flex">
+                        <button
+                            type="button"
+                            className={`flex-1 p-2 rounded-y rounded-l ${truongHopNhap === "muaMoi" ? "bg-gray-800 text-white" : "bg-gray-200"}`}
+                            onClick={() => setTruongHopNhap("muaMoi")}
+                        >
+                            Mua Mới
+                        </button>
+                        <button
+                            type="button"
+                            className={`flex-1 p-2 rounded-y rounded-r ${truongHopNhap === "taiTro" ? "bg-gray-800 text-white" : "bg-gray-200"}`}
+                            onClick={() => setTruongHopNhap("taiTro")}
+                        >
+                            Được Tài Trợ
+                        </button>
+                    </div>
                 </div>
             </form>
 
-            {/* Hiển thị Form Phiếu Nhập */}
-            {showPhieuNhap && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <FormPhieuNhap onClose={() => setShowPhieuNhap(false)} />
+            <div className="p-4 overflow-auto">
+                <h3 className="text-xl font-semibold">Danh Sách Thiết Bị</h3>
+                <table className="w-full mt-2 border">
+                    <thead>
+                        <tr className="bg-gray-200">
+                            <th className="px-4 py-2 border-b">ID</th>
+                            <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
+                            <th className="px-4 py-2 border-b">Phòng</th>
+                            <th className="px-4 py-2 border-b">Người Nhận</th>
+                            <th className="px-4 py-2 border-b">Trạng Thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {thietBiNhap.map((tb, index) => (
+                            <tr key={index} className="text-center">
+                                <td className="p-2 border">{tb.thietbi_id}</td>
+                                <td className="p-2 border">{tb.tenThietBi}</td>
+                                <td className="p-2 border">{tb.phong}</td>
+                                <td className="p-2 border">{tb.nguoiDuocCap}</td>
+                                <td className="p-2 border">{tb.trangThai}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                <div className="space-x-2">
+                    <button type="button" onClick={() => setShowPhieuNhap(true)} className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
+                        + Thêm Thiết Bị Nhập
+                    </button>
+                    <button type="submit" className="px-4 py-2 mt-2 text-white bg-green-500 rounded" onClick={(handleSubmitNhieuThietBi)}>
+                        Lưu Ghi Nhập Test
+                    </button>
+                    <button type="submit" className="px-4 py-2 mt-2 text-white bg-green-500 rounded" onClick={(handleSubmit)}>
+                        Lưu Ghi Nhập Real
+                    </button>
                 </div>
-            )}
+                {showPhieuNhap && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                        <FormPhieuNhap onClose={() => setShowPhieuNhap(false)} onAddThietBi={handleAddThietBi} />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
