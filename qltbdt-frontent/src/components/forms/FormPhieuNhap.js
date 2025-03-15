@@ -2,29 +2,20 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 
 const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
-    
+
     const [thietBiList, setThietBiList] = useState([]);
-    const [phongList, setPhongList] = useState([]);
     const [selectedThietBi, setSelectedThietBi] = useState("");
-    const [selectedPhong, setSelectedPhong] = useState("");
-    const [nguoiDuocCap, setNguoiDuocCap] = useState("");
-    const [tinhTrang, setTinhTrang] = useState("dang_dung");
+    const [soLuong, setSoLuong] = useState(1);
+    const [donGia, setDonGia] = useState(0);
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/next-id")
-            .then(response => setNextId(response.data.nextId))
-            .catch(error => console.error("ERROR", error));
-
         axios.get("http://localhost:5000/api/tttb/thietbi-list")
             .then(response => setThietBiList(response.data))
             .catch(error => console.error("ERROR", error));
 
-        axios.get("http://localhost:5000/api/tttb/phong-list")
-            .then(response => setPhongList(response.data))
-            .catch(error => console.error("ERROR", error));
     }, []);
-    
-    const [nextId, setNextId] = useState(() => thietBiList.length > 0 ? Math.max(...thietBiList.map(tb => tb.id)) + 1 : 1);
+
+    const [nextId] = useState(() => thietBiList.length > 0 ? Math.max(...thietBiList.map(tb => tb.id)) + 1 : 1);
     const handleAdd = () => {
         if (!selectedThietBi) {
             alert("Vui lòng chọn thiết bị!");
@@ -33,35 +24,15 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
 
         const newThietBi = {
             id: nextId,
-            thietbi_id: selectedThietBi, 
+            thietbi_id: selectedThietBi,
             tenThietBi: thietBiList.find(tb => tb.id === Number(selectedThietBi))?.tenThietBi || "Không rõ",
-            phong: phongList.find(ph => ph.id === Number(selectedPhong))?.phong || "Không có",
-            nguoiDuocCap: nguoiDuocCap || "Không có",
-            trangThai: tinhTrang === "dang_dung" ? "Đang Dùng" : "Chưa Dùng",
+            soLuong: soLuong,
+            donGia: donGia
         };
-        
+
         console.log("Thêm thiết bị:", newThietBi);
         onAddThietBi(newThietBi);
         onClose();
-    };
-
-    const handleSubmit = async () => {
-        const data = {
-            thietbi_id: selectedThietBi,
-            phong_id: selectedPhong || null,
-            nguoiDuocCap: nguoiDuocCap || null,
-            phieunhap_id: null,
-            tinhTrang: tinhTrang
-        };
-
-        try {
-            await axios.post("http://localhost:5000/api/tttb", data);
-            alert("Lưu thành công!");
-            refreshData();
-            onClose();
-        } catch (error) {
-            alert("Lỗi khi lưu!");
-        }
     };
 
     return (
@@ -88,36 +59,26 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
                         ))}
                     </select>
                 </div>
-
+                
                 <div>
-                    <label className="block font-medium">Phòng</label>
-                    <select className="w-full p-2 mt-1 border rounded" onChange={e => setSelectedPhong(e.target.value)}>
-                        <option value="">Chọn Phòng (Tòa - Tầng - Phòng)</option>
-                        {phongList.map(ph => (
-                            <option key={ph.id} value={ph.id}>{ph.phong}</option>
-                        ))}
-                    </select>
+                    <label className="block font-medium">Số Lượng</label>
+                    <input type="number" value={soLuong} min="1"
+                        onChange={(e) => setSoLuong(Number(e.target.value))}
+                        className="w-full p-2 mt-1 border rounded"
+                    />
                 </div>
 
                 <div>
-                    <label className="block font-medium">Người Được Cấp</label>
-                    <input type="text" value={nguoiDuocCap} onChange={e => setNguoiDuocCap(e.target.value)} className="w-full p-2 mt-1 border rounded" />
-                </div>
-
-                <div>
-                    <label className="block font-medium">Tình Trạng</label>
-                    <select className="w-full p-2 mt-1 border rounded" value={tinhTrang} onChange={e => setTinhTrang(e.target.value)}>
-                        <option value="dang_dung">Đang Dùng</option>
-                        <option value="chua_dung">Chưa Dùng</option>
-                    </select>
+                    <label className="block font-medium">Đơn Giá</label>
+                    <input type="number" value={donGia} min="0"
+                        onChange={(e) => setDonGia(Number(e.target.value))}
+                        className="w-full p-2 mt-1 border rounded"
+                    />
                 </div>
 
                 <div className="flex justify-end space-x-2">
                     <button type="button" className="px-4 py-2 text-white bg-yellow-500 rounded" onClick={handleAdd}>
                         Thêm Thiết Bị Khác
-                    </button>
-                    <button type="button" className="px-4 py-2 text-white bg-green-500 rounded" onClick={handleSubmit}>
-                        Lưu
                     </button>
                     <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={onClose}>
                         Hủy

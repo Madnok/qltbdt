@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { getTinhTrangLabel } from "../../utils/constants";
+import { useFormattedPrice } from "../../utils/helpers";
 
 
 const ChiTietNhap = ({ selectedRecord, onClose}) => {
+    const formatPrice = useFormattedPrice();
     const [thietBiNhapData, setThietBiNhapData] = useState([]);
 
 
@@ -96,9 +98,8 @@ const ChiTietNhap = ({ selectedRecord, onClose}) => {
                         <tr className="bg-gray-200">
                             <th className="px-4 py-2 border-b">TB ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
-                            <th className="px-4 py-2 border-b">Phòng</th>
-                            <th className="px-4 py-2 border-b">Người Nhận</th>
-                            <th className="px-4 py-2 border-b">Trạng Thái</th>
+                            <th className="px-4 py-2 border-b">Số Lượng</th>
+                            <th className="px-4 py-2 border-b">Đơn Giá</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,9 +108,8 @@ const ChiTietNhap = ({ selectedRecord, onClose}) => {
                                 <tr key={tb.id} className="text-center">
                                     <td className="p-2 border">{tb.thietbi_id}</td>
                                     <td className="p-2 border">{tb.tenThietBi}</td>
-                                    <td className="p-2 border">{tb.phong_id || "Chưa có"}</td>
-                                    <td className="p-2 border">{tb.nguoiDuocCap || "Chưa có"}</td>
-                                    <td className="p-2 border">{getTinhTrangLabel(tb.tinhTrang)}</td>
+                                    <td className="p-2 border">{tb.soLuong}</td>
+                                    <td className="p-2 border">{formatPrice(tb.donGia)}</td>
                                 </tr>
                             ))
                         ) : (

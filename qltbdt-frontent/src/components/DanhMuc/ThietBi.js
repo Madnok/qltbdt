@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useFormattedPrice } from "../../utils/helpers";
 
 const ThietBi = ({ setSelectedRecord, refresh }) => {
+    const formatPrice = useFormattedPrice();
     const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10; // Giới hạn 10 dòng mỗi trang
@@ -46,7 +48,7 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                             <th className="px-4 py-2 border-b">Mô Tả</th>
                             <th className="px-4 py-2 border-b">Số Lượng</th>
                             <th className="px-4 py-2 border-b">Tồn Kho</th>
-                            <th className="px-4 py-2 border-b">~</th>
+                            <th className="px-4 py-2 border-b">Đơn Giá</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,7 +63,7 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                                 <td className="p-2 border">{record.moTa}</td>
                                 <td className="p-2 border">{record.soLuong}</td>
                                 <td className="p-2 border">{record.tonKho}</td>
-                                <td className="p-2 border">~</td>
+                                <td className="p-2 border">{formatPrice(record.donGia)}</td>
                             </tr>
                         ))}
                     </tbody>

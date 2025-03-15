@@ -1,8 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useFormattedPrice } from "../../../utils/helpers";
 
 const ChiTietThietBi = ({ onClose, record, refreshData }) => {
     const [editData, setEditData] = useState(record);
+    const formatPrice = useFormattedPrice();
     const [isEditing, setIsEditing] = useState(false);
     const [danhSachTheLoai, setDanhSachTheLoai] = useState([]);
 
@@ -141,9 +143,24 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
                 {/* Đơn Giá */}
                 <div>
                     <label className="font-semibold">Đơn Giá:</label>
-                    <input type="number" name="donGia" value={editData.donGia}
-                        onChange={handleChange} className="w-full p-2 border"
-                        disabled={!isEditing} />
+                    <input
+                        type="text"
+                        name="donGia"
+                        value={isEditing ? editData.donGia : formatPrice(editData.donGia)}
+                        onChange={(e) => {
+                            const rawValue = e.target.value.replace(/\D/g, "");
+                            handleChange({ target: { name: "donGia", value: rawValue } });
+                        }}
+                        className="w-full p-2 border"
+                        disabled={!isEditing}
+                    />
+                </div>
+
+                {/* Tồn Kho */}
+                <div>
+                    <label className="font-semibold">Tổng Tiền:</label>
+                    <input type="text" name="tonKho" value={formatPrice(editData.soLuong * editData.donGia)}
+                        className="w-full p-2 border" disabled />
                 </div>
 
                 {/* Mô Tả */}

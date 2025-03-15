@@ -1,5 +1,5 @@
 
-const db = require("../config/db"); 
+const db = require("../config/db");
 // Lấy danh sách tất cả phiếu nhập
 exports.getAllPhieuNhap = async (req, res) => {
     try {
@@ -20,29 +20,6 @@ exports.getPhieuNhapById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
-// Lấy ID phiếu nhập tiếp theo
-exports.getNextPhieuNhapId = async (req, res) => {
-    const query = "SELECT MAX(id) AS maxId FROM phieunhap";
-
-    db.query(query, (err, result) => {
-        if (err) {
-            console.error("❌ Lỗi SQL lấy ID tiếp theo:", err);
-            return res.status(500).json({ error: "Lỗi server" });
-        }
-
-        console.log("📌 Kết quả MAX(id):", result); // 🛠 Debug log
-
-        if (!result || result.length === 0 || result[0].maxId === null) {
-            console.log("📌 Không có phiếu nhập nào, nextId = 1");
-            return res.json({ nextPhieuNhapId: 1 });
-        } else {
-            console.log("📌 Next ID:", result[0].maxId + 1);
-            return res.json({ nextPhieuNhapId: result[0].maxId + 1 });
-        }
-    });
-};
-
 
 
 // Lấy họ tên người tạo theo user_id
@@ -83,15 +60,21 @@ exports.createPhieuNhap = async (req, res) => {
         );
         const phieuNhapId = phieuNhapResult.insertId; // ID phiếu nhập vừa tạo
 
-        // Chèn danh sách thiết bị vào bảng `thongtinthietbi`
+        // Duyệt từng thiết bị trong danh sách
         if (danhSachThietBi && danhSachThietBi.length > 0) {
-            const insertQuery = `
-                INSERT INTO thongtinthietbi (thietbi_id, phieunhap_id, tenThietBi, tinhTrang) 
-                VALUES ?
-            `;
+            for (const item of danhSachThietBi) {
+                //Chèn vào `thongtinthietbi`
+                await connection.query(
+                    "INSERT INTO thongtinthietbi (thietbi_id, phieunhap_id, tenThietBi) VALUES (?, ?, ?)",
+                    [item.thietbi_id, phieuNhapId, item.tenThietBi]
+                );
 
-            const values = danhSachThietBi.map(item => [item.thietbi_id, phieuNhapId, item.tenThietBi, item.tinhTrang]);
-            await connection.query(insertQuery, [values]);
+                //Cập nhật số lượng trong `thietbi`
+                await connection.query(
+                    "UPDATE thietbi SET soLuong = soLuong + ?, donGia = donGia + ?,tonKho = tonKho + ? WHERE id = ?",
+                    [item.soLuong, item.donGia, item.soLuong, item.thietbi_id]
+                );
+            }
         }
 
         await connection.commit(); // Xác nhận transaction
@@ -104,26 +87,33 @@ exports.createPhieuNhap = async (req, res) => {
     }
 };
 
-// Lấy các thiết bị trong phiếu nhập
+
+// Lấy danh sách thiết bị trong phiếu nhập
 exports.getThietBiInPhieuNhap = async (req, res) => {
     const { phieuNhapId } = req.params;
-    
+
     try {
         const [rows] = await db.execute(
             `SELECT 
-                ttb.*, 
+                ttb.thietbi_id, 
+                ttb.tenThietBi, 
+                tb.soLuong, 
+                tb.donGia, 
                 pn.truongHopNhap 
             FROM thongtinthietbi ttb
             JOIN phieunhap pn ON ttb.phieunhap_id = pn.id
-            WHERE ttb.phieunhap_id = ?`, 
+            JOIN thietbi tb ON ttb.thietbi_id = tb.id
+            WHERE ttb.phieunhap_id = ?`,
             [phieuNhapId]
         );
+
         res.json(rows);
     } catch (error) {
         console.error("Lỗi lấy danh sách thiết bị:", error);
         res.status(500).json({ error: "Lỗi lấy danh sách thiết bị" });
     }
 };
+
 
 // Xóa phiếu nhập theo ID
 exports.deletePhieuNhap = async (req, res) => {

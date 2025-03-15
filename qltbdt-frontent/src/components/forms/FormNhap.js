@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import FormPhieuNhap from "./FormPhieuNhap";
+import { useFormattedPrice } from "../../utils/helpers";
 
 const FormNhap = ({ onClose }) => {
     const [showPhieuNhap, setShowPhieuNhap] = useState(false);
+    const formatPrice = useFormattedPrice();
     const [phieuNhapId] = useState(null);
     const [thietBiNhap, setThietBiNhap] = useState([]);
     const [nguoiTao, setNguoiTao] = useState("");
     const [ngayTao, setNgayTao] = useState("");
     const [truongHopNhap, setTruongHopNhap] = useState("muaMoi");
+    
 
     // useEffect đầu tiên chỉ lấy thông tin người tạo và ngày
     useEffect(() => {
@@ -39,7 +42,6 @@ const FormNhap = ({ onClose }) => {
     const handleAddThietBi = (newThietBi) => {
         setThietBiNhap((prev) => [...prev, { 
             ...newThietBi, 
-            tinhTrang: newThietBi.tinhTrang || "dang_dung" 
         }]);
         console.log("Danh sách thiết bị sau khi thêm:", [...thietBiNhap, newThietBi]);
     };
@@ -70,26 +72,6 @@ const FormNhap = ({ onClose }) => {
         }
     };
 
-
-    const handleSubmitNhieuThietBi = async () => {
-        if (thietBiNhap.length === 0) {
-            alert("Chưa có thiết bị nào để lưu!");
-            return;
-        }
-
-        try {
-            await axios.post("http://localhost:5000/api/tttb/multiple", {
-                danhSachThietBi: thietBiNhap
-            });
-
-            alert("Lưu phiếu nhập thành công!");
-            onClose();
-        } catch (error) {
-            console.error("Lỗi:", error);
-            alert("Lỗi khi lưu phiếu nhập!");
-        }
-    };
-
     return (
         <div className="flex flex-col h-full bg-white border-l shadow-md">
             <div className="flex items-center justify-between p-2 bg-white border-b">
@@ -99,11 +81,6 @@ const FormNhap = ({ onClose }) => {
                 </button>
             </div>
             <form className="p-4 space-y-4" onSubmit={handleSubmit}>
-                <div>
-                    <label className="block font-medium">ID Phiếu Nhập:</label>
-                    <input type="text" value={phieuNhapId || "Đang tải..."} disabled className="w-full p-2 bg-gray-100 border rounded" />
-                </div>
-
                 <div>
                     <label className="block font-medium">Người Tạo:</label>
                     <input type="text" value={nguoiTao || "Đang tải..."} disabled className="w-full p-2 bg-gray-100 border rounded" />
@@ -142,9 +119,9 @@ const FormNhap = ({ onClose }) => {
                         <tr className="bg-gray-200">
                             <th className="px-4 py-2 border-b">ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
-                            <th className="px-4 py-2 border-b">Phòng</th>
-                            <th className="px-4 py-2 border-b">Người Nhận</th>
-                            <th className="px-4 py-2 border-b">Trạng Thái</th>
+                            <th className="px-4 py-2 border-b">Số Lượng</th>
+                            <th className="px-4 py-2 border-b">Đơn Giá</th>
+                            <th className="px-4 py-2 border-b">Tổng Tiền</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -152,22 +129,19 @@ const FormNhap = ({ onClose }) => {
                             <tr key={index} className="text-center">
                                 <td className="p-2 border">{tb.thietbi_id}</td>
                                 <td className="p-2 border">{tb.tenThietBi}</td>
-                                <td className="p-2 border">{tb.phong}</td>
-                                <td className="p-2 border">{tb.nguoiDuocCap}</td>
-                                <td className="p-2 border">{tb.trangThai}</td>
+                                <td className="p-2 border">{tb.soLuong}</td>
+                                <td className="p-2 border">{formatPrice(tb.donGia)}</td>
+                                <td class="p-2 border">{formatPrice(tb.soLuong * tb.donGia)}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
                 <div className="space-x-2">
                     <button type="button" onClick={() => setShowPhieuNhap(true)} className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
-                        + Thêm Thiết Bị Nhập
-                    </button>
-                    <button type="submit" className="px-4 py-2 mt-2 text-white bg-green-500 rounded" onClick={(handleSubmitNhieuThietBi)}>
-                        Lưu Ghi Nhập Test
+                        Thêm Thiết Bị
                     </button>
                     <button type="submit" className="px-4 py-2 mt-2 text-white bg-green-500 rounded" onClick={(handleSubmit)}>
-                        Lưu Ghi Nhập Real
+                        Lưu Ghi Nhập
                     </button>
                 </div>
                 {showPhieuNhap && (

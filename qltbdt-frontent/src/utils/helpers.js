@@ -1,5 +1,15 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
+/**
+ * Hook định dạng tiền tệ
+ */
+export const formatCurrency = (amount) => {
+    if (!amount) return "0 VNĐ";
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+};
+export const useFormattedPrice = () => {
+    return useCallback((amount) => formatCurrency(amount), []);
+};
 
 /**
  * Hook điều khiển Sidebar
