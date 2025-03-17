@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `qltbdt` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `qltbdt`;
--- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.36, for Win64 (x86_64)
 --
 -- Host: localhost    Database: qltbdt
 -- ------------------------------------------------------
--- Server version	8.0.41
+-- Server version	8.0.37
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -33,7 +31,7 @@ CREATE TABLE `phieunhap` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `phieunhap_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,6 +40,7 @@ CREATE TABLE `phieunhap` (
 
 LOCK TABLES `phieunhap` WRITE;
 /*!40000 ALTER TABLE `phieunhap` DISABLE KEYS */;
+INSERT INTO `phieunhap` VALUES (1,1,'Admin','2025-03-03 02:53:08','muaMoi'),(4,1,'Admin','2025-03-14 14:13:00','taiTro'),(36,1,'Admin','2025-03-15 18:39:00','muaMoi');
 /*!40000 ALTER TABLE `phieunhap` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -61,7 +60,7 @@ CREATE TABLE `phong` (
   `chucNang` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `phong_chk_1` CHECK ((`soPhong` between 1 and 20))
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -85,7 +84,7 @@ CREATE TABLE `theloai` (
   `id` int NOT NULL AUTO_INCREMENT,
   `theLoai` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -94,7 +93,7 @@ CREATE TABLE `theloai` (
 
 LOCK TABLES `theloai` WRITE;
 /*!40000 ALTER TABLE `theloai` DISABLE KEYS */;
-INSERT INTO `theloai` VALUES (1,'Laptop'),(2,'Micro'),(3,'Máy In'),(4,'Bóng Đèn'),(5,'Máy Tính'),(6,'Điều Hòa'),(7,'Ghế'),(8,'Bàn'),(9,'Dây Điện'),(10,'Loa'),(11,'Quạt');
+INSERT INTO `theloai` VALUES (1,'Laptop'),(2,'Micro'),(3,'Máy In'),(4,'Bóng Đèn'),(5,'Máy Tính'),(6,'Điều Hòa'),(7,'Ghế'),(8,'Bàn'),(9,'Dây Điện'),(10,'Loa'),(11,'Quạt'),(12,'Tai Nghe'),(13,'Sạc Dự Phòng');
 /*!40000 ALTER TABLE `theloai` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -116,7 +115,7 @@ CREATE TABLE `thietbi` (
   PRIMARY KEY (`id`),
   KEY `theloai_id` (`theloai_id`),
   CONSTRAINT `thietbi_ibfk_1` FOREIGN KEY (`theloai_id`) REFERENCES `theloai` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -125,8 +124,43 @@ CREATE TABLE `thietbi` (
 
 LOCK TABLES `thietbi` WRITE;
 /*!40000 ALTER TABLE `thietbi` DISABLE KEYS */;
-INSERT INTO `thietbi` VALUES (1,1,'Laptop Sony VPL','Độ phân giải Full HD',15000000,0,0),(2,4,'Bóng Đèn Huỳnh Quang','Công Suất Cao Tiết Kiệm Điện',600000,1,1),(3,2,'Micro Shure SM58','Dòng micro dynamic',3000000,0,0),(4,2,'Micro AKG D5','Thiết kế chống hú',2500000,25,22),(5,3,'Máy In HP LaserJet','Công nghệ in Laser trắng đen',5000000,8,5),(6,3,'Máy In Canon PIXMA','In màu, kết nối WiFi',4500000,12,10),(7,4,'Bóng Đèn Philips LED','Công suất 9W, tiết kiệm điện',50000,100,95),(8,4,'Bóng Đèn Rạng Đông','Bóng LED 18W, ánh sáng trắng',70000,80,75),(9,1,'Laptop MSI','Dùng để chơi game',12000000,0,0),(18,5,'Desktop Gaming','I5 12400F, RTX 5090, 64 gb Ram',54000000,0,0);
+INSERT INTO `thietbi` VALUES (1,1,'Laptop Sony VPL','Độ phân giải Full HD',0,0,0),(2,4,'Bóng Đèn Huỳnh Quang','Công Suất Cao Tiết Kiệm Điện',0,0,0),(3,2,'Micro Shure SM58','Dòng micro dynamic',0,0,0),(4,2,'Micro AKG D5','Thiết kế chống hú',0,0,0),(5,3,'Máy In HP LaserJet','Công nghệ in Laser trắng đen',0,0,0),(6,3,'Máy In Canon PIXMA','In màu, kết nối WiFi',0,0,0),(7,4,'Bóng Đèn Philips LED','Công suất 9W, tiết kiệm điện',0,0,0),(8,4,'Bóng Đèn Rạng Đông','Bóng LED 18W, ánh sáng trắng',0,0,0),(9,1,'Laptop MSI','Dùng để chơi game',0,0,0),(18,5,'Desktop Gaming','I5 12400F, RTX 5090, 64 gb Ram',2000000,4,4),(20,12,'Airpod Pro 2025','Tai Nghe của hãng Apple, Chống Ồn, Âm Thanh 3D sống động',4000000,5,5),(21,3,'Máy In Hp','Máy In Hp hiện đại ',0,0,0);
 /*!40000 ALTER TABLE `thietbi` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `thongtinthietbi`
+--
+
+DROP TABLE IF EXISTS `thongtinthietbi`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `thongtinthietbi` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `thietbi_id` int NOT NULL,
+  `phong_id` int DEFAULT NULL,
+  `nguoiDuocCap` varchar(100) DEFAULT NULL,
+  `tenThietBi` varchar(255) NOT NULL,
+  `phieunhap_id` int DEFAULT NULL,
+  `tinhTrang` enum('chua_dung','dang_dung') NOT NULL DEFAULT 'chua_dung',
+  PRIMARY KEY (`id`),
+  KEY `thietbi_id` (`thietbi_id`),
+  KEY `phong_id` (`phong_id`),
+  KEY `phieunhap_id` (`phieunhap_id`),
+  CONSTRAINT `ThongTinThietBi_ibfk_1` FOREIGN KEY (`thietbi_id`) REFERENCES `thietbi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `ThongTinThietBi_ibfk_2` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `ThongTinThietBi_ibfk_3` FOREIGN KEY (`phieunhap_id`) REFERENCES `phieunhap` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `thongtinthietbi`
+--
+
+LOCK TABLES `thongtinthietbi` WRITE;
+/*!40000 ALTER TABLE `thongtinthietbi` DISABLE KEYS */;
+INSERT INTO `thongtinthietbi` VALUES (3,1,6,'Lê Khải','Laptop Sony VPL',1,'dang_dung'),(4,2,NULL,NULL,'Bóng Đèn Huỳnh Quang',1,'chua_dung'),(5,3,NULL,NULL,'Micro Shure SM58',1,'chua_dung'),(6,4,NULL,NULL,'Micro AKG D5',1,'chua_dung'),(7,5,NULL,NULL,'Máy In HP LaserJet',1,'chua_dung'),(24,18,NULL,NULL,'Desktop Gaming',4,'chua_dung'),(25,20,NULL,NULL,'Airpod Pro 2025',4,'chua_dung'),(61,18,NULL,NULL,'Desktop Gaming',36,'chua_dung'),(62,20,NULL,NULL,'Airpod Pro 2025',36,'chua_dung');
+/*!40000 ALTER TABLE `thongtinthietbi` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -150,9 +184,8 @@ CREATE TABLE `users` (
   `tinhTrang` enum('on','off') DEFAULT 'on',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `sDT` (`sDT`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -161,7 +194,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on'),(2,'hung1806','$2b$10$CNvZl4yWWejIXICC8zz79.HcKQlRfInP5hBNqNzOyi9oc/MYRO5US','Phạm Minh Hùng','2001-06-18','Nam','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải','2011-11-11','Nam','012345678','dinhlekhai@gmail.com',NULL,'nguoidung','on'),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-12-11','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740677793/avatars/zf67man9tjbisz4bixhk.jpg','nguoidung','on'),(5,'testuser2','$2b$10$xeDHWNWCwERwWVa.mXOgCu/1X7wB7RviwBI2XQFzeagCx6hcjXLp2','Test User 2',NULL,'Nam',NULL,NULL,NULL,'nguoidung','on');
+INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on'),(2,'hung1806','$2b$10$CNvZl4yWWejIXICC8zz79.HcKQlRfInP5hBNqNzOyi9oc/MYRO5US','Phạm Minh Hùng','2001-06-18','Khác','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải 1','2011-11-11','Nam','012345678','dinhlekhai@gmail.com',NULL,'nguoidung','on'),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-10-08','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740919997/avatars/nbm5heihwzluedfnk2tp.png','nguoidung','on');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -174,4 +207,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-02-28 12:40:56
+-- Dump completed on 2025-03-18  3:32:57
