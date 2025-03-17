@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "axios": "^1.7.9",
     "cra-template-tailwindcss": "4.0.1",
     "react": "^19.0.0",

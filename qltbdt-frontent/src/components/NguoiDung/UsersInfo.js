@@ -2,6 +2,7 @@ import { useAuth } from "../../context/AuthProvider";
 import { useState } from "react";
 
 const UsersInfo = ({onClose}) => {
+    // eslint-disable-next-line
     const { user } = useAuth(); // Lấy thông tin user từ context
     const [passwordData, setPasswordData] = useState({ oldPassword: "", newPassword: "", confirmNewPassword: "" });
     const handleChange = (e) => {

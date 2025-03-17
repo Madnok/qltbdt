@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthProvider";
 import { useRefresh } from "../../utils/helpers";
+import { getTinhTrangLabel } from "../../utils/constants";
 
 const UserRoute = ({ onOpenRightPanel }) => {
   const { user, refreshUser, /*updateUser*/ } = useAuth();
@@ -140,6 +141,16 @@ const UserRoute = ({ onOpenRightPanel }) => {
           )}
         </div>
         <div className="grid grid-cols-1 gap-4">
+          <label className="block">
+            <span className="text-gray-700">Vai Trò:</span>
+            <input
+              type="text"
+              name="role"
+              value={getTinhTrangLabel(editData.role)}
+              disabled
+              className="block w-full p-2 mt-1 border border-gray-500 rounded-md"
+            />
+          </label>
           <label className="block">
             <span className="text-gray-700">Họ Tên:</span>
             <input

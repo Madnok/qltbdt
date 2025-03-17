@@ -52,6 +52,16 @@ export const getTinhTrangLabel = (tinhTrang) => {
             return "Mua Mới";
         case "taiTro":
             return "Tài Trợ";
+        case "nguoidung":
+            return "Người Dùng"
+        case "nhanvien":
+            return "Nhân Viên";
+        case "admin":
+            return "Quản Trị Viên";
+        case "on":
+            return "Bật";
+        case "off":
+            return "Tắt";
         default:
             return tinhTrang;
     }

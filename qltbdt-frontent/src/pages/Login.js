@@ -21,14 +21,26 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", { username, password }, { withCredentials: true });
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { username, password },
+        { withCredentials: true }
+      );
       if (response.data) {
         alert("✅ Đăng nhập thành công!");
         setUser(response.data.user); // Cập nhật user trong context
         navigate("/nguoidung");
       }
     } catch (err) {
-      setError("❌ Sai tài khoản hoặc mật khẩu!");
+      if (err.response) {
+        if (err.response.status === 403) {
+          setError("🚫 Tài khoản của bạn đang bị khóa!");
+        } else {
+          setError(err.response.data.message || "❌ Sai tài khoản hoặc mật khẩu!");
+        }
+      } else {
+        setError("❌ Lỗi kết nối đến máy chủ!");
+      }
     }
   };
 
