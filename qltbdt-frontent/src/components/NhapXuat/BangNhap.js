@@ -38,6 +38,7 @@ const BangNhap = ({ setSelectedRecord }) => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line
     }, []);
 
     const formatDate = (dateString) => {

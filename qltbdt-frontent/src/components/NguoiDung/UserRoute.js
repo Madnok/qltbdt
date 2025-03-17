@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthProvider";
 import { useRefresh } from "../../utils/helpers";
 
-const UserRoute = () => {
+const UserRoute = ({ onOpenRightPanel }) => {
   const { user, refreshUser, /*updateUser*/ } = useAuth();
   const [userData, setUserData] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -90,7 +90,7 @@ const UserRoute = () => {
         alert("Cập nhật thành công!");
         handleRefresh();
         refreshUser();
-       // updateUser(response.data); // Cập nhật thông tin người dùng ngay lập tức
+        // updateUser(response.data); // Cập nhật thông tin người dùng ngay lập tức
       })
       .catch((error) => console.error("Lỗi khi cập nhật thông tin:", error));
   };
@@ -105,7 +105,7 @@ const UserRoute = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return "Vui Lòng Thêm Ngày Sinh";
     const [year, month, day] = dateStr.split("-");
-    return `Ngày ${parseInt(day) + 1 } tháng ${parseInt(month)} năm ${year}`;
+    return `Ngày ${parseInt(day) + 1} tháng ${parseInt(month)} năm ${year}`;
   };
 
   if (!userData) {
@@ -129,7 +129,7 @@ const UserRoute = () => {
           {isEditing ? (
             <>
               <div className="flex flex-col items-center gap-3">
-                <input type="file"  accept="image/*" onChange={handleFileChange} className="mt-2 text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+                <input type="file" accept="image/*" onChange={handleFileChange} className="mt-2 text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
                 <button onClick={handleUploadAvatar} className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
                   Cập nhật Avatar
                 </button>
@@ -219,12 +219,17 @@ const UserRoute = () => {
           {/* Nút thao tác */}
           <div className="flex gap-4">
             {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="w-full py-2 mt-4 text-white bg-blue-500 rounded-md hover:bg-blue-600"
-              >
-                Thay Đổi Thông Tin
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="w-full py-2 mt-4 text-white bg-blue-500 rounded-md hover:bg-blue-600"
+                >
+                  Thay Đổi Thông Tin
+                </button>
+                <button
+                  onClick={onOpenRightPanel}
+                  className="w-full py-2 mt-4 text-white bg-green-500 rounded-md hover:bg-green-600">Đổi Mật Khẩu</button>
+              </>
             ) : (
               <>
                 <button

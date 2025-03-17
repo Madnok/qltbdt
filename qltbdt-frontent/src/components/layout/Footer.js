@@ -2,7 +2,7 @@ const Footer = () => {
     return (
         <footer className="py-4 text-center text-gray-300 bg-gray-900 border-t border-gray-700">
             <div className="flex flex-col items-center space-y-2">
-                <p className="text-xs">&copy; 2025 QLTBDT. Phạm Minh Hùng - 19474781.</p>
+                <p className="text-xs">&copy; 2025 QLTBDT. Phạm Minh Hùng - Đinh Lê Khải</p>
                 <div className="flex space-x-4">
                     {/* eslint-disable-next-line*/}
                     <a href="#" className="text-blue-400 transition hover:text-blue-500"> 

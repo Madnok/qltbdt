@@ -5,7 +5,6 @@ export const categoryLabels = {
     TheLoai: "Thể Loại",
     ThietBi: "Thiết Bị",
     ViPham: "Vi Phạm",
-    GoiYDanhGia: "Gợi Ý Đánh Giá",
     ThongTinThietBi: "Thông Tin Thiết Bị",
     Nhap: "Ghi Nhập",
     Xuat: "Ghi Xuất"
@@ -17,9 +16,6 @@ export const categories = [
     { name: "Thiết Bị", icon: "fas fa-laptop", key: "ThietBi" },
     { name: "Thông Tin Thiết Bị", icon: "fas fa-info-circle", key: "ThongTinThietBi" },
     { name: "Vi Phạm", icon: "fas fa-exclamation-triangle", key: "ViPham" },
-    { name: "Gợi Ý Đánh Giá", icon: "fas fa-star", key: "GoiYDanhGia" },
-    // { name: "Ghi Nhập", icon: "fas fa-download", key: "Nhap" },
-    // { name: "Ghi Xuất", icon: "fas fa-upload", key: "Xuat" }
 ];
 
 // Mapping danh mục với Form tương ứng khi thêm mới

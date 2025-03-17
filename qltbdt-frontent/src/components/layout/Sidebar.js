@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen = true }) => {
     { path: "/nhapxuat", icon: "fas fa-exchange-alt", text: "Nhập Xuất", roles: ["admin", "nhanvien"] },
     { path: "/baotri", icon: "fas fa-tools", text: "Bảo Trì", roles: ["admin", "nhanvien"] },
     { path: "/danhmuc", icon: "fas fa-list", text: "Danh Mục", roles: ["admin", "nhanvien"] },
-    { path: "/baohong", icon: "fas fa-exclamation-triangle", text: "Báo Hỏng", roles: ["admin", "nhanvien", "nguoidung"] },
+    { path: "/", icon: "fas fa-exclamation-triangle", text: "Báo Hỏng & Góp Ý", roles: ["admin", "nhanvien"] },
     { path: "/nguoidung", icon: "fas fa-user", text: "Người Dùng", roles: ["admin", "nhanvien", "nguoidung"] },
     { path: "/thongke", icon: "fas fa-chart-bar", text: "Thống Kê", roles: ["admin"] },
     { path: "/lichtruc", icon: "fas fa-calendar-alt", text: "Lịch Trực", roles: ["admin", "nhanvien"] }

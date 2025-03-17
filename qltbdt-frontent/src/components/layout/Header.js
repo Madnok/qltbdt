@@ -1,38 +1,36 @@
 import { useAuth } from "../../context/AuthProvider";
-import { useState} from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const Header = ({ toggleSidebar }) => {
-  const { user, logout} = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false); // State cho dropdown menu
-  const notificationCount = 12; // TODO: Thay bằng số thông báo thực tế từ API
+  const notificationCount = 12; // TODO: Lấy từ API sau
 
-// bắt đầu sửa
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-800 shadow-md">
+    <div className="flex items-center justify-between p-4 bg-gray-900 shadow-md">
       {/* Nút Toggle Sidebar */}
       <button
         onClick={toggleSidebar}
-        className="p-2 text-white transition-all rounded-lg hover:bg-gray-700"
+        className="text-white transition-all rounded-lg hover:bg-gray-700"
       >
-        <i className="text-xl fas fa-bars"></i>
+        <i className="text-2xl fas fa-bars"></i>
       </button>
 
       {/* Tiêu đề */}
-      <h1 className="text-lg font-semibold tracking-wide text-white">
+      <h1 className="text-lg font-bold tracking-wide text-white">
         QUẢN LÝ CƠ SỞ VẬT CHẤT
       </h1>
 
       {/* Ô tìm kiếm */}
-      <div className="relative w-80">
+      <div className="relative hidden w-80 md:block">
         <input
           type="text"
-          placeholder="Tìm kiếm..."
-          className="w-full px-4 py-2 text-sm text-gray-800 bg-white border rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          placeholder="Tìm kiếm thiết bị, phòng học..."
+          className="w-full px-4 py-2 text-sm text-gray-900 bg-white border rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
-        <i className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 fas fa-search"></i>
+        <i className="absolute text-gray-500 transform -translate-y-1/2 right-4 top-1/2 fas fa-search"></i>
       </div>
 
       {/* Avatar + Dropdown */}
@@ -64,7 +62,7 @@ const Header = ({ toggleSidebar }) => {
           </div>
 
           {/* Username + Icon Dropdown */}
-          <span className="text-white">
+          <span className="hidden text-white sm:block">
             {user?.hoTen || user?.username || "Khách"}
           </span>
           <i className={`text-white fas fa-caret-down transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`}></i>
@@ -72,20 +70,31 @@ const Header = ({ toggleSidebar }) => {
 
         {/* Dropdown menu */}
         {isOpen && (
-          <div className="absolute right-0 mt-3 bg-white rounded-lg shadow-lg w-44">
+          <div className="absolute right-0 w-48 mt-3 bg-white rounded-lg shadow-lg">
             <ul className="text-gray-800">
-              <li
-                className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
-                onClick={() => navigate("/nguoidung")}
-              >
-                <i className="mr-2 fas fa-user"></i> Tài khoản
-              </li>
-              <li
-                className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
-                onClick={logout}
-              >
-                <i className="mr-2 fas fa-sign-out-alt"></i> Đăng xuất
-              </li>
+              {user ? (
+                <>
+                  <li
+                    className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
+                    onClick={() => navigate("/nguoidung")}
+                  >
+                    <i className="mr-2 fas fa-user"></i> Tài khoản
+                  </li>
+                  <li
+                    className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
+                    onClick={logout}
+                  >
+                    <i className="mr-2 fas fa-sign-out-alt"></i> Đăng xuất
+                  </li>
+                </>
+              ) : (
+                <li
+                  className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
+                  onClick={() => navigate("/login")}
+                >
+                  <i className="mr-2 fas fa-sign-in-alt"></i> Đăng nhập
+                </li>
+              )}
             </ul>
           </div>
         )}
@@ -95,4 +104,3 @@ const Header = ({ toggleSidebar }) => {
 };
 
 export default Header;
-

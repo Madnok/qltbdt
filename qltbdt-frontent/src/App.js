@@ -1,20 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import NhapXuat from "./pages/NhapXuat";
-import BaoHong from "./pages/BaoHong";
 import DanhMuc from "./pages/DanhMuc";
 import ThongKe from "./pages/ThongKe";
 import NguoiDung from "./pages/NguoiDung";
 import BaoTri from "./pages/BaoTri";
 import LichTruc from "./pages/LichTruc";
 import PrivateRoute from "./utils/PrivateRoutes";
+import BaoHongGoiY from "./pages/BaoHongGoiY";
 import { AuthProvider } from "../src/context/AuthProvider";
 import AppLayout from "../src/components/layout/AppLayout";
 
 function Layout() {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
+       <Route path="/" element={<BaoHongGoiY />} />
+
+      <Route path="/login" element={<Login />} />
 
       {/* AppLayout */}
       <Route element={<AppLayout />}>
@@ -26,7 +28,6 @@ function Layout() {
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}> 
-          <Route path="/baohong" element={<BaoHong />} />
           <Route path="/nguoidung" element={<NguoiDung />} />
         </Route>
 
@@ -40,6 +41,7 @@ function Layout() {
     </Routes>
   );
 }
+
 
 function App() {
   return (

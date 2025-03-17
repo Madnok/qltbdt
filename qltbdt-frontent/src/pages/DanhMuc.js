@@ -6,7 +6,6 @@ import TheLoai from "../components/DanhMuc/TheLoai";
 import ThietBi from "../components/DanhMuc/ThietBi";
 import ViPham from "../components/DanhMuc/ViPham";
 import ThongTinThietBi from "../components/DanhMuc/ThongTinThietBi"
-import GoiYDanhGia from "../components/DanhMuc/GoiYDanhGia";
 import ChiTietThietBi from "../components/DanhMuc/ChiTiet/ChiTietThietBi";
 import ChiTietPhong from "../components/DanhMuc/ChiTiet/ChiTietPhong";
 import ChiTietTheLoai from "../components/DanhMuc/ChiTiet/ChiTietTheLoai";
@@ -31,7 +30,6 @@ const DanhMuc = () => {
         ThietBi: <ThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietThietBi", record)} refresh={refresh} />,
         ThongTinThietBi: <ThongTinThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietTTTB", record)} refresh={refresh} />,
         ViPham: <ViPham setSelectedRecord={(record) => handleOpenRightPanel("ChiTietViPham", record)} />,
-        GoiYDanhGia: <GoiYDanhGia setSelectedRecord={(record) => handleOpenRightPanel("ChiTietGoiYDanhGia", record)} />,
     };
 
     // Xác định component nào hiển thị trên Right Panel
