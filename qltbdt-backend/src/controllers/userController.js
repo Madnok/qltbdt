@@ -31,7 +31,7 @@ exports.getUserById = async (req, res) => {
 // Thêm mới người dùng
 exports.createUser = async (req, res) => {
     try {
-        const { username, password, hoTen, ngaySinh = null, gioiTinh = "Khác", sDT, email, role, tinhTrang } = req.body;
+        const { username, password, hoTen, ngaySinh = null, gioiTinh = "Khác", sDT, email, role, tinhTrang = "on"} = req.body;
 
         if (!username || !password || !hoTen || !email) {
             return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin bắt buộc" });

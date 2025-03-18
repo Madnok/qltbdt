@@ -16,7 +16,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
     email: "",
     hoTen: "",
     sDT: "",
-    tinhTrang: "",
+    tinhTrang: "on",
     role: "nguoidung"
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,191 +131,211 @@ const AdminRoute = ({ setSelectedRecord }) => {
       <div className="bg-white p-4 border-b flex justify-between items-center">
         <h2 className="text-xl font-semibold">Quản Lý Người Dùng</h2>
       </div>
-      <div className="max-h-full pt-2 overflow-x-auto overflow-y-auto">
-        <table className="w-full border min-w-[600px]">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-3 text-center border-b">ID</th>
-              <th className="p-3 text-center border-b">Tài Khoản</th>
-              <th className="p-3 text-center border-b">Họ Tên</th>
-              <th className="p-3 text-center border-b">Ngày Sinh</th>
-              <th className="p-3 text-center border-b">Email</th> 
-              <th className="p-3 text-center border-b">Vai trò</th>
-              <th className="p-3 text-center border-b">Giới Tính</th>
-              <th className="p-3 text-center border-b">Tình Trạng</th>
-              <th className="p-3 text-center border-b">Chức Năng</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Hiển thị admin riêng biệt */}
-            {users.some(user => user.id === 1) && (
-              <tr key="admin" className="border-y text-center bg-gray-100 ">
-                <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.id}</td>
-                <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.username}</td>
-                <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                <td className="p-3 border text-black font-bold cursor-not-allowed">{getTinhTrangLabel(users.find(user => user.id === 1)?.role)}</td>
-                <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                <td className="p-3 border text-gray-400 ">
-                  <button className="p-2 text-green-500 hover:text-green-700"
-                    title="Thêm mới"
-                    onClick={() => setIsOpen(true)}>
-
-                    <FaPlus />
-                  </button>
-                </td>
-              </tr>
-            )}
-
-            {/* Hiển thị danh sách người dùng bình thường */}
-            {users.length > 1 ? (
-              currentItems.map((record) => (
-                <tr key={record.id} className="border-y text-center border-gray-200 hover:bg-gray-50">
-                  <td className="p-3 border">{record.id}</td>
-                  <td className="p-3 border">{record.username}</td>
-
-                  {/* Nếu đang chỉnh sửa thì hiển thị input */}
-                  <td className="p-3 border">
-                    {editingUserId === record.id ? (
-                      <input
-                        type="text"
-                        className="border rounded p-1 w-full"
-                        value={editedData.hoTen}
-                        onChange={(e) => handleChange(e, "hoTen")}
-                      />
-                    ) : (
-                      record.hoTen
-                    )}
-                  </td>
-
-                  <td className="p-3 border">
-                    {editingUserId === record.id ? (
-                      <input
-                        type="date" // Để hiển thị đúng định dạng ngày trong input
-                        className="border rounded p-1 w-full"
-                        value={editedData.ngaySinh}
-                        onChange={(e) => handleChange(e, "ngaySinh")}
-                      />
-                    ) : (
-                      record.ngaySinh ? record.ngaySinh.split("T")[0] : "" // Chỉ hiển thị phần ngày
-                    )}
-                  </td>
-
-                  <td className="p-3 border">
-                    {editingUserId === record.id ? (
-                      <input
-                        type="email"
-                        className="border rounded p-1 w-full"
-                        value={editedData.email}
-                        onChange={(e) => handleChange(e, "email")}
-                      />
-                    ) : (
-                      record.email
-                    )}
-                  </td>
-
-                  <td className="p-3 border">
-                    {editingUserId === record.id ? (
-                      <select
-                        className="border rounded p-1 w-full"
-                        value={editedData.role}
-                        onChange={(e) => handleChange(e, "role")}
-                      >
-                        {["admin", "nguoidung", "nhanvien"]
-                          .filter((r) => r !== record.role) // Chỉ hiển thị các role khác với role hiện tại
-                          .map((r) => (
-                            <option key={r} value={r}>
-                              {getTinhTrangLabel(r)}
-                            </option>
-                          ))}
-                      </select>
-                    ) : (
-                      getTinhTrangLabel(record.role)
-                    )}
-                  </td>
-
-                  <td className="p-3 border">
-                    {editingUserId === record.id ? (
-                      <select
-                        className="border rounded p-1 w-full"
-                        value={editedData.gioiTinh}
-                        onChange={(e) => handleChange(e, "gioiTinh")}
-                      >
-                        {["Nam", "Nữ", "Khác"]
-                          .filter((g) => g !== record.gioiTinh)
-                          .map((g) => (
-                            <option key={g} value={g}>
-                              {g}
-                            </option>
-                          ))}
-                      </select>
-                    ) : (
-                      record.gioiTinh
-                    )}
-                  </td>
-
-                  <td className="p-2 border">
-                    <button onClick={() => handleToggleStatus(record.id)} className="text-xl">
-                      {record.tinhTrang === "on" ? (
-                        <FaToggleOn className="text-green-500" />
-                      ) : (
-                        <FaToggleOff className="text-red-500" />
-                      )}
-                    </button>
-                  </td>
-
-                  <td className="p-3 border">
-                    <div className="flex justify-center space-x-2">
-                      {editingUserId === record.id ? (
-                        <>
-                          <button
-                            className="p-2 text-green-500 hover:text-green-700"
-                            onClick={handleUpdateUser}
-                            title="Lưu"
-                          >
-                            <FaSave />
-                          </button>
-                          <button
-                            className="p-2 text-red-500 hover:text-red-700"
-                            onClick={handleCancelEdit}
-                            title="Hủy"
-                          >
-                            <FaTimes />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="p-2 text-blue-500 hover:text-blue-700"
-                            onClick={() => handleEditClick(record)}
-                            title="Chỉnh sửa"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            className="p-2 text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(record.id)}
-                            title="Xóa"
-                          >
-                            <FaTrash />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+      <div className="p-4">
+          <div className="max-h-full pt-2 overflow-x-auto overflow-y-auto">
+            <table className="w-full border min-w-[600px]">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-3 text-center border-b">ID</th>
+                  <th className="p-3 text-center border-b">Tài Khoản</th>
+                  <th className="p-3 text-center border-b">Họ Tên</th>
+                  <th className="p-3 text-center border-b">Ngày Sinh</th>
+                  <th className="p-3 text-center border-b">Email</th>
+                  <th className="p-3 text-center border-b">Vai trò</th>
+                  <th className="p-3 text-center border-b">Giới Tính</th>
+                  <th className="p-3 text-center border-b">Tình Trạng</th>
+                  <th className="p-3 text-center border-b">Chức Năng</th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="p-3 text-center text-gray-500">
-                  Không có dữ liệu người dùng
-                </td>
-              </tr>
+              </thead>
+              <tbody>
+                {/* Hiển thị admin riêng biệt */}
+                {users.some(user => user.id === 1) && (
+                  <tr key="admin" className="border-y text-center bg-gray-100 ">
+                    <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.id}</td>
+                    <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.username}</td>
+                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
+                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
+                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
+                    <td className="p-3 border text-black font-bold cursor-not-allowed">{getTinhTrangLabel(users.find(user => user.id === 1)?.role)}</td>
+                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
+                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
+                    <td className="p-3 border text-gray-400 ">
+                      <button className="p-2 text-green-500 hover:text-green-700"
+                        title="Thêm mới"
+                        onClick={() => setIsOpen(true)}>
+
+                        <FaPlus />
+                      </button>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Hiển thị danh sách người dùng bình thường */}
+                {users.length > 1 ? (
+                  currentItems.map((record) => (
+                    <tr key={record.id} className="border-y text-center border-gray-200 hover:bg-gray-50">
+                      <td className="p-3 border">{record.id}</td>
+                      <td className="p-3 border">{record.username}</td>
+
+                      {/* Nếu đang chỉnh sửa thì hiển thị input */}
+                      <td className="p-3 border">
+                        {editingUserId === record.id ? (
+                          <input
+                            type="text"
+                            className="border rounded p-1 w-full"
+                            value={editedData.hoTen}
+                            onChange={(e) => handleChange(e, "hoTen")}
+                          />
+                        ) : (
+                          record.hoTen
+                        )}
+                      </td>
+
+                      <td className="p-3 border">
+                        {editingUserId === record.id ? (
+                          <input
+                            type="date" // Để hiển thị đúng định dạng ngày trong input
+                            className="border rounded p-1 w-full"
+                            value={editedData.ngaySinh}
+                            onChange={(e) => handleChange(e, "ngaySinh")}
+                          />
+                        ) : (
+                          record.ngaySinh ? record.ngaySinh.split("T")[0] : "" // Chỉ hiển thị phần ngày
+                        )}
+                      </td>
+
+                      <td className="p-3 border">
+                        {editingUserId === record.id ? (
+                          <input
+                            type="email"
+                            className="border rounded p-1 w-full"
+                            value={editedData.email}
+                            onChange={(e) => handleChange(e, "email")}
+                          />
+                        ) : (
+                          record.email
+                        )}
+                      </td>
+
+                      <td className="p-3 border">
+                        {editingUserId === record.id ? (
+                          <select
+                            className="border rounded p-1 w-full"
+                            value={editedData.role}
+                            onChange={(e) => handleChange(e, "role")}
+                          >
+                            {["admin", "nguoidung", "nhanvien"]
+                              .filter((r) => r !== record.role) // Chỉ hiển thị các role khác với role hiện tại
+                              .map((r) => (
+                                <option key={r} value={r}>
+                                  {getTinhTrangLabel(r)}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          getTinhTrangLabel(record.role)
+                        )}
+                      </td>
+
+                      <td className="p-3 border">
+                        {editingUserId === record.id ? (
+                          <select
+                            className="border rounded p-1 w-full"
+                            value={editedData.gioiTinh}
+                            onChange={(e) => handleChange(e, "gioiTinh")}
+                          >
+                            {["Nam", "Nữ", "Khác"]
+                              .filter((g) => g !== record.gioiTinh)
+                              .map((g) => (
+                                <option key={g} value={g}>
+                                  {g}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          record.gioiTinh
+                        )}
+                      </td>
+
+                      <td className="p-2 border">
+                        <button onClick={() => handleToggleStatus(record.id)} className="text-xl">
+                          {record.tinhTrang === "on" ? (
+                            <FaToggleOn className="text-green-500" />
+                          ) : (
+                            <FaToggleOff className="text-red-500" />
+                          )}
+                        </button>
+                      </td>
+
+                      <td className="p-3 border">
+                        <div className="flex justify-center space-x-2">
+                          {editingUserId === record.id ? (
+                            <>
+                              <button
+                                className="p-2 text-green-500 hover:text-green-700"
+                                onClick={handleUpdateUser}
+                                title="Lưu"
+                              >
+                                <FaSave />
+                              </button>
+                              <button
+                                className="p-2 text-red-500 hover:text-red-700"
+                                onClick={handleCancelEdit}
+                                title="Hủy"
+                              >
+                                <FaTimes />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                className="p-2 text-blue-500 hover:text-blue-700"
+                                onClick={() => handleEditClick(record)}
+                                title="Chỉnh sửa"
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                className="p-2 text-red-500 hover:text-red-700"
+                                onClick={() => handleDelete(record.id)}
+                                title="Xóa"
+                              >
+                                <FaTrash />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="p-3 text-center text-gray-500">
+                      Không có dữ liệu người dùng
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {/* Phân trang */}
+            {totalPages > 1 && (
+              <div className="flex justify-center my-4 space-x-2">
+                {currentPage > 1 && (
+                  <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
+                    onClick={() => goToPage(currentPage - 1)}>← Trước</button>
+                )}
+                {[...Array(totalPages)].map((_, i) => (
+                  <button key={i} className={`px-4 py-2 border rounded 
+                            ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                    onClick={() => goToPage(i + 1)}>{i + 1}</button>
+                ))}
+                {currentPage < totalPages && (
+                  <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
+                    onClick={() => goToPage(currentPage + 1)}>Sau →</button>
+                )}
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
         {/* Popover Form */}
         <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
@@ -335,10 +355,10 @@ const AdminRoute = ({ setSelectedRecord }) => {
 
                 <select className="border p-2 rounded" value={newUser.gioiTinh}
                   onChange={(e) => setNewUser({ ...newUser, gioiTinh: e.target.value })}
-                  >
-                    <option value="Khác">Khác</option>
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
+                >
+                  <option value="Khác">Khác</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
                 </select>
 
                 <select className="border p-2 rounded" value={newUser.role}
@@ -364,24 +384,6 @@ const AdminRoute = ({ setSelectedRecord }) => {
             </div>
           </div>
         </Dialog>
-        {/* Phân trang */}
-        {totalPages > 1 && (
-          <div className="flex justify-center my-4 space-x-2">
-            {currentPage > 1 && (
-              <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-                onClick={() => goToPage(currentPage - 1)}>← Trước</button>
-            )}
-            {[...Array(totalPages)].map((_, i) => (
-              <button key={i} className={`px-4 py-2 border rounded 
-                            ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                onClick={() => goToPage(i + 1)}>{i + 1}</button>
-            ))}
-            {currentPage < totalPages && (
-              <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-                onClick={() => goToPage(currentPage + 1)}>Sau →</button>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

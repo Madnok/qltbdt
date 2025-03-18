@@ -1,30 +1,55 @@
 import RightPanel from "../components/layout/RightPanel";
-import { useRightPanel } from "../utils/helpers";
+import { useState } from "react";
+import PhanCa from "../components/LichTruc/PhanCa";
 
 const LichTruc = () => {
-    const { selectedRecord, activeRightPanel, /* handleOpenRightPanel,*/ handleCloseRightPanel } = useRightPanel();
+    const [activeTab, setActiveTab] = useState("users");
     return (
-        <div className="flex flex-1 bg-gray-100">
-            {/* Left Panel - Trang Lịch Trực */}
-            <div className={`bg-white shadow-md flex flex-col transition-all duration-300 ${selectedRecord || activeRightPanel ? "w-3/5" : "w-full"}`}>
-                {/* Header - Trang Lịch Trực */}
-                <div className="flex items-center justify-between p-2 bg-white shadow-md">
-                    <h2 className="text-xl font-semibold">
-                        Lịch Trực
-                    </h2>
-                    <div className="flex items-center space-x-2">
-                        {/* Nút Sort */}
-                        <button className="flex items-center justify-center w-10 h-10 transition rounded-full hover:bg-gray-300">
-                            <i className="text-lg text-gray-500 fas fa-filter"></i>
-                        </button>
-                        {/* Nút Thêm */}
-                        <button className="flex items-center px-4 py-2 text-white bg-blue-500 rounded">
-                            <i className="mr-2 fas fa-plus"></i> Thêm
-                        </button>
-                    </div>
-                </div>
+        <div className="flex flex-col bg-white">
+            <div className=" p-4 border-b flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Lịch Làm Việc</h2>
             </div>
-            <RightPanel onClose={handleCloseRightPanel} />
+            {/* Tabs */}
+            <div className="flex border-b">
+                <button
+                    className={`p-2 w-1/3 text-center ${activeTab === "users" ? "border-b-2 border-blue-500 font-semibold" : ""}`}
+                    onClick={() => setActiveTab("users")}
+                >
+                    Danh Sách Nhân Viên
+                </button>
+                <button
+                    className={`p-2 w-1/3 text-center ${activeTab === "schedule" ? "border-b-2 border-blue-500 font-semibold" : ""}`}
+                    onClick={() => setActiveTab("schedule")}
+                >
+                    Phân Ca
+                </button>
+                <button
+                    className={`p-2 w-1/3 text-center ${activeTab === "reports" ? "border-b-2 border-blue-500 font-semibold" : ""}`}
+                    onClick={() => setActiveTab("reports")}
+                >
+                    Thông Tin Báo Hỏng
+                </button>
+            </div>
+            {activeTab === "users" && (
+                <div>
+                    <PhanCa />
+                </div>
+            )}
+
+            {activeTab === "schedule" && (
+                <div>
+                    <h3 className="text-lg font-semibold mb-2">Phân Ca Làm Việc</h3>
+                    <p>Chức năng đang được phát triển...</p>
+                </div>
+            )}
+
+            {activeTab === "reports" && (
+                <div>
+                    <h3 className="text-lg font-semibold mb-2">Thông Tin Báo Hỏng</h3>
+                    <p>Chức năng đang được phát triển...</p>
+                </div>
+            )}
+            <RightPanel />
         </div>
     );
 };
