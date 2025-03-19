@@ -40,7 +40,7 @@ exports.getNextId = async (req, res) => {
 // Lấy danh sách thiết bị (Dropdown)
 exports.getListThietBi = async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT id, tenThietBi FROM thietbi");
+        const [rows] = await pool.query("SELECT * FROM thietbi");
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -134,16 +134,52 @@ exports.updateThongTinThietBi = async (req, res) => {
     }
 };
 
-// Xóa thông tin thiết bị
+// Xóa thông tin thiết bị khỏi phòng (set phong_id = NULL)
 exports.deleteThongTinThietBi = async (req, res) => {
     const { id } = req.params;
     try {
-        const [result] = await pool.query("DELETE FROM thongtinthietbi WHERE id = ?", [id]);
+        const [result] = await pool.query("UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?", [id]);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị để xóa" });
+            return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị để cập nhật" });
         }
-        res.json({ message: `Xóa thông tin thiết bị ID ${id} thành công!` });
+        res.json({ message: `Thiết bị ID ${id} đã được gỡ khỏi phòng thành công!` });
     } catch (error) {
-        res.status(500).json({ error: "Lỗi xóa thông tin thiết bị" });
+        res.status(500).json({ error: "Lỗi cập nhật thiết bị" });
+    }
+};
+
+// Lấy Danh Sách Thiết Bị Trong Phòng
+exports.getThietBiTrongPhong = async (req, res) => {
+    const { phong_id } = req.params;
+    try {
+        const [rows] = await pool.query(`
+            SELECT tttb.id, tttb.thietbi_id, tb.tenThietBi, tb.soLuong, tttb.nguoiDuocCap
+            FROM thongtinthietbi tttb
+            JOIN thietbi tb ON tttb.thietbi_id = tb.id
+            WHERE tttb.phong_id = ?
+        `, [phong_id]);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Thêm thiết bị vào phòng
+exports.createThietBiCoSan = async (req, res) => {
+    const { phongId } = req.params;
+    const { thietBiIds } = req.body;
+
+    if (!thietBiIds || thietBiIds.length === 0) {
+        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ" });
+    }
+
+    try {
+        const sql = "UPDATE thietbi SET phong_id = ? WHERE id IN (?)";
+        await pool.query(sql, [phongId, thietBiIds]);
+
+        res.json({ message: "Thêm thiết bị vào phòng thành công!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Lỗi server");
     }
 };

@@ -12,5 +12,9 @@ router.get("/:id", tttbController.getThongTinThietBiById);
 router.put("/:id", tttbController.updateThongTinThietBi);
 router.delete("/:id", tttbController.deleteThongTinThietBi);
 router.post("/multiple",tttbController.createMultipleThongTinThietBi);
+router.get("/phong/:phong_id", tttbController.getThietBiTrongPhong);
+router.put("/thietbi/:id/remove-from-phong", tttbController.deleteThongTinThietBi);
+router.post("/phong/:phongId/themthietbicosan", tttbController.createThietBiCoSan);
+
 
 module.exports = router;

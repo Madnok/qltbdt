@@ -58,6 +58,13 @@ router.delete("/:id", async (req, res) => {
     const { id } = req.params;
 
     try {
+        // Kiểm tra xem thể loại có thiết bị nào không
+        const [checkThietBi] = await pool.query("SELECT * FROM thietbi WHERE theloai_id = ?", [id]);
+        if (checkThietBi.length > 0) {
+            return res.status(400).json({ error: "Không thể xóa thể loại vì có thiết bị liên quan" });
+        }
+
+        // Kiểm tra xem thể loại có tồn tại không
         const [result] = await pool.query("DELETE FROM theloai WHERE id = ?", [id]);
 
         if (result.affectedRows === 0) {
@@ -66,7 +73,7 @@ router.delete("/:id", async (req, res) => {
 
         res.json({ message: `Xóa thể loại ID ${id} thành công!` });
     } catch (error) {
-        res.status(500).json({ error: "Lỗi xóa thể loại" });
+        res.status(500).json({ error: "Lỗi khi xóa thể loại" });
     }
 });
 
