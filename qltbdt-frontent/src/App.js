@@ -14,24 +14,24 @@ import AppLayout from "../src/components/layout/AppLayout";
 function Layout() {
   return (
     <Routes>
-       <Route path="/" element={<BaoHongGoiY />} />
+      <Route path="/" element={<BaoHongGoiY />} />
 
       <Route path="/login" element={<Login />} />
 
       {/* AppLayout */}
       <Route element={<AppLayout />}>
-        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}> 
-          <Route path="/nhapxuat" element={<NhapXuat />} />
+        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
           <Route path="/baotri" element={<BaoTri />} />
           <Route path="/danhmuc" element={<DanhMuc />} />
           <Route path="/lichtruc" element={<LichTruc />} />
         </Route>
 
-        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}> 
+        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}>
           <Route path="/nguoidung" element={<NguoiDung />} />
         </Route>
 
-        <Route element={<PrivateRoute allowedRoles={["admin"]} />}> 
+        <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+          <Route path="/nhapxuat" element={<NhapXuat />} />
           <Route path="/thongke" element={<ThongKe />} />
         </Route>
       </Route>

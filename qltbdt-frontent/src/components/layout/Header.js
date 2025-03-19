@@ -63,7 +63,7 @@ const Header = ({ toggleSidebar }) => {
 
           {/* Username + Icon Dropdown */}
           <span className="hidden text-white sm:block">
-            {user?.hoTen || user?.username || "Khách"}
+            {user?.username || "Khách"}
           </span>
           <i className={`text-white fas fa-caret-down transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`}></i>
         </button>

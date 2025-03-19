@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaClock, FaUser, FaEdit, FaSave, FaSearch } from 'react-icons/fa';
 
 const PhanCa = () => {
-//    const [setSelectedDate] = useState(new Date());
+    //    const [setSelectedDate] = useState(new Date());
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCriteria, setFilterCriteria] = useState('all');
 
@@ -19,7 +19,7 @@ const PhanCa = () => {
                 contact: 'john.doe@example.com'
             },
             status: 'Chờ Phân Ca',
-            notes: 'Hoàn thành tất cả công việc được giao.'
+            notes: 'Có 3 Thiết Bị Cần Bảo Hành, 2 Thiết Bị Đã Được Sửa'
         },
         {
             id: 2,
@@ -33,7 +33,7 @@ const PhanCa = () => {
                 contact: 'jane.smith@example.com'
             },
             status: 'Đang Làm Việc',
-            notes: 'Tôi đang làm việc'
+            notes: 'Chưa Có'
         },
     ];
 
@@ -57,7 +57,7 @@ const PhanCa = () => {
     });
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="container p-4 mx-auto">
             {/* Navigation and Filters */}
             <div className="flex flex-wrap items-center justify-between mb-6">
                 <div className="flex space-x-4">
@@ -65,11 +65,11 @@ const PhanCa = () => {
                         <input
                             type="text"
                             placeholder="Tìm Kiếm..."
-                            className="pl-10 pr-4 py-2 border rounded-full"
+                            className="py-2 pl-10 pr-4 border rounded-full"
                             value={searchTerm}
                             onChange={handleSearch}
                         />
-                        <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                        <FaSearch className="absolute text-gray-400 left-3 top-3" />
                     </div>
                     <select
                         className="px-4 py-2 border rounded-full"
@@ -87,9 +87,9 @@ const PhanCa = () => {
             {/* Shift Assignments */}
             <div className="space-y-6">
                 {filteredAssignments.map((assignment) => (
-                    <div key={assignment.id} className="bg-white shadow-lg rounded-lg p-6 transition duration-300 ease-in-out transform hover:scale-105">
+                    <div key={assignment.id} className="p-6 transition duration-300 ease-in-out transform bg-white rounded-lg shadow-lg hover:scale-105">
                         <div className="flex flex-wrap items-center justify-between mb-4">
-                            <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                            <div className="flex items-center mb-4 space-x-4 sm:mb-0">
                                 <img
                                     src={assignment.employee.photo}
                                     alt={assignment.employee.name}
@@ -102,7 +102,7 @@ const PhanCa = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center mb-4  space-x-2">
+                        <div className="flex items-center mb-4 space-x-2">
                             <FaClock className="text-gray-400" />
                             <span>{assignment.startTime} - {assignment.endTime}</span>
                         </div>
@@ -120,19 +120,21 @@ const PhanCa = () => {
                             </span>
                         </div>
                         <div className="mb-4">
-                            <h3 className="text-lg font-semibold mb-2">Ghi Chú</h3>
-                            <div className="bg-gray-100 p-3 rounded">
-                                <p>{assignment.notes}</p>
+                            <div className='w-1/2 grid-cols-1'>
+                                <h3 className="mb-2 text-lg font-semibold">Báo cáo công việc</h3>
+                                <div className="p-3 bg-gray-100 rounded">
+                                    <p>{assignment.notes}</p>
+                                </div>
                             </div>
                         </div>
                         <div className="flex justify-start space-x-2">
-                            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300">
+                            <button className="px-4 py-2 text-white transition duration-300 bg-blue-500 rounded hover:bg-blue-600">
                                 <FaEdit className="inline-block mr-2" />
-                                Edit
+                                Phân Ca
                             </button>
-                            <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-300">
+                            <button className="px-4 py-2 text-white transition duration-300 bg-green-500 rounded hover:bg-green-600">
                                 <FaSave className="inline-block mr-2" />
-                                Save
+                                Lưu Lịch
                             </button>
                         </div>
                     </div>

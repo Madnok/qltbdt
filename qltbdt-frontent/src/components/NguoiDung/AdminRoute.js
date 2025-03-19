@@ -128,7 +128,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
 
   return (
     <div className="flex flex-col">
-      <div className="bg-white p-4 border-b flex justify-between items-center">
+      <div className="flex items-center justify-between p-4 bg-white border-b">
         <h2 className="text-xl font-semibold">Quản Lý Người Dùng</h2>
       </div>
       <div className="p-4">
@@ -150,16 +150,16 @@ const AdminRoute = ({ setSelectedRecord }) => {
               <tbody>
                 {/* Hiển thị admin riêng biệt */}
                 {users.some(user => user.id === 1) && (
-                  <tr key="admin" className="border-y text-center bg-gray-100 ">
-                    <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.id}</td>
-                    <td className="p-3 border font-bold cursor-not-allowed">{users.find(user => user.id === 1)?.username}</td>
-                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                    <td className="p-3 border text-black font-bold cursor-not-allowed">{getTinhTrangLabel(users.find(user => user.id === 1)?.role)}</td>
-                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                    <td className="p-3 border text-gray-400 cursor-not-allowed">-</td>
-                    <td className="p-3 border text-gray-400 ">
+                  <tr key="admin" className="text-center bg-gray-100 border-y ">
+                    <td className="p-3 font-bold border cursor-not-allowed">{users.find(user => user.id === 1)?.id}</td>
+                    <td className="p-3 font-bold border cursor-not-allowed">{users.find(user => user.id === 1)?.username}</td>
+                    <td className="p-3 text-gray-400 border cursor-not-allowed">-</td>
+                    <td className="p-3 text-gray-400 border cursor-not-allowed">-</td>
+                    <td className="p-3 text-gray-400 border cursor-not-allowed">-</td>
+                    <td className="p-3 font-bold text-black border cursor-not-allowed">{getTinhTrangLabel(users.find(user => user.id === 1)?.role)}</td>
+                    <td className="p-3 text-gray-400 border cursor-not-allowed">-</td>
+                    <td className="p-3 text-gray-400 border cursor-not-allowed">-</td>
+                    <td className="p-3 text-gray-400 border ">
                       <button className="p-2 text-green-500 hover:text-green-700"
                         title="Thêm mới"
                         onClick={() => setIsOpen(true)}>
@@ -173,7 +173,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                 {/* Hiển thị danh sách người dùng bình thường */}
                 {users.length > 1 ? (
                   currentItems.map((record) => (
-                    <tr key={record.id} className="border-y text-center border-gray-200 hover:bg-gray-50">
+                    <tr key={record.id} className="text-center border-gray-200 border-y hover:bg-gray-50">
                       <td className="p-3 border">{record.id}</td>
                       <td className="p-3 border">{record.username}</td>
 
@@ -182,7 +182,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                         {editingUserId === record.id ? (
                           <input
                             type="text"
-                            className="border rounded p-1 w-full"
+                            className="w-full p-1 border rounded"
                             value={editedData.hoTen}
                             onChange={(e) => handleChange(e, "hoTen")}
                           />
@@ -195,12 +195,12 @@ const AdminRoute = ({ setSelectedRecord }) => {
                         {editingUserId === record.id ? (
                           <input
                             type="date" // Để hiển thị đúng định dạng ngày trong input
-                            className="border rounded p-1 w-full"
+                            className="w-full p-1 border rounded"
                             value={editedData.ngaySinh}
                             onChange={(e) => handleChange(e, "ngaySinh")}
                           />
                         ) : (
-                          record.ngaySinh ? record.ngaySinh.split("T")[0] : "" // Chỉ hiển thị phần ngày
+                          record.ngaySinh ? record.ngaySinh.split("T")[0]  : "" // Chỉ hiển thị phần ngày
                         )}
                       </td>
 
@@ -208,7 +208,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                         {editingUserId === record.id ? (
                           <input
                             type="email"
-                            className="border rounded p-1 w-full"
+                            className="w-full p-1 border rounded"
                             value={editedData.email}
                             onChange={(e) => handleChange(e, "email")}
                           />
@@ -220,7 +220,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                       <td className="p-3 border">
                         {editingUserId === record.id ? (
                           <select
-                            className="border rounded p-1 w-full"
+                            className="w-full p-1 border rounded"
                             value={editedData.role}
                             onChange={(e) => handleChange(e, "role")}
                           >
@@ -240,7 +240,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                       <td className="p-3 border">
                         {editingUserId === record.id ? (
                           <select
-                            className="border rounded p-1 w-full"
+                            className="w-full p-1 border rounded"
                             value={editedData.gioiTinh}
                             onChange={(e) => handleChange(e, "gioiTinh")}
                           >
@@ -338,22 +338,22 @@ const AdminRoute = ({ setSelectedRecord }) => {
           </div>
         {/* Popover Form */}
         <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-              <Dialog.Title className="text-lg font-semibold text-center mb-4">Tạo Tài Khoản Mới</Dialog.Title>
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="p-6 bg-white rounded-lg shadow-lg w-96">
+              <Dialog.Title className="mb-4 text-lg font-semibold text-center">Tạo Tài Khoản Mới</Dialog.Title>
               <div className="grid grid-cols-1 gap-3">
-                <input type="text" placeholder="Tên tài khoản *" className="border p-2 rounded"
+                <input type="text" placeholder="Tên tài khoản *" className="p-2 border rounded"
                   value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
-                <input type="password" placeholder="Mật khẩu *" className="border p-2 rounded"
+                <input type="password" placeholder="Mật khẩu *" className="p-2 border rounded"
                   value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
-                <input type="text" placeholder="Họ tên *" className="border p-2 rounded"
+                <input type="text" placeholder="Họ tên *" className="p-2 border rounded"
                   value={newUser.hoTen} onChange={(e) => setNewUser({ ...newUser, hoTen: e.target.value })} />
-                <input type="email" placeholder="Email" className="border p-2 rounded"
+                <input type="email" placeholder="Email" className="p-2 border rounded"
                   value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-                <input type="text" placeholder="Số điện thoại" className="border p-2 rounded"
+                <input type="text" placeholder="Số điện thoại" className="p-2 border rounded"
                   value={newUser.sDT} onChange={(e) => setNewUser({ ...newUser, sDT: e.target.value })} />
 
-                <select className="border p-2 rounded" value={newUser.gioiTinh}
+                <select className="p-2 border rounded" value={newUser.gioiTinh}
                   onChange={(e) => setNewUser({ ...newUser, gioiTinh: e.target.value })}
                 >
                   <option value="Khác">Khác</option>
@@ -361,7 +361,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                   <option value="Nữ">Nữ</option>
                 </select>
 
-                <select className="border p-2 rounded" value={newUser.role}
+                <select className="p-2 border rounded" value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
                   {["nhanvien", "nguoidung", "admin"].map((r) => (
                     <option key={r} value={r}>{getTinhTrangLabel(r)}</option>
@@ -369,7 +369,7 @@ const AdminRoute = ({ setSelectedRecord }) => {
                 </select>
 
                 <select
-                  className="border p-2 rounded" value={newUser.tinhTrang}
+                  className="p-2 border rounded" value={newUser.tinhTrang}
                   onChange={(e) => setNewUser({ ...newUser, tinhTrang: e.target.value })}
                 >
                   <option value="on">Hoạt động</option>
@@ -378,8 +378,8 @@ const AdminRoute = ({ setSelectedRecord }) => {
 
               </div>
               <div className="grid grid-cols-2 gap-3 mt-4">
-                <button className="bg-green-500 text-white p-2 rounded" onClick={handleCreateUser}>Tạo tài khoản</button>
-                <button className="bg-red-500 text-white p-2 rounded" onClick={() => setIsOpen(false)}>Hủy Bỏ</button>
+                <button className="p-2 text-white bg-green-500 rounded" onClick={handleCreateUser}>Tạo tài khoản</button>
+                <button className="p-2 text-white bg-red-500 rounded" onClick={() => setIsOpen(false)}>Hủy Bỏ</button>
               </div>
             </div>
           </div>
