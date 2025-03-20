@@ -164,6 +164,30 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 };
 
+// Lấy danh sách thể loại (không trùng)
+exports.getTheLoaiList = async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT DISTINCT theLoai FROM theloai");
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Lấy danh sách thiết bị theo thể loại
+exports.getThietBiByTheLoai = async (req, res) => {
+    const { theLoai } = req.params;
+    try {
+        const [rows] = await pool.query(
+            "SELECT tb.id, tb.tenThietBi FROM thietbi tb JOIN theloai tl ON tb.theloai_id = tl.id WHERE tl.theLoai = ?",
+            [theLoai]
+        );
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Thêm thiết bị vào phòng
 exports.createThietBiCoSan = async (req, res) => {
     const { phongId } = req.params;

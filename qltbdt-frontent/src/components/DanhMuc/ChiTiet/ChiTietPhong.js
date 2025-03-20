@@ -201,9 +201,9 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                 </div>
             )}
             <div className="p-4 bg-white rounded-lg">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 items-center overflow-x-auto ">
                     <h3 className="text-xl font-semibold mb-4">Các Thiết Bị Có Trong Phòng</h3>
-                    <div className="pb-4 flex flex-col md:flex-row justify-between items-center gap-4 relative">
+                    <div className="pb-4 flex flex-col md:flex-row justify-between gap-4 relative">
                         <input
                             type="text"
                             placeholder="Tìm Kiếm..."
@@ -213,24 +213,6 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                         />
                         <BsSearch className="absolute left-3 top-2 text-gray-400" />
                     </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 pb-4">
-                    <select name="theloai" className="w-full p-2 border rounded-lg">
-                        <option>Thể Loại 1</option>
-                        <option>Thể Loại 2</option>
-                        <option>Thể Loại 3</option>
-                        <option>Thể Loại 4</option>
-                        <option>Thể Loại 5</option>
-                        <option>Thể Loại 6</option>
-                    </select>
-                    <select name="thietbi" className="w-full p-2 border rounded-lg">
-                        <option>Thiết bị 1</option>
-                        <option>Thiết bị 2</option>
-                        <option>Thiết bị 3</option>
-                    </select>
-                    <button className=" items-center gap-2 px-4 w-full py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                        Thêm
-                    </button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full table-auto border border-gray-300">

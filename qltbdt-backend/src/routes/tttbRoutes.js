@@ -15,6 +15,7 @@ router.post("/multiple",tttbController.createMultipleThongTinThietBi);
 router.get("/phong/:phong_id", tttbController.getThietBiTrongPhong);
 router.put("/thietbi/:id/remove-from-phong", tttbController.deleteThongTinThietBi);
 router.post("/phong/:phongId/themthietbicosan", tttbController.createThietBiCoSan);
-
+router.get("/theloai", tttbController.getTheLoaiList)
+router.get("/thietbi/:theLoai", tttbController.getThietBiByTheLoai);
 
 module.exports = router;
