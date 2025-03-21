@@ -41,16 +41,17 @@ exports.createPhieuNhap = async (req, res) => {
     if (!["muaMoi", "taiTro"].includes(truongHopNhap)) {
         return res.status(400).json({ error: "Trường hợp nhập không hợp lệ!" });
     }
+    if (!Array.isArray(danhSachThietBi) || danhSachThietBi.length === 0) {
+        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ!" });
+    }
 
-    const connection = await db.getConnection(); // Mở kết nối DB
+    const connection = await db.getConnection();
     try {
-        await connection.beginTransaction(); // Bắt đầu transaction
+        await connection.beginTransaction();
 
         // Lấy họ tên người tạo từ userId
         const [userRows] = await connection.query("SELECT hoTen FROM users WHERE id = ?", [userId]);
-        if (userRows.length === 0) {
-            throw new Error("Người dùng không tồn tại!");
-        }
+        if (userRows.length === 0) throw new Error("Người dùng không tồn tại!");
         const nguoiTao = userRows[0].hoTen;
 
         // Chèn vào bảng `phieunhap`
@@ -58,34 +59,35 @@ exports.createPhieuNhap = async (req, res) => {
             "INSERT INTO phieunhap (user_id, nguoiTao, truongHopNhap, ngayTao) VALUES (?, ?, ?, ?)",
             [userId, nguoiTao, truongHopNhap, ngayTao]
         );
-        const phieuNhapId = phieuNhapResult.insertId; // ID phiếu nhập vừa tạo
+        const phieuNhapId = phieuNhapResult.insertId;
+        if (!phieuNhapId) throw new Error("Không thể tạo phiếu nhập!");
 
-        // Duyệt từng thiết bị trong danh sách
-        if (danhSachThietBi && danhSachThietBi.length > 0) {
-            for (const item of danhSachThietBi) {
-                //Chèn vào `thongtinthietbi`
-                await connection.query(
-                    "INSERT INTO thongtinthietbi (thietbi_id, phieunhap_id, tenThietBi) VALUES (?, ?, ?)",
-                    [item.thietbi_id, phieuNhapId, item.tenThietBi]
-                );
+        // Duyệt danh sách thiết bị
+        for (const item of danhSachThietBi) {
+            await connection.query(
+                `INSERT INTO thongtinthietbi (
+                    thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc
+                ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH))`,
+                [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh]
+            );
 
-                //Cập nhật số lượng trong `thietbi`
+                // Cập nhật số lượng và tồn kho trong thietbi
                 await connection.query(
                     "UPDATE thietbi SET soLuong = soLuong + ?, donGia = donGia + ?,tonKho = tonKho + ? WHERE id = ?",
                     [item.soLuong, item.donGia, item.soLuong, item.thietbi_id]
                 );
-            }
         }
 
-        await connection.commit(); // Xác nhận transaction
+        await connection.commit();
         res.json({ message: "Tạo phiếu nhập thành công!", phieunhapId: phieuNhapId });
     } catch (error) {
-        await connection.rollback(); // Hoàn tác nếu có lỗi
+        await connection.rollback();
         res.status(500).json({ error: error.message });
     } finally {
-        connection.release(); // Đóng kết nối
+        connection.release();
     }
 };
+
 
 
 // Lấy danh sách thiết bị trong phiếu nhập

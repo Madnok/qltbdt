@@ -44,10 +44,10 @@ export const toaTheoCoSo = {
 //Chuyển đổi tình trạng sang có dấu
 export const getTinhTrangLabel = (tinhTrang) => {
     switch (tinhTrang) {
-        case "chua_dung":
-            return "Chưa Dùng";
-        case "dang_dung":
-            return "Đang Dùng";
+        case "het_bao_hanh":
+            return "Hết Bảo Hành";
+        case "con_bao_hanh":
+            return "Còn Bảo Hành";
         case "muaMoi":
             return "Mua Mới";
         case "taiTro":

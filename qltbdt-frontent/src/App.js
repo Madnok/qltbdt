@@ -8,6 +8,7 @@ import BaoTri from "./pages/BaoTri";
 import LichTruc from "./pages/LichTruc";
 import PrivateRoute from "./utils/PrivateRoutes";
 import BaoHongGoiY from "./pages/BaoHongGoiY";
+import NotFound from "./pages/NotFound";
 import { AuthProvider } from "../src/context/AuthProvider";
 import AppLayout from "../src/components/layout/AppLayout";
 
@@ -37,7 +38,7 @@ function Layout() {
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<h1>404 - Không tìm thấy trang</h1>} />
+      <Route path="*" element={<NotFound/>} />
     </Routes>
   );
 }

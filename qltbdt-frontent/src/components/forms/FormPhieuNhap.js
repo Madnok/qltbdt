@@ -7,6 +7,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
     const [selectedThietBi, setSelectedThietBi] = useState("");
     const [soLuong, setSoLuong] = useState(1);
     const [donGia, setDonGia] = useState(0);
+    const [thoiGianBaoHanh, setThoiGianBaoHanh] = useState(0); // Thêm thời gian bảo hành
 
     useEffect(() => {
         axios.get("http://localhost:5000/api/tttb/thietbi-list")
@@ -21,13 +22,18 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
             alert("Vui lòng chọn thiết bị!");
             return;
         }
+        if (thoiGianBaoHanh <= 0 || isNaN(thoiGianBaoHanh)) {
+            alert("Vui lòng nhập thời gian bảo hành hợp lệ (lớn hơn 0)!");
+            return;
+        }
 
         const newThietBi = {
             id: nextId,
             thietbi_id: selectedThietBi,
             tenThietBi: thietBiList.find(tb => tb.id === Number(selectedThietBi))?.tenThietBi || "Không rõ",
             soLuong: soLuong,
-            donGia: donGia
+            donGia: donGia,
+            thoiGianBaoHanh: thoiGianBaoHanh
         };
 
         console.log("Thêm thiết bị:", newThietBi);
@@ -45,10 +51,10 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
             </div>
 
             <form className="p-4 space-y-4">
-                <div>
+                {/* <div>
                     <label className="block font-medium">ID</label>
                     <input type="text" value={nextId} readOnly className="w-full p-2 mt-1 bg-gray-200 border rounded" />
-                </div>
+                </div> */}
 
                 <div>
                     <label className="block font-medium">Chọn Thiết Bị</label>
@@ -59,7 +65,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
                         ))}
                     </select>
                 </div>
-                
+
                 <div>
                     <label className="block font-medium">Số Lượng</label>
                     <input type="number" value={soLuong} min="1"
@@ -72,6 +78,14 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
                     <label className="block font-medium">Đơn Giá</label>
                     <input type="number" value={donGia} min="0"
                         onChange={(e) => setDonGia(Number(e.target.value))}
+                        className="w-full p-2 mt-1 border rounded"
+                    />
+                </div>
+
+                <div>
+                    <label className="block font-medium">Thời Gian Bảo Hành (tháng) <span className="text-red-500">*</span></label>
+                    <input type="number" value={thoiGianBaoHanh} min="1" required
+                        onChange={(e) => setThoiGianBaoHanh(Number(e.target.value))}
                         className="w-full p-2 mt-1 border rounded"
                     />
                 </div>

@@ -252,29 +252,24 @@ const FormPhong = ({ onClose, refreshData }) => {
                     </select>
                 </div>
                 {/* Chức Năng */}
-                <div>
+                <div className="col-span-2">
                     <label className="block font-medium">Chức Năng</label>
                     <input type="text" name="chucNang" value={formData.chucNang} onChange={handleChange} className="w-full p-1 mt-1 border rounded" />
                 </div>
-                <div>
-                    <label className="block font-medium mb-1">Thêm Phòng & Xóa Trắng</label>
-                    <div className="flex gap-2">
-                        <button
-                            type="submit"
-                            onClick={handleSubmit}
-                            className="w-1/2 p-1 text-sm text-white bg-green-500 border rounded"
-                        >
-                            Lưu Phòng
-                        </button>
-                        <button
-                            type="button"
-                            className="w-1/2 text-sm bg-gray-300 border rounded"
-                            onClick={handleReset}
-                        >
-                            Xóa Trắng
-                        </button>
-                    </div>
-                </div>
+                <button
+                    type="submit"
+                    onClick={handleSubmit}
+                    className="w-full p-1 text-sm text-white bg-green-500 border rounded"
+                >
+                    Lưu Phòng
+                </button>
+                <button
+                    type="button"
+                    className="w-full text-sm bg-gray-300 border rounded"
+                    onClick={handleReset}
+                >
+                    Xóa Trắng
+                </button>
             </div>
 
 
@@ -316,13 +311,22 @@ const FormPhong = ({ onClose, refreshData }) => {
                             </option>
                         ))}
                     </select>
-                    <button onClick={handleAddThietBi} className="px-4 w-full py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                </div>
+                <div className="grid grid-cols-2 gap-2 items-center pb-4">
+                    <button
+                        onClick={alert}
+                        className="w-full p-1 text-sm text-white bg-green-500 border rounded hover:bg-green-600 transition-colors"
+                    >
+                        Lưu Thiết Bị
+                    </button>
+                    <button
+                        onClick={handleAddThietBi}
+                        className="w-full p-1 text-sm text-white rounded bg-blue-500 hover:bg-blue-600 transition-colors"
+                    >
                         Thêm Thiết Bị
                     </button>
-                    <button onClick={alert} className="px-4 w-full py-1 bg-green-500 text-sm text-white rounded-lg hover:bg-blue-600 transition-colors">
-                        Lưu
-                    </button>
                 </div>
+
                 <table className="w-full table-auto border border-gray-300">
                     <thead className="bg-gray-100">
                         <tr>

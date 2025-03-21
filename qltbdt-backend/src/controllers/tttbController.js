@@ -90,27 +90,42 @@ exports.createThongTinThietBi = async (req, res) => {
     }
 };
 
-// Thêm mới nhiều thông tin thiết bị
 exports.createMultipleThongTinThietBi = async (req, res) => {
-    const { danhSachThietBi } = req.body; // Nhận danh sách thiết bị từ client
+    const { danhSachThietBi } = req.body;
 
     if (!Array.isArray(danhSachThietBi) || danhSachThietBi.length === 0) {
         return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ" });
     }
 
     try {
-        const values = danhSachThietBi.map(tb => [
-            tb.thietbi_id,
-            tb.phong_id || null,
-            tb.nguoiDuocCap || null,
-            tb.phieunhap_id,
-            tb.tinhTrang || 'chua_dung',
-            tb.tenThietBi
-        ]);
+        const values = danhSachThietBi.map(tb => {
+            const ngayHienTai = new Date();
+
+            // Nếu không nhập thời gian bảo hành, không đặt mặc định 12 tháng nữa
+            const ngayBaoHanhKetThuc = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0
+                ? new Date(ngayHienTai.getFullYear(), ngayHienTai.getMonth() + tb.thoiGianBaoHanh, ngayHienTai.getDate())
+                : null;
+
+            // Xác định tình trạng bảo hành (chỉ xét nếu có thời gian bảo hành)
+            const tinhTrang = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0 ? 'con_bao_hanh' : 'het_bao_hanh';
+
+            return [
+                tb.thietbi_id,
+                tb.phong_id || null,
+                tb.nguoiDuocCap || null,
+                tb.phieunhap_id,
+                tinhTrang,
+                tb.tenThietBi,
+                tb.thoiGianBaoHanh || null,
+                ngayBaoHanhKetThuc
+            ];
+        });
 
         await pool.query(
-            "INSERT INTO thongtinthietbi (thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi) VALUES ?",
-            [values]
+            `INSERT INTO thongtinthietbi (
+                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, thoiGianBaoHanh, ngayBaoHanhKetThuc
+            ) VALUES ${values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}`,
+            values.flat()
         );
 
         res.status(201).json({ message: "Thêm nhiều thiết bị thành công!" });
@@ -118,6 +133,9 @@ exports.createMultipleThongTinThietBi = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+
 
 // Cập nhật thông tin thiết bị
 exports.updateThongTinThietBi = async (req, res) => {

@@ -8,11 +8,26 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     const [editData, setEditData] = useState(record);
     const [isEditing, setIsEditing] = useState(false);
 
-   
-    const tinhTrangList = ["chua_dung", "dang_dung"].map(value => ({
+
+    const tinhTrangList = ["het_bao_hanh", "con_bao_hanh"].map(value => ({
         value,
         label: getTinhTrangLabel(value),
     }));
+
+    const thoiGianBaoHanh = (ngayBaoHanhKetThuc) => {
+        const currentDate = new Date();
+        const expirationDate = new Date(ngayBaoHanhKetThuc);
+
+        if (expirationDate < currentDate) {
+            return 0; // Nếu hết bảo hành, trả về 0
+        }
+
+        const diffInMonths =
+            (expirationDate.getFullYear() - currentDate.getFullYear()) * 12 +
+            (expirationDate.getMonth() - currentDate.getMonth());
+
+        return diffInMonths;
+    };
 
     useEffect(() => {
         axios.get("http://localhost:5000/api/tttb/phong-list")
@@ -169,15 +184,33 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
 
                 {/* Chọn Trạng Thái */}
                 <div>
-                    <label className="font-semibold">Trạng Thái:</label>
+                    <label className="font-semibold">Tình Trạng:</label>
                     {isEditing ? (
-                        <select name="tinhTrang" value={editData.tinhTrang} onChange={handleChange} className="w-full p-2 border">
+                        <select
+                            name="tinhTrang"
+                            value={editData.tinhTrang}
+                            onChange={handleChange}
+                            className="w-full p-2 border"
+                        >
                             {tinhTrangList.map(tt => (
                                 <option key={tt.value} value={tt.value}>{tt.label}</option>
                             ))}
                         </select>
                     ) : (
-                        <input type="text" value={getTinhTrangLabel(record.tinhTrang)} className="w-full p-2 border" disabled />
+                        <div className="flex flex-col">
+                            {/* Hiển thị tình trạng */}
+                            <input
+                                type="text"
+                                value={getTinhTrangLabel(record.tinhTrang)}
+                                className="w-full p-2 border mb-2"
+                                disabled
+                            />
+                            {/* Hiển thị tháng bảo hành còn lại */}
+                            <span className="text-gray-500">
+                                Tháng bảo hành còn lại:{" "}
+                                {thoiGianBaoHanh(record.ngayBaoHanhKetThuc)}
+                            </span>
+                        </div>
                     )}
                 </div>
 
