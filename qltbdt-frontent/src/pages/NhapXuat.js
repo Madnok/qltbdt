@@ -13,12 +13,13 @@ import LeftPanel from "../components/layout/LeftPanel";
 const NhapXuat = () => {
   const [activeTab, setActiveTab] = useState("nhap"); // "nhap" hoặc "xuat"
   const { selectedRecord, activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
+  const [refreshData, setRefreshData] = useState(false); // State để quản lý việc làm mới dữ liệu
 
   // Xác định component hiển thị trong RightPanel
   const rightPanelComponent = useMemo(() => {
     switch (activeRightPanel) {
       case "ChiTietNhap":
-        return <ChiTietNhap selectedRecord={selectedRecord} onClose={handleCloseRightPanel} />;
+        return <ChiTietNhap selectedRecord={selectedRecord} onClose={handleCloseRightPanel} refreshData={() => setRefreshData(!refreshData)}/>;
       case "ChiTietXuat":
         return <ChiTietXuat selectedRecord={selectedRecord} onClose={handleCloseRightPanel} />;
       case addForms.Nhap:
@@ -28,11 +29,11 @@ const NhapXuat = () => {
       default:
         return null;
     }
-  }, [activeRightPanel, selectedRecord, handleCloseRightPanel]);
+  }, [activeRightPanel, selectedRecord, handleCloseRightPanel, refreshData]);
 
   // Xác định component nào hiển thị trên Left Panel
   const leftPanelComponent = activeTab === "nhap" ? (
-    <BangNhap setSelectedRecord={(record) => handleOpenRightPanel("ChiTietNhap", record)} />
+    <BangNhap setSelectedRecord={(record) => handleOpenRightPanel("ChiTietNhap", record)} refreshData={refreshData}/>
   ) : (
     <BangXuat setSelectedRecord={(record) => handleOpenRightPanel("ChiTietXuat", record)} />
   );

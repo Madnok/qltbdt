@@ -216,3 +216,4 @@ exports.updatePhieuNhap = async (req, res) => {
         connection.release();
     }
 };
+

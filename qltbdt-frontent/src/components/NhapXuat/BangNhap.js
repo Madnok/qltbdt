@@ -3,7 +3,7 @@ import { paginateData } from "../../utils/helpers";
 import { useEffect, useState } from "react";
 import { getTinhTrangLabel } from "../../utils/constants";
 
-const BangNhap = ({ setSelectedRecord }) => {
+const BangNhap = ({ setSelectedRecord, refreshData }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [data, setData] = useState([]);
     const [soLuongTB, setSoLuongTB] = useState({}); // Lưu số lượng thiết bị
@@ -39,7 +39,7 @@ const BangNhap = ({ setSelectedRecord }) => {
     useEffect(() => {
         fetchData();
         // eslint-disable-next-line
-    }, []);
+    }, [refreshData]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);

@@ -78,6 +78,19 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
         setThietBiNhapData((prev) => [...prev, newDevice]);
     };
 
+    const handleDeletePhieuNhap = () => {
+        if (window.confirm("Bạn có chắc chắn muốn xóa phiếu nhập này?")) {
+            axios
+                .delete(`http://localhost:5000/api/nhap/${selectedRecord.id}`)
+                .then(() => {
+                    alert("Xóa phiếu nhập thành công!");
+                    refreshData();
+                    onClose();
+                })
+                .catch((error) => console.error("Lỗi khi xóa phiếu nhập:", error));
+        }
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -94,7 +107,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
                     {/* Nút Xóa */}
                     <button
                         className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-red-500 hover:text-white"
-                        onClick={handleCancelEdit}
+                        onClick={handleDeletePhieuNhap}
                     >
                         <i className="text-lg text-black fas fa-trash"></i>
                     </button>

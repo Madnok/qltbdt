@@ -3,7 +3,7 @@ import axios from "axios";
 import FormPhieuNhap from "./FormPhieuNhap";
 import { useFormattedPrice } from "../../utils/helpers";
 
-const FormNhap = ({ onClose }) => {
+const FormNhap = ({ onClose, refreshData }) => {
     const [showPhieuNhap, setShowPhieuNhap] = useState(false);
     const formatPrice = useFormattedPrice();
     const [phieuNhapId] = useState(null);
@@ -11,7 +11,7 @@ const FormNhap = ({ onClose }) => {
     const [nguoiTao, setNguoiTao] = useState("");
     const [ngayTao, setNgayTao] = useState("");
     const [truongHopNhap, setTruongHopNhap] = useState("muaMoi");
-    
+
 
     // useEffect đầu tiên chỉ lấy thông tin người tạo và ngày
     useEffect(() => {
@@ -40,12 +40,15 @@ const FormNhap = ({ onClose }) => {
     }, [phieuNhapId]);
 
     const handleAddThietBi = (newThietBi) => {
-        setThietBiNhap((prev) => [...prev, { 
-            ...newThietBi, 
+        setThietBiNhap((prev) => [...prev, {
+            ...newThietBi,
         }]);
         console.log("Danh sách thiết bị sau khi thêm:", [...thietBiNhap, newThietBi]);
     };
-    
+
+    const handleDeleteThietBi = (thietbi_id) => {
+        setThietBiNhap((prev) => prev.filter((tb) => tb.thietbi_id !== thietbi_id));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -65,6 +68,7 @@ const FormNhap = ({ onClose }) => {
         try {
             await axios.post("http://localhost:5000/api/nhap", data);
             alert("Tạo phiếu nhập thành công!");
+            refreshData();
             onClose();
         } catch (error) {
             console.error("Lỗi:", error);
@@ -120,8 +124,10 @@ const FormNhap = ({ onClose }) => {
                             <th className="px-4 py-2 border-b">ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
                             <th className="px-4 py-2 border-b">Số Lượng</th>
+                            <th className="px-4 py-2 border-b text-sm grid-cols-2">Bảo Hành <span className="text-sm text-gray-500">(Tháng)</span></th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
                             <th className="px-4 py-2 border-b">Tổng Tiền</th>
+                            <th className="px-4 py-2 border-b"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -130,8 +136,17 @@ const FormNhap = ({ onClose }) => {
                                 <td className="p-2 border">{tb.thietbi_id}</td>
                                 <td className="p-2 border">{tb.tenThietBi}</td>
                                 <td className="p-2 border">{tb.soLuong}</td>
+                                <td className="p-2 border">{tb.thoiGianBaoHanh}</td>
                                 <td className="p-2 border">{formatPrice(tb.donGia)}</td>
                                 <td class="p-2 border">{formatPrice(tb.soLuong * tb.donGia)}</td>
+                                <td className="p-2 border">
+                                    <button
+                                        className="px-3 py-1 text-white bg-red-500 rounded"
+                                        onClick={() => handleDeleteThietBi(tb.thietbi_id)}
+                                    >
+                                        Xóa
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
