@@ -46,7 +46,6 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                             <th className="px-4 py-2 border-b">ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
                             <th className="px-4 py-2 border-b">Mô Tả</th>
-                            <th className="px-4 py-2 border-b">Số Lượng</th>
                             <th className="px-4 py-2 border-b">Tồn Kho</th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
                         </tr>
@@ -61,7 +60,6 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                                 <td className="p-2 border">TB{record.id}</td>
                                 <td className="p-2 border">{record.tenThietBi}</td>
                                 <td className="p-2 border">{record.moTa}</td>
-                                <td className="p-2 border">{record.soLuong}</td>
                                 <td className="p-2 border">{record.tonKho}</td>
                                 <td className="p-2 border">{formatPrice(record.donGia)}</td>
                             </tr>

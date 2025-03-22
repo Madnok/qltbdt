@@ -68,7 +68,7 @@ const BangNhap = ({ setSelectedRecord }) => {
                             <th className="px-4 py-2 border-b">Ngày tạo</th>
                             <th className="px-4 py-2 border-b">Người tạo</th>
                             <th className="px-4 py-2 border-b">Trường hợp</th>
-                            <th className="px-4 py-2 border-b">Số Lượng TB</th>
+                            <th className="px-4 py-2 border-b text-sm">Tổng Số Loại TB</th>
                         </tr>
                     </thead>
                     <tbody>

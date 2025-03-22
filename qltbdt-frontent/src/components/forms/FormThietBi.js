@@ -43,7 +43,6 @@ const FormThietBi = ({ onClose, refreshData }) => {
             tenThietBi: formData.tenThietBi,
             moTa: formData.moTa,
             donGia: formData.donGia,
-            soLuong: 0, // Mặc định là 0
             tonKho: 0,  // Mặc định là 0
         };
 
@@ -112,12 +111,6 @@ const FormThietBi = ({ onClose, refreshData }) => {
                         <input type="number" name="donGia" value={formData.donGia} onChange={handleChange} className="w-full p-2 mt-1 border rounded" />
                         <span className="absolute text-gray-500 right-3 top-3">₫</span>
                     </div>
-                </div>
-
-                {/* Số Lượng */}
-                <div>
-                    <label className="block font-medium">Số Lượng</label>
-                    <input type="number" value="0" disabled className="w-full p-2 mt-1 bg-gray-100 border rounded" />
                 </div>
 
                 {/* Tồn Kho */}

@@ -8,4 +8,5 @@ router.get("/user/:userId", nhapController.getHoTenByUserId); // Lấy họ tên
 router.post("/", nhapController.createPhieuNhap); // Tạo phiếu nhập
 router.get("/:phieuNhapId/thongtinthietbi",nhapController.getThietBiInPhieuNhap);
 router.delete("/:id", nhapController.deletePhieuNhap);
+router.put("/:id", nhapController.updatePhieuNhap);
 module.exports = router;

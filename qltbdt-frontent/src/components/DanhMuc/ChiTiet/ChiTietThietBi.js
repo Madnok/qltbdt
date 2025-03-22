@@ -124,14 +124,6 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
                         disabled={!isEditing} />
                 </div>
 
-                {/* Số Lượng */}
-                <div>
-                    <label className="font-semibold">Số Lượng:</label>
-                    <input type="number" name="soLuong" value={editData.soLuong}
-                        onChange={handleChange} className="w-full p-2 border"
-                        disabled={!isEditing} />
-                </div>
-
                 {/* Tồn Kho */}
                 <div>
                     <label className="font-semibold">Tồn Kho:</label>
@@ -159,7 +151,7 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
                 {/* Tồn Kho */}
                 <div>
                     <label className="font-semibold">Tổng Tiền:</label>
-                    <input type="text" name="tonKho" value={formatPrice(editData.soLuong * editData.donGia)}
+                    <input type="text" name="tonKho" value={formatPrice(editData.tonKho * editData.donGia)}
                         className="w-full p-2 border" disabled />
                 </div>
 

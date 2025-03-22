@@ -63,10 +63,10 @@ exports.getListPhong = async (req, res) => {
 
 // Thêm mới một thông tin thiết bị
 exports.createThongTinThietBi = async (req, res) => {
-    const { thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang } = req.body;
+    const { thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, soLuong, thoiGianBaoHanh } = req.body;
 
-    if (!thietbi_id) {
-        return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin thiết bị" });
+    if (!thietbi_id || !soLuong) {
+        return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin thiết bị, bao gồm số lượng" });
     }
 
     try {
@@ -78,10 +78,23 @@ exports.createThongTinThietBi = async (req, res) => {
 
         const tenThietBi = thietbiRows[0].tenThietBi;
 
-        // Thêm vào bảng thongtinthietbi
+        // Tính ngày hết hạn bảo hành
+        const ngayBaoHanhKetThuc = thoiGianBaoHanh
+            ? new Date(new Date().setMonth(new Date().getMonth() + thoiGianBaoHanh))
+            : null;
+
+        // Thêm thiết bị vào bảng thongtinthietbi
         await pool.query(
-            "INSERT INTO thongtinthietbi (thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi) VALUES (?, ?, ?, ?, ?, ?)",
-            [thietbi_id, phong_id || null, nguoiDuocCap || null, phieunhap_id, tinhTrang || 'chua_dung', tenThietBi]
+            `INSERT INTO thongtinthietbi (
+                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, soLuong, thoiGianBaoHanh, ngayBaoHanhKetThuc
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [thietbi_id, phong_id || null, nguoiDuocCap || null, phieunhap_id, tinhTrang || 'con_bao_hanh', tenThietBi, soLuong, thoiGianBaoHanh || null, ngayBaoHanhKetThuc]
+        );
+
+        // Cập nhật tồn kho
+        await pool.query(
+            "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
+            [soLuong, thietbi_id]
         );
 
         res.status(201).json({ message: "Thêm thông tin thiết bị thành công!" });
@@ -90,6 +103,7 @@ exports.createThongTinThietBi = async (req, res) => {
     }
 };
 
+
 exports.createMultipleThongTinThietBi = async (req, res) => {
     const { danhSachThietBi } = req.body;
 
@@ -97,16 +111,19 @@ exports.createMultipleThongTinThietBi = async (req, res) => {
         return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ" });
     }
 
+    const connection = await pool.getConnection();
     try {
+        await connection.beginTransaction();
+
         const values = danhSachThietBi.map(tb => {
             const ngayHienTai = new Date();
 
-            // Nếu không nhập thời gian bảo hành, không đặt mặc định 12 tháng nữa
+            // Tính ngày hết hạn bảo hành nếu có thời gian bảo hành
             const ngayBaoHanhKetThuc = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0
-                ? new Date(ngayHienTai.getFullYear(), ngayHienTai.getMonth() + tb.thoiGianBaoHanh, ngayHienTai.getDate())
+                ? new Date(ngayHienTai.setMonth(ngayHienTai.getMonth() + tb.thoiGianBaoHanh))
                 : null;
 
-            // Xác định tình trạng bảo hành (chỉ xét nếu có thời gian bảo hành)
+            // Xác định tình trạng bảo hành
             const tinhTrang = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0 ? 'con_bao_hanh' : 'het_bao_hanh';
 
             return [
@@ -116,24 +133,37 @@ exports.createMultipleThongTinThietBi = async (req, res) => {
                 tb.phieunhap_id,
                 tinhTrang,
                 tb.tenThietBi,
+                tb.soLuong || 0, // Số lượng thiết bị
                 tb.thoiGianBaoHanh || null,
                 ngayBaoHanhKetThuc
             ];
         });
 
-        await pool.query(
+        // Thêm nhiều bản ghi vào bảng `thongtinthietbi`
+        await connection.query(
             `INSERT INTO thongtinthietbi (
-                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, thoiGianBaoHanh, ngayBaoHanhKetThuc
-            ) VALUES ${values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}`,
+                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, soLuong, thoiGianBaoHanh, ngayBaoHanhKetThuc
+            ) VALUES ${values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}`,
             values.flat()
         );
 
+        // Cập nhật tồn kho trong bảng `thietbi`
+        for (const tb of danhSachThietBi) {
+            await connection.query(
+                "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
+                [tb.soLuong || 0, tb.thietbi_id]
+            );
+        }
+
+        await connection.commit();
         res.status(201).json({ message: "Thêm nhiều thiết bị thành công!" });
     } catch (error) {
+        await connection.rollback();
         res.status(500).json({ error: error.message });
+    } finally {
+        connection.release();
     }
 };
-
 
 
 
@@ -155,14 +185,25 @@ exports.updateThongTinThietBi = async (req, res) => {
 // Xóa thông tin thiết bị khỏi phòng (set phong_id = NULL)
 exports.deleteThongTinThietBi = async (req, res) => {
     const { id } = req.params;
+
     try {
-        const [result] = await pool.query("UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?", [id]);
-        if (result.affectedRows === 0) {
+        // Lấy thông tin số lượng và thietbi_id trước khi xóa
+        const [rows] = await pool.query("SELECT soLuong, thietbi_id FROM thongtinthietbi WHERE id = ?", [id]);
+        if (rows.length === 0) {
             return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị để cập nhật" });
         }
-        res.json({ message: `Thiết bị ID ${id} đã được gỡ khỏi phòng thành công!` });
+
+        const { soLuong, thietbi_id } = rows[0];
+
+        // Cập nhật tồn kho
+        await pool.query("UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?", [soLuong, thietbi_id]);
+
+        // Xóa thiết bị khỏi bảng thongtinthietbi
+        const [result] = await pool.query("DELETE FROM thongtinthietbi WHERE id = ?", [id]);
+
+        res.json({ message: `Xóa thông tin thiết bị ID ${id} thành công!` });
     } catch (error) {
-        res.status(500).json({ error: "Lỗi cập nhật thiết bị" });
+        res.status(500).json({ error: "Lỗi xóa thông tin thiết bị" });
     }
 };
 
@@ -171,9 +212,8 @@ exports.getThietBiTrongPhong = async (req, res) => {
     const { phong_id } = req.params;
     try {
         const [rows] = await pool.query(`
-            SELECT tttb.id, tttb.thietbi_id, tb.tenThietBi, tb.soLuong, tttb.nguoiDuocCap
+            SELECT tttb.id, tttb.thietbi_id, tttb.tenThietBi, tttb.soLuong, tttb.nguoiDuocCap
             FROM thongtinthietbi tttb
-            JOIN thietbi tb ON tttb.thietbi_id = tb.id
             WHERE tttb.phong_id = ?
         `, [phong_id]);
         res.json(rows);

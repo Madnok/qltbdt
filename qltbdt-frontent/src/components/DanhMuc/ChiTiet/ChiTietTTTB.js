@@ -133,6 +133,17 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                     <input type="text" value={`GN${record.phieunhap_id}`} className="w-full p-2 bg-gray-100 border" disabled />
                 </div>
 
+                {/* Số Lượng */}
+                <div>
+                    <label className="font-semibold">Số Lượng Nhập:</label>
+                    <input
+                        type="text"
+                        name="soLuong"
+                        value={record.soLuong || 0 }
+                        className="w-full p-2 border"
+                        disabled />
+                </div>
+
                 {/* Chọn Tên Thiết Bị */}
                 <div>
                     <label className="font-semibold">Tên Thiết Bị:</label>
@@ -215,7 +226,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                 </div>
 
                 {/* Người Được Cấp */}
-                <div className="col-span-2">
+                <div className="col-span-1">
                     <label className="font-semibold">Người Được Cấp:</label>
                     {isEditing ? (
                         <input
@@ -234,7 +245,6 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                             className="w-full p-2 border"
                             disabled />
                     )}
-
                 </div>
 
                 {/* Nút Lưu & Hủy */}
