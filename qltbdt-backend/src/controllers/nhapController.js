@@ -162,6 +162,7 @@ exports.deletePhieuNhap = async (req, res) => {
     }
 };
 
+
 // Cập nhật phiếu nhập theo ID
 exports.updatePhieuNhap = async (req, res) => {
     const { id } = req.params;
@@ -188,23 +189,72 @@ exports.updatePhieuNhap = async (req, res) => {
             throw new Error("Không tìm thấy phiếu nhập để cập nhật!");
         }
 
-        // Xóa danh sách thiết bị cũ của phiếu nhập
-        await connection.query("DELETE FROM thongtinthietbi WHERE phieunhap_id = ?", [id]);
+        // Lấy danh sách thiết bị cũ của phiếu nhập
+        const [existingDevices] = await connection.query(
+            "SELECT thietbi_id, thoiGianBaoHanh, soLuong FROM thongtinthietbi WHERE phieunhap_id = ?",
+            [id]
+        );
 
-        // Chèn lại danh sách thiết bị mới
+        // Tạo map để kiểm tra thiết bị đã tồn tại (kèm thời gian bảo hành)
+        const existingMap = {};
+        existingDevices.forEach((device) => {
+            const key = `${device.thietbi_id}_${device.thoiGianBaoHanh}`;
+            existingMap[key] = device.soLuong;
+        });
+
+        const newDeviceIds = new Set();
+
+        // Xử lý cập nhật, thêm mới
         for (const item of thietBiNhap) {
-            await connection.query(
-                `INSERT INTO thongtinthietbi (
-                    thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, soLuong
-                ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH), ?)`,
-                [item.thietbi_id, id, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh, item.soLuong]
-            );
+            const key = `${item.thietbi_id}_${item.thoiGianBaoHanh}`;
 
-            // Cập nhật tồn kho thiết bị
-            await connection.query(
-                "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-                [item.soLuong, item.thietbi_id]
-            );
+            if (existingMap[key] !== undefined) {
+                // Nếu thiết bị đã tồn tại với cùng ID và thời gian bảo hành => Cộng dồn số lượng
+                const updatedQuantity = existingMap[key] + item.soLuong;
+
+                await connection.query(
+                    `UPDATE thongtinthietbi 
+                     SET soLuong = ?
+                     WHERE phieunhap_id = ? AND thietbi_id = ? AND thoiGianBaoHanh = ?`,
+                    [updatedQuantity, id, item.thietbi_id, item.thoiGianBaoHanh]
+                );
+
+                await connection.query(
+                    "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
+                    [item.soLuong, item.thietbi_id]
+                );
+            } else {
+                // Nếu thiết bị chưa tồn tại hoặc có khác thời gian bảo hành => Thêm mới
+                await connection.query(
+                    `INSERT INTO thongtinthietbi (
+                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, soLuong
+                    ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH), ?)`,
+                    [item.thietbi_id, id, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh, item.soLuong]
+                );
+
+                await connection.query(
+                    "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
+                    [item.soLuong, item.thietbi_id]
+                );
+            }
+
+            newDeviceIds.add(`${item.thietbi_id}_${item.thoiGianBaoHanh}`);
+        }
+
+        // Xóa thiết bị bị loại bỏ khỏi danh sách nhập
+        for (const device of existingDevices) {
+            const key = `${device.thietbi_id}_${device.thoiGianBaoHanh}`;
+            if (!newDeviceIds.has(key)) {
+                await connection.query(
+                    "DELETE FROM thongtinthietbi WHERE phieunhap_id = ? AND thietbi_id = ? AND thoiGianBaoHanh = ?",
+                    [id, device.thietbi_id, device.thoiGianBaoHanh]
+                );
+
+                await connection.query(
+                    "UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?",
+                    [device.soLuong, device.thietbi_id]
+                );
+            }
         }
 
         await connection.commit();

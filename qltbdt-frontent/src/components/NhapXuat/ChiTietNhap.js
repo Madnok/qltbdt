@@ -53,6 +53,12 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     };
 
     const handleSaveChanges = () => {
+
+        if (thietBiNhapData.length === 0) {
+            alert("Bạn không thể để phiếu nhập rỗng! Nếu muốn xóa thiết bị này, vui lòng xóa phiếu nhập!");
+            return;
+        }
+
         axios
             .put(`http://localhost:5000/api/nhap/${selectedRecord.id}`, {
                 truongHopNhap,
@@ -75,8 +81,31 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     };
 
     const handleAddDevice = (newDevice) => {
-        setThietBiNhapData((prev) => [...prev, newDevice]);
+        setThietBiNhapData((prev) => {
+            const existingIndex = prev.findIndex(
+                (tb) =>
+                    tb.thietbi_id === newDevice.thietbi_id &&
+                    tb.tenThietBi === newDevice.tenThietBi &&
+                    tb.thoiGianBaoHanh === newDevice.thoiGianBaoHanh
+            );
+    
+            if (existingIndex !== -1) {
+                // Nếu thiết bị đã tồn tại với cùng ID, tên và thời gian bảo hành => Cộng dồn số lượng
+                const updatedList = [...prev];
+                updatedList[existingIndex] = {
+                    ...updatedList[existingIndex],
+                    soLuong: updatedList[existingIndex].soLuong + newDevice.soLuong,
+                };
+                return updatedList;
+            } else {
+                // Nếu thiết bị khác ID hoặc khác tên hoặc khác thời gian bảo hành => Thêm mới
+                return [...prev, newDevice];
+            }
+        });
+    
+        console.log("Danh sách thiết bị sau khi thêm:", thietBiNhapData);
     };
+    
 
     const handleDeletePhieuNhap = () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa phiếu nhập này?")) {

@@ -15,15 +15,16 @@ const NhapXuat = () => {
   const { selectedRecord, activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
   const [refreshData, setRefreshData] = useState(false); // State để quản lý việc làm mới dữ liệu
 
+
   // Xác định component hiển thị trong RightPanel
   const rightPanelComponent = useMemo(() => {
     switch (activeRightPanel) {
       case "ChiTietNhap":
-        return <ChiTietNhap selectedRecord={selectedRecord} onClose={handleCloseRightPanel} refreshData={() => setRefreshData(!refreshData)}/>;
+        return <ChiTietNhap selectedRecord={selectedRecord} onClose={handleCloseRightPanel} refreshData={() => setRefreshData(!refreshData)} />;
       case "ChiTietXuat":
         return <ChiTietXuat selectedRecord={selectedRecord} onClose={handleCloseRightPanel} />;
       case addForms.Nhap:
-        return <FormNhap onClose={handleCloseRightPanel} />;
+        return <FormNhap onClose={handleCloseRightPanel} refreshData={() => setRefreshData(!refreshData)}/>;
       case addForms.Xuat:
         return <FormXuat onClose={handleCloseRightPanel} />;
       default:
@@ -33,51 +34,51 @@ const NhapXuat = () => {
 
   // Xác định component nào hiển thị trên Left Panel
   const leftPanelComponent = activeTab === "nhap" ? (
-    <BangNhap setSelectedRecord={(record) => handleOpenRightPanel("ChiTietNhap", record)} refreshData={refreshData}/>
+    <BangNhap setSelectedRecord={(record) => handleOpenRightPanel("ChiTietNhap", record)} refreshData={refreshData} />
   ) : (
     <BangXuat setSelectedRecord={(record) => handleOpenRightPanel("ChiTietXuat", record)} />
   );
 
   return (
-        <div className="flex flex-1 overflow-auto bg-gray-100">
-          {/* Left Panel */}
-          <div className={`transition-all duration-300 ${selectedRecord || activeRightPanel ? "w-3/5" : "w-full"}`}>
-            {/* Tabs */}
-            <div className="flex border-b bg-white">
-              <button className={`py-3.5 px-6 font-semibold flex-1 text-center ${activeTab === "nhap" ? "border-b-4 border-gray-800 text-orange-400" : "text-black"}`}
-                onClick={() => setActiveTab("nhap")}
-              >
-                Ghi Nhập
-              </button>
-              <button className={`py-3.5 px-6 font-semibold flex-1 text-center ${activeTab === "xuat" ? "border-b-4 border-gray-800 text-orange-400" : "text-black"}`}
-                onClick={() => setActiveTab("xuat")}
-              >
-                Ghi Xuất
-              </button>
-            </div>
-
-            {/* Header */}
-            <div className="flex items-center justify-between p-2 bg-white shadow-md">
-              <h2 className="text-xl font-semibold">{activeTab === "nhap" ? "Danh sách Ghi Nhập" : "Danh sách Ghi Xuất"}</h2>
-
-              {/* Nút Thêm */}
-              <button
-                className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
-                onClick={() => handleOpenRightPanel(activeTab === "nhap" ? addForms.Nhap : addForms.Xuat)}
-              >
-                <i className="mr-2 fas fa-plus"></i> Thêm
-              </button>
-            </div>
-            <LeftPanel activeComponent={leftPanelComponent} />
-          </div>
-
-          {/* RightPanel */}
-          {activeRightPanel && (
-            <div className="w-2/5 transition-all duration-300">
-              <RightPanel activeComponent={rightPanelComponent} onClose={handleCloseRightPanel} />
-            </div>
-          )}
+    <div className="flex flex-1 overflow-auto bg-gray-100">
+      {/* Left Panel */}
+      <div className={`flex flex-col transition-all duration-300 ${selectedRecord || activeRightPanel ? "w-3/5" : "w-full"}`}>
+        {/* Tabs */}
+        <div className="flex border-b bg-white">
+          <button className={`py-3.5 px-6 font-semibold flex-1 text-center ${activeTab === "nhap" ? "border-b-4 border-gray-800 text-orange-400" : "text-black"}`}
+            onClick={() => setActiveTab("nhap")}
+          >
+            Ghi Nhập
+          </button>
+          <button className={`py-3.5 px-6 font-semibold flex-1 text-center ${activeTab === "xuat" ? "border-b-4 border-gray-800 text-orange-400" : "text-black"}`}
+            onClick={() => setActiveTab("xuat")}
+          >
+            Ghi Xuất
+          </button>
         </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-2 bg-white shadow-md">
+          <h2 className="text-xl font-semibold">{activeTab === "nhap" ? "Danh sách Ghi Nhập" : "Danh sách Ghi Xuất"}</h2>
+
+          {/* Nút Thêm */}
+          <button
+            className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
+            onClick={() => handleOpenRightPanel(activeTab === "nhap" ? addForms.Nhap : addForms.Xuat)}
+          >
+            <i className="mr-2 fas fa-plus"></i> Thêm
+          </button>
+        </div>
+        <LeftPanel activeComponent={leftPanelComponent} />
+      </div>
+
+      {/* RightPanel */}
+      {activeRightPanel && (
+        <div className="w-2/5 transition-all duration-300">
+          <RightPanel activeComponent={rightPanelComponent} onClose={handleCloseRightPanel} />
+        </div>
+      )}
+    </div>
   );
 };
 

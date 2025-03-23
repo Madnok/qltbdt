@@ -40,10 +40,29 @@ const FormNhap = ({ onClose, refreshData }) => {
     }, [phieuNhapId]);
 
     const handleAddThietBi = (newThietBi) => {
-        setThietBiNhap((prev) => [...prev, {
-            ...newThietBi,
-        }]);
-        console.log("Danh sách thiết bị sau khi thêm:", [...thietBiNhap, newThietBi]);
+        setThietBiNhap((prev) => {
+            const existingIndex = prev.findIndex(
+                (tb) =>
+                    tb.thietbi_id === newThietBi.thietbi_id &&
+                    tb.tenThietBi === newThietBi.tenThietBi &&
+                    tb.thoiGianBaoHanh === newThietBi.thoiGianBaoHanh
+            );
+    
+            if (existingIndex !== -1) {
+                // Nếu thiết bị đã tồn tại với cùng ID, tên và thời gian bảo hành => Cộng dồn số lượng
+                const updatedList = [...prev];
+                updatedList[existingIndex] = {
+                    ...updatedList[existingIndex],
+                    soLuong: updatedList[existingIndex].soLuong + newThietBi.soLuong,
+                };
+                return updatedList;
+            } else {
+                // Nếu thiết bị khác ID hoặc khác tên hoặc khác thời gian bảo hành => Thêm mới
+                return [...prev, newThietBi];
+            }
+        });
+    
+        console.log("Danh sách thiết bị sau khi thêm:", thietBiNhap);
     };
 
     const handleDeleteThietBi = (thietbi_id) => {
