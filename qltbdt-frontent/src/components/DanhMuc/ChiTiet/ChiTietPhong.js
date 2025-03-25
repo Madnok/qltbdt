@@ -70,30 +70,30 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     };
 
     // Xóa thiết bị trong phòng
-    const handleDeleteThietBi = async (thietbi_id) => {
-        console.log("Gỡ thiết bị ID:", thietbi_id);
-
+    const handleDeleteThietBi = async (thietbi_id, soLuong) => {
+        console.log("Gỡ thiết bị ID:", thietbi_id, "Số lượng:", soLuong);
+    
         if (!window.confirm("Bạn có chắc chắn muốn gỡ thiết bị này khỏi phòng không?")) return;
-
+    
         try {
             await axios.post("http://localhost:5000/api/phong/xoathietbi", {
                 phong_id: record.id,
                 thietbi_id,
+                soLuong,
             });
-
+    
             // Cập nhật danh sách thiết bị sau khi xóa
             const updatedThietBiList = thietBiList.filter(tb => tb.thietbi_id !== thietbi_id);
             setThietBiList(updatedThietBiList);
             setFilteredThietBiList(updatedThietBiList);
-
+    
             alert("Xóa Thiết Bị Khỏi Phòng Thành Công!");
             refreshData();
         } catch (error) {
             console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error);
         }
     };
-
-
+    
 
     // Xóa phòng
     const handleDelete = async () => {
@@ -219,7 +219,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                             placeholder="Tìm Kiếm..."
                             value={searchTerm}
                             onChange={handleSearch}
-                            className="py-1 pl-10 pr-4 border rounded-lg md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="py-1 pl-10 pr-4 border rounded-lg md:w-full focus:inline-none"
                         />
                         <BsSearch className="absolute text-gray-400 left-3 top-2" />
                     </div>
@@ -243,7 +243,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                                         <td className="px-4 py-2 text-center border">{getTinhTrangLabel(tb.tinhTrang)}</td>
                                         <td className="px-4 py-2 text-center border">
                                             <button
-                                                onClick={() => handleDeleteThietBi(tb.thietbi_id)}
+                                                onClick={() => handleDeleteThietBi(tb.thietbi_id, tb.soLuong)}
                                                 className="text-red-500 hover:text-red-700"
                                             >
                                                 <BsTrash />

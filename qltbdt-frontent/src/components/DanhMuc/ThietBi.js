@@ -9,11 +9,30 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
     const itemsPerPage = 10; // Giới hạn 10 dòng mỗi trang
 
     // Hàm tải dữ liệu
-    const fetchData = () => {
-        axios.get("http://localhost:5000/api/thietbi")
-            .then(response => setData(response.data))
-            .catch(error => console.error("Lỗi tải dữ liệu:", error));
+    const fetchData = async () => {
+        try {
+            // Gọi API lấy danh sách thiết bị
+            const thietBiResponse = await axios.get("http://localhost:5000/api/thietbi");
+            // Gọi API lấy tổng số lượng nhập
+            const tongSoLuongNhapResponse = await axios.get("http://localhost:5000/api/thietbi/tongsoluongnhap");
+    
+            // Kết hợp dữ liệu từ hai API
+            const mergedData = thietBiResponse.data.map((item) => {
+                const tongNhap = tongSoLuongNhapResponse.data.find(
+                    (nhap) => nhap.id === item.id
+                );
+                return {
+                    ...item,
+                    tongSoLuongNhap: tongNhap ? tongNhap.tongSoLuongNhap : 0, // Nếu không tìm thấy thì mặc định là 0
+                };
+            });
+    
+            setData(mergedData); // Cập nhật state `data` với dữ liệu đã kết hợp
+        } catch (error) {
+            console.error("Lỗi tải dữ liệu:", error);
+        }
     };
+    
 
     useEffect(() => {
         fetchData();
@@ -46,13 +65,15 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                             <th className="px-4 py-2 border-b">ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
                             <th className="px-4 py-2 border-b">Mô Tả</th>
+                            <th className="px-4 py-2 border-b">Tổng Nhập</th>
                             <th className="px-4 py-2 border-b">Tồn Kho</th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
                         </tr>
                     </thead>
                     <tbody>
                         {currentItems.map((record, index) => (
-                            <tr key={record.id}
+                            <tr
+                                key={record.id}
                                 className="text-center cursor-pointer hover:bg-gray-100"
                                 onClick={() => selectRecord(record)}
                             >
@@ -60,11 +81,13 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
                                 <td className="p-2 border">TB{record.id}</td>
                                 <td className="p-2 border">{record.tenThietBi}</td>
                                 <td className="p-2 border">{record.moTa}</td>
-                                <td className="p-2 border">{record.tonKho}</td>
+                                <td className="p-2 border"><strong className="font-bold text-green-600">{record.tongSoLuongNhap}</strong></td>
+                                <td className="p-2 border"><strong className="font-bold text-red-500">{record.tonKho}</strong></td>
                                 <td className="p-2 border">{formatPrice(record.donGia)}</td>
                             </tr>
                         ))}
                     </tbody>
+
                 </table>
             </div>
 

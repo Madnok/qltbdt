@@ -77,5 +77,30 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+router.get("/theloai/:id", async (req, res) => {
+    const db = await pool.getConnection();
+    try {
+        const { id } = req.params;
+
+        // Lấy danh sách thiết bị theo thể loại
+        const dsThietBi = await db.query(
+            `SELECT tb.id, tb.tenThietBi, 
+                    COALESCE(tt.soLuong, 0) - COALESCE(ptb.totalUsed, 0) AS tonKho
+             FROM thietbi tb
+             LEFT JOIN thongtinthietbi tt ON tb.id = tt.thietbi_id
+             LEFT JOIN (
+                SELECT thietbi_id, SUM(soLuong) AS totalUsed FROM phong_thietbi GROUP BY thietbi_id
+             ) ptb ON tb.id = ptb.thietbi_id
+             WHERE tb.theloai_id = ?`,
+            [id]
+        );
+
+        res.json({ dsThietBi });
+    } catch (error) {
+        res.status(500).json({ error: "Lỗi tải danh sách thiết bị" });
+    } finally {
+        db.release();
+    }
+});
 
 module.exports = router;

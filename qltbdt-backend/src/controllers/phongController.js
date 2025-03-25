@@ -99,7 +99,7 @@ exports.getListPhong = async (req, res) => {
     }
 };
 
-// Thêm thiết bị vào phòng
+// Thêm thiết bị vào phòng và cập nhật tồn kho
 exports.addThietBiToPhong = async (req, res) => {
     try {
         const thietbiList = req.body; // Nhận danh sách thiết bị
@@ -124,14 +124,18 @@ exports.addThietBiToPhong = async (req, res) => {
                 "INSERT INTO phong_thietbi (phong_id, thietbi_id, thongtinthietbi_id, soLuong) VALUES (?, ?, ?, ?)",
                 [phong_id, thietbi_id, thongtinthietbi_id, soLuong]
             );
+
+            // Cập nhật tồn kho
+            await pool.query("UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?", [soLuong, thietbi_id]);
         }
 
-        res.json({ success: true, message: "Thêm thiết bị vào phòng thành công!" });
+        res.json({ success: true, message: "Thêm thiết bị vào phòng và cập nhật tồn kho thành công!" });
     } catch (error) {
         console.error("Lỗi thêm thiết bị vào phòng:", error);
         res.status(500).json({ success: false, message: "Lỗi server!" });
     }
 };
+
 
 // Lấy Danh Sách Thiết Bị Trong Phòng
 exports.getThietBiTrongPhong = async (req, res) => {
@@ -188,18 +192,18 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 };
 
-// Xóa thiết bị khỏi phòng
+// Xóa thiết bị khỏi phòng và cập nhật tồn kho
 exports.removeThietBiFromPhong = async (req, res) => {
-    const { phong_id, thietbi_id } = req.body;
-
-    if (!phong_id || !thietbi_id) {
-        return res.status(400).json({ error: "Vui lòng cung cấp phòng_id và thietbi_id!" });
-    }
-
     try {
+        const { phong_id, thietbi_id, soLuong } = req.body;
+
+        if (!phong_id || !thietbi_id) {
+            return res.status(400).json({ error: "Thiếu dữ liệu, vui lòng kiểm tra lại!" });
+        }
+
         // Kiểm tra xem thiết bị có tồn tại trong phòng không
         const [existing] = await pool.query(
-            "SELECT * FROM phong_thietbi WHERE phong_id = ? AND thietbi_id = ?",
+            "SELECT soLuong FROM phong_thietbi WHERE phong_id = ? AND thietbi_id = ?",
             [phong_id, thietbi_id]
         );
 
@@ -207,14 +211,23 @@ exports.removeThietBiFromPhong = async (req, res) => {
             return res.status(404).json({ error: "Thiết bị không tồn tại trong phòng này!" });
         }
 
-        // Xóa thiết bị khỏi phòng
-        await pool.query(
-            "DELETE FROM phong_thietbi WHERE phong_id = ? AND thietbi_id = ? LIMIT 1",
-            [phong_id, thietbi_id]
-        );
+        const currentSoLuong = existing[0].soLuong;
 
-        res.status(200).json({ message: "Xóa thiết bị khỏi phòng thành công!" });
+        if (soLuong >= currentSoLuong) {
+            // Nếu số lượng yêu cầu xóa lớn hơn hoặc bằng số lượng trong phòng, xóa hoàn toàn thiết bị
+            await pool.query("DELETE FROM phong_thietbi WHERE phong_id = ? AND thietbi_id = ?", [phong_id, thietbi_id]);
+        } else {
+            // Nếu số lượng yêu cầu xóa nhỏ hơn, chỉ cập nhật số lượng
+            await pool.query("UPDATE phong_thietbi SET soLuong = soLuong - ? WHERE phong_id = ? AND thietbi_id = ?", [soLuong, phong_id, thietbi_id]);
+        }
+
+        // Cập nhật tồn kho
+        await pool.query("UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?", [soLuong, thietbi_id]);
+
+        res.status(200).json({ message: "Xóa thiết bị khỏi phòng và cập nhật tồn kho thành công!" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Lỗi khi xóa thiết bị khỏi phòng:", error);
+        res.status(500).json({ error: "Lỗi server!" });
     }
 };
+

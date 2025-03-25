@@ -455,17 +455,17 @@ const FormPhong = ({ onClose, refreshData }) => {
     const [thietBiTrongPhong, setThietBiTrongPhong] = useState([]);
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/phong")
-            .then(response => setNewId(response.data.length + 1))
-            .catch(error => console.error("Lỗi tải danh sách phòng:", error));
-
-        axios.get("http://localhost:5000/api/phong/phonglist")
-            .then(response => setPhongList(response.data))
-            .catch(error => console.error("Lỗi tải danh sách phòng:", error));
-
-        axios.get("http://localhost:5000/api/theloai")
-            .then(response => setTheLoaiList(response.data))
-            .catch(error => console.error("Lỗi tải thể loại:", error));
+        Promise.all([
+            axios.get("http://localhost:5000/api/phong"),
+            axios.get("http://localhost:5000/api/phong/phonglist"),
+            axios.get("http://localhost:5000/api/theloai")
+        ])
+        .then(([phongRes, phongListRes, theLoaiRes]) => {
+            setNewId(phongRes.data.length + 1);
+            setPhongList(phongListRes.data);
+            setTheLoaiList(theLoaiRes.data);
+        })
+        .catch(error => console.error("Lỗi tải dữ liệu:", error));
     }, []);
 
     // Khi chọn thể loại, lấy danh sách thiết bị

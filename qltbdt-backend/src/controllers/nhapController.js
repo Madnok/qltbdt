@@ -90,8 +90,6 @@ exports.createPhieuNhap = async (req, res) => {
 };
 
 
-
-
 // Lấy danh sách thiết bị trong phiếu nhập
 exports.getThietBiInPhieuNhap = async (req, res) => {
     const { phieuNhapId } = req.params;

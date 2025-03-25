@@ -10,6 +10,23 @@ exports.getAllThietBi = async (req, res) => {
     }
 };
 
+// Lấy tổng số lượng nhập cho từng thiết bị
+exports.getAllThietBiFromPhieuNhap = async (req, res) => {
+    try {
+        const [results] = await pool.query(`
+            SELECT thietbi.id, thietbi.tenThietBi, SUM(thongtinthietbi.soLuong) AS tongSoLuongNhap
+            FROM thietbi
+            JOIN thongtinthietbi ON thietbi.id = thongtinthietbi.thietbi_id
+            GROUP BY thietbi.id, thietbi.tenThietBi
+        `);
+        res.status(200).json(results);
+    } catch (error) {
+        console.error("Lỗi khi lấy tổng số lượng nhập:", error);
+        res.status(500).json({ error: "Lỗi server!" });
+    }
+};
+
+
 //  Lấy chi tiết thiết bị theo ID lấy cả tên thể loại và id thể loại
 exports.getThietBiById = async (req, res) => {
     const { id } = req.params;
@@ -91,13 +108,21 @@ exports.deleteThietBi = async (req, res) => {
     }
 };
 
-// lấy thông tin thiết bị từ bảng tttb
+// Lấy thông tin thiết bị, trừ đi số lượng đã gán vào phòng
 exports.getThongTinThietBi = async (req, res) => {
     const { thietbi_id } = req.params;
 
     try {
         const [result] = await pool.query(
-            "SELECT id AS thongtinthietbi_id FROM thongtinthietbi WHERE thietbi_id = ? LIMIT 1",
+            `SELECT tttb.id AS thongtinthietbi_id, 
+                    tb.id AS thietbi_id, 
+                    tb.tenThietBi, 
+                    (tb.tonKho - IFNULL(SUM(ptb.soLuong), 0)) AS tonKhoConLai
+             FROM thongtinthietbi tttb
+             JOIN thietbi tb ON tttb.thietbi_id = tb.id
+             LEFT JOIN phong_thietbi ptb ON tb.id = ptb.thietbi_id
+             WHERE tb.id = ?
+             GROUP BY tb.id, tttb.id`,
             [thietbi_id]
         );
 
