@@ -72,24 +72,28 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     // Xóa thiết bị trong phòng
     const handleDeleteThietBi = async (thietbi_id) => {
         console.log("Gỡ thiết bị ID:", thietbi_id);
-    
+
         if (!window.confirm("Bạn có chắc chắn muốn gỡ thiết bị này khỏi phòng không?")) return;
-    
+
         try {
-            const response = await axios.post("http://localhost:5000/api/phong/xoathietbi", {
+            await axios.post("http://localhost:5000/api/phong/xoathietbi", {
                 phong_id: record.id,
                 thietbi_id,
             });
-    
-            setThietBiList(response.data);
-            setFilteredThietBiList(response.data);
-    
+
+            // Cập nhật danh sách thiết bị sau khi xóa
+            const updatedThietBiList = thietBiList.filter(tb => tb.thietbi_id !== thietbi_id);
+            setThietBiList(updatedThietBiList);
+            setFilteredThietBiList(updatedThietBiList);
+
             alert("Xóa Thiết Bị Khỏi Phòng Thành Công!");
+            refreshData();
         } catch (error) {
             console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error);
         }
     };
-    
+
+
 
     // Xóa phòng
     const handleDelete = async () => {
@@ -189,7 +193,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                 <div>
                     <label className="font-semibold">Chức Năng:</label>
                     <input type="text" name="chucNang" value={editData.chucNang}
-                        onChange={handleChange} className="w-full p-2 border"
+                        onChange={handleChange} className="w-full p-2 bg-gray-100 border"
                         disabled={!isEditing} />
                 </div>
             </div>
@@ -198,30 +202,30 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
             {isEditing && (
                 <div className="grid grid-cols-3 gap-2 p-2">
                     <p></p>
-                    <div className="space-x-2 flex flex-row">
-                        <button className="px-2 py-2 w-1/2 text-white bg-green-500 rounded"
+                    <div className="flex flex-row space-x-2">
+                        <button className="w-1/2 px-2 py-2 text-white bg-green-500 rounded"
                             onClick={handleSave}>Lưu</button>
-                        <button className="px-2 py-2 w-1/2 text-white bg-gray-500 rounded"
+                        <button className="w-1/2 px-2 py-2 text-white bg-gray-500 rounded"
                             onClick={handleCancel}>Hủy</button>
                     </div>
                 </div>
             )}
             <div className="p-4 bg-white rounded-lg">
-                <div className="grid grid-cols-2 gap-2 items-center overflow-x-auto ">
-                    <h3 className="text-xl font-semibold mb-4">Các Thiết Bị Có Trong Phòng</h3>
-                    <div className="pb-4 flex flex-col md:flex-row justify-between gap-4 relative">
+                <div className="grid items-center grid-cols-2 gap-2 overflow-x-auto ">
+                    <h3 className="mb-4 text-xl font-semibold">Các Thiết Bị Có Trong Phòng</h3>
+                    <div className="relative flex flex-col justify-between gap-4 pb-4 md:flex-row">
                         <input
                             type="text"
                             placeholder="Tìm Kiếm..."
                             value={searchTerm}
                             onChange={handleSearch}
-                            className="md:w-80 pl-10 pr-4 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="py-1 pl-10 pr-4 border rounded-lg md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <BsSearch className="absolute left-3 top-2 text-gray-400" />
+                        <BsSearch className="absolute text-gray-400 left-3 top-2" />
                     </div>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full table-auto border border-gray-300">
+                    <table className="w-full border border-gray-300 table-auto">
                         <thead className="bg-gray-100">
                             <tr>
                                 <th className="px-4 py-2 border">Tên Thiết Bị</th>
@@ -235,9 +239,9 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                                 filteredThietBiList.map((tb) => (
                                     <tr key={tb.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-2 border">{tb.tenThietBi}</td>
-                                        <td className="px-4 py-2 border text-center">{tb.soLuong}</td>
-                                        <td className="px-4 py-2 border text-center">{getTinhTrangLabel(tb.tinhTrang)}</td>
-                                        <td className="px-4 py-2 border text-center">
+                                        <td className="px-4 py-2 text-center border">{tb.soLuong}</td>
+                                        <td className="px-4 py-2 text-center border">{getTinhTrangLabel(tb.tinhTrang)}</td>
+                                        <td className="px-4 py-2 text-center border">
                                             <button
                                                 onClick={() => handleDeleteThietBi(tb.thietbi_id)}
                                                 className="text-red-500 hover:text-red-700"

@@ -243,7 +243,7 @@
 //             </div>
 //             <div className="flex items-center bg-white">
 //                 {/* Tabs */}
-//                 <div className="flex-1 flex border-b bg-white">
+//                 <div className="flex flex-1 bg-white border-b">
 //                     <button
 //                         className={`flex-1 text-center py-4 font-semibold ${activeTab === "themPhong" ? "border-b-4 border-green-500 text-green-500" : "text-gray-400"}`}
 //                         onClick={() => setActiveTab("themPhong")}
@@ -260,7 +260,7 @@
 //             </div>
 //             {/* Dữ Liệu Thêm Phòng Mới */}
 //             {activeTab === "themPhong" && (
-//                 <div className="grid grid-cols-2 p-2 space-2 gap-2 mb-2">
+//                 <div className="grid grid-cols-2 gap-2 p-2 mb-2 space-2">
 //                     {/* Cơ sở */}
 //                     <div>
 //                         <label className="block font-medium">Cơ Sở</label>
@@ -366,22 +366,22 @@
 //                             ))}
 //                         </select>
 //                     </div>
-//                     <div className="grid grid-cols-2 gap-2 items-center pb-4">
+//                     <div className="grid items-center grid-cols-2 gap-2 pb-4">
 //                         <button
 //                             onClick={handleSaveThietBi}
-//                             className="w-full p-1 text-sm text-white bg-green-500 border rounded hover:bg-green-600 transition-colors"
+//                             className="w-full p-1 text-sm text-white transition-colors bg-green-500 border rounded hover:bg-green-600"
 //                         >
 //                             Lưu Thiết Bị
 //                         </button>
 //                         <button
 //                             onClick={handleAddThietBi}
-//                             className="w-full p-1 text-sm text-white rounded bg-blue-500 hover:bg-blue-600 transition-colors"
+//                             className="w-full p-1 text-sm text-white transition-colors bg-blue-500 rounded hover:bg-blue-600"
 //                         >
 //                             Thêm Thiết Bị
 //                         </button>
 //                     </div>
 
-//                     <table className="w-full table-auto border border-gray-300">
+//                     <table className="w-full border border-gray-300 table-auto">
 //                         <thead className="bg-gray-100">
 //                             <tr>
 //                                 <th className="px-4 py-1 border">Phòng</th>
@@ -394,9 +394,9 @@
 //                         <tbody>
 //                             {thietBiTrongPhong.map((item, index) => (
 //                                 <tr key={index}>
-//                                     <td className="px-4 py-1 border text-center">{item.phong}</td>
-//                                     <td className="px-4 py-1 border text-center">{item.ten}</td>
-//                                     <td className="px-4 py-1 border text-center">
+//                                     <td className="px-4 py-1 text-center border">{item.phong}</td>
+//                                     <td className="px-4 py-1 text-center border">{item.ten}</td>
+//                                     <td className="px-4 py-1 text-center border">
 //                                         <input
 //                                             type="number"
 //                                             value={item.soLuong}
@@ -405,11 +405,11 @@
 //                                             min="1"
 //                                         />
 //                                     </td>
-//                                     <td className="px-4 py-1 border text-center">
-//                                         <medium className="text-gray-500 ml-2">{dsThietBi.find(tb => tb.tenThietBi === item.ten)?.tonKho || 0}</medium>
+//                                     <td className="px-4 py-1 text-center border">
+//                                         <medium className="ml-2 text-gray-500">{dsThietBi.find(tb => tb.tenThietBi === item.ten)?.tonKho || 0}</medium>
 //                                     </td>
 
-//                                     <td className="px-4 py-1 border text-center">
+//                                     <td className="px-4 py-1 text-center border">
 //                                         <button
 //                                             onClick={() => handleDelete(index)}
 //                                             className="px-2 py-1 text-white bg-red-500 rounded"
@@ -589,6 +589,7 @@ const FormPhong = ({ onClose, refreshData }) => {
         setThietBiTrongPhong(updatedList);
     };
 
+
     // Xử lý nhập liệu số lượng
     const handleInputChange = (e, index) => {
         const newSoLuong = parseInt(e.target.value) || 1; // Đảm bảo giá trị hợp lệ
@@ -666,6 +667,7 @@ const FormPhong = ({ onClose, refreshData }) => {
             if (response.data.success) {
                 alert("Lưu thành công!");
                 setThietBiTrongPhong([]); // Reset danh sách sau khi lưu
+                refreshData();
             } else {
                 throw new Error(response.data.message);
             }
@@ -688,7 +690,7 @@ const FormPhong = ({ onClose, refreshData }) => {
             </div>
             <div className="flex items-center bg-white">
                 {/* Tabs */}
-                <div className="flex-1 flex border-b bg-white">
+                <div className="flex flex-1 bg-white border-b">
                     <button
                         className={`flex-1 text-center py-4 font-semibold ${activeTab === "themPhong" ? "border-b-4 border-green-500 text-green-500" : "text-gray-400"}`}
                         onClick={() => setActiveTab("themPhong")}
@@ -705,7 +707,7 @@ const FormPhong = ({ onClose, refreshData }) => {
             </div>
             {/* Dữ Liệu Thêm Phòng Mới */}
             {activeTab === "themPhong" && (
-                <div className="grid grid-cols-2 p-2 space-2 gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-2 p-2 mb-2 space-2">
                     {/* Cơ sở */}
                     <div>
                         <label className="block font-medium">Cơ Sở</label>
@@ -811,22 +813,22 @@ const FormPhong = ({ onClose, refreshData }) => {
                             ))}
                         </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 items-center pb-4">
+                    <div className="grid items-center grid-cols-2 gap-2 pb-4">
                         <button
                             onClick={handleSaveThietBi}
-                            className="w-full p-1 text-sm text-white bg-green-500 border rounded hover:bg-green-600 transition-colors"
+                            className="w-full p-1 text-sm text-white transition-colors bg-green-500 border rounded hover:bg-green-600"
                         >
                             Lưu Thiết Bị
                         </button>
                         <button
                             onClick={handleAddThietBi}
-                            className="w-full p-1 text-sm text-white rounded bg-blue-500 hover:bg-blue-600 transition-colors"
+                            className="w-full p-1 text-sm text-white transition-colors bg-blue-500 rounded hover:bg-blue-600"
                         >
                             Thêm Thiết Bị
                         </button>
                     </div>
 
-                    <table className="w-full table-auto border border-gray-300">
+                    <table className="w-full border border-gray-300 table-auto">
                         <thead className="bg-gray-100">
                             <tr>
                                 <th className="px-4 py-1 border">Phòng</th>
@@ -839,9 +841,9 @@ const FormPhong = ({ onClose, refreshData }) => {
                         <tbody>
                             {thietBiTrongPhong.map((item, index) => (
                                 <tr key={index}>
-                                    <td className="px-4 py-1 border text-center">{item.phong}</td>
-                                    <td className="px-4 py-1 border text-center">{item.ten}</td>
-                                    <td className="px-4 py-1 border text-center">
+                                    <td className="px-4 py-1 text-center border">{item.phong}</td>
+                                    <td className="px-4 py-1 text-center border">{item.ten}</td>
+                                    <td className="px-4 py-1 text-center border">
                                         <input
                                             type="number"
                                             value={item.soLuong}
@@ -850,11 +852,11 @@ const FormPhong = ({ onClose, refreshData }) => {
                                             min="1"
                                         />
                                     </td>
-                                    <td className="px-4 py-1 border text-center">
-                                        <medium className="text-gray-500 ml-2">{dsThietBi.find(tb => tb.tenThietBi === item.ten)?.tonKho || 0}</medium>
+                                    <td className="px-4 py-1 text-center border">
+                                        <medium className="ml-2 text-gray-500">{dsThietBi.find(tb => tb.tenThietBi === item.ten)?.tonKho || 0}</medium>
                                     </td>
 
-                                    <td className="px-4 py-1 border text-center">
+                                    <td className="px-4 py-1 text-center border">
                                         <button
                                             onClick={() => handleDelete(index)}
                                             className="px-2 py-1 text-white bg-red-500 rounded"

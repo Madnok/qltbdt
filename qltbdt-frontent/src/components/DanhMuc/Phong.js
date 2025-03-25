@@ -81,7 +81,7 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 {/* Kiểm tra nếu bất kỳ filter nào đang được bật */}
                                 {Object.values(filter).some(value => value) && (
                                     <AiOutlineClose
-                                        className="text-red-500 cursor-pointer text-xl hover:text-red-600 transition"
+                                        className="text-xl text-red-500 transition cursor-pointer hover:text-red-600"
                                         onClick={() => {
                                             setFilter({ coSo: "", toa: "", tang: "", soPhong: "" });
                                             setActiveFilter(null);
@@ -97,7 +97,7 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                     onClick={() => setActiveFilter(activeFilter === "coSo" ? null : "coSo")}
                                 />
                                 {activeFilter === "coSo" && (
-                                    <div className="absolute bg-white border mt-2 z-10">
+                                    <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("coSo").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
                                                 onClick={() => { setFilter({ ...filter, coSo: value }); setActiveFilter(null); }}
@@ -124,12 +124,12 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 <div className="flex flex-row justify-center">
                                     {filter.toa && (
                                         <AiOutlineClose
-                                            className="text-red-500 cursor-pointer ml-2"
+                                            className="ml-2 text-red-500 cursor-pointer"
                                             onClick={() => setFilter({ ...filter, toa: "" })}
                                         />
                                     )}
                                     {activeFilter === "toa" && (
-                                        <div className="absolute bg-white border mt-2 z-10">
+                                        <div className="absolute z-10 mt-2 bg-white border">
                                             {getDropdownValues("toa").map(value => (
                                                 <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
                                                     onClick={() => { setFilter({ ...filter, toa: value }); setActiveFilter(null); }}
@@ -150,12 +150,12 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 />
                                 {filter.tang && (
                                     <AiOutlineClose
-                                        className="text-red-500 cursor-pointer ml-2"
+                                        className="ml-2 text-red-500 cursor-pointer"
                                         onClick={() => setFilter({ ...filter, tang: "" })}
                                     />
                                 )}
                                 {activeFilter === "tang" && (
-                                    <div className="absolute bg-white border mt-2 z-10">
+                                    <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("tang").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
                                                 onClick={() => { setFilter({ ...filter, tang: value }); setActiveFilter(null); }}
@@ -175,12 +175,12 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 />
                                 {filter.soPhong && (
                                     <AiOutlineClose
-                                        className="text-red-500 cursor-pointer ml-2"
+                                        className="ml-2 text-red-500 cursor-pointer"
                                         onClick={() => setFilter({ ...filter, soPhong: "" })}
                                     />
                                 )}
                                 {activeFilter === "soPhong" && (
-                                    <div className="absolute bg-white border mt-2 z-10">
+                                    <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("soPhong").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
                                                 onClick={() => { setFilter({ ...filter, soPhong: value }); setActiveFilter(null); }}
@@ -194,12 +194,12 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                         </th>
                         <th className="px-4 py-2 border-b">Chức Năng
                             <div className="flex flex-row justify-center">
-                                <p className="mt-3 z-10"> </p>
+                                <p className="z-10 mt-3"> </p>
                             </div>
                         </th>
                         <th className="px-4 py-2 text-sm border-b">Danh Sách TB
                             <div className="flex flex-row justify-center">
-                                <p className="mt-3 z-10"> </p>
+                                <p className="z-10 mt-3"> </p>
                             </div>
                         </th>
                     </tr>
