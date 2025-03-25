@@ -40,31 +40,42 @@ const FormNhap = ({ onClose, refreshData }) => {
     }, [phieuNhapId]);
 
     const handleAddThietBi = (newThietBi) => {
+        let isDuplicate = false;
+    
         setThietBiNhap((prev) => {
             const existingIndex = prev.findIndex(
-                (tb) =>
-                    tb.thietbi_id === newThietBi.thietbi_id &&
-                    tb.tenThietBi === newThietBi.tenThietBi &&
-                    tb.thoiGianBaoHanh === newThietBi.thoiGianBaoHanh
+                (tb) => tb.thietbi_id === newThietBi.thietbi_id && tb.tenThietBi === newThietBi.tenThietBi
             );
     
             if (existingIndex !== -1) {
-                // Nếu thiết bị đã tồn tại với cùng ID, tên và thời gian bảo hành => Cộng dồn số lượng
-                const updatedList = [...prev];
-                updatedList[existingIndex] = {
-                    ...updatedList[existingIndex],
-                    soLuong: updatedList[existingIndex].soLuong + newThietBi.soLuong,
-                };
-                return updatedList;
+                // Nếu tìm thấy thiết bị có cùng ID và tên
+                if (prev[existingIndex].thoiGianBaoHanh === newThietBi.thoiGianBaoHanh) {
+                    // Cùng thời gian bảo hành thì Cộng dồn số lượng
+                    const updatedList = [...prev];
+                    updatedList[existingIndex] = {
+                        ...updatedList[existingIndex],
+                        soLuong: updatedList[existingIndex].soLuong + newThietBi.soLuong,
+                    };
+                    return updatedList;
+                } else {
+                    // Khác thời gian bảo hành => Đánh dấu lỗi
+                    isDuplicate = true;
+                    return prev;
+                }
             } else {
-                // Nếu thiết bị khác ID hoặc khác tên hoặc khác thời gian bảo hành => Thêm mới
+                // Nếu không tìm thấy thiết bị trùng, thêm mới
                 return [...prev, newThietBi];
             }
         });
     
+        // Hiện alert ngoài setState
+        if (isDuplicate) {
+            alert(`Vui lòng nhập cùng thời gian bảo hành cho 1 lô thiết bị ${newThietBi.tenThietBi} giống nhau.`);
+        }
+    
         console.log("Danh sách thiết bị sau khi thêm:", thietBiNhap);
     };
-
+    
     const handleDeleteThietBi = (thietbi_id) => {
         setThietBiNhap((prev) => prev.filter((tb) => tb.thietbi_id !== thietbi_id));
     };
@@ -78,7 +89,7 @@ const FormNhap = ({ onClose, refreshData }) => {
         }
 
         const data = {
-            userId: 1, // Giả sử user ID là 1 (có thể thay bằng user đăng nhập)
+            userId: 1,
             truongHopNhap,
             ngayTao,
             danhSachThietBi: thietBiNhap, // Gửi luôn danh sách thiết bị nhập
@@ -170,7 +181,7 @@ const FormNhap = ({ onClose, refreshData }) => {
                         ))}
                     </tbody>
                 </table>
-                <div className="space-x-2">
+                <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setShowPhieuNhap(true)} className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
                         Thêm Thiết Bị
                     </button>

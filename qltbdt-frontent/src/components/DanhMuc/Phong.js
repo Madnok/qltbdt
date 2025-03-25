@@ -10,11 +10,47 @@ const Phong = ({ setSelectedRecord, refresh }) => {
     const [filter, setFilter] = useState({ coSo: "", toa: "", tang: "", soPhong: "" });
     const [activeFilter, setActiveFilter] = useState(null);
 
+
+    const fetchTotalDevices = async (phongId) => {
+        try {
+            const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${phongId}`);
+            const devices = response.data; // API trả về danh sách các thiết bị với trường `total`
+
+            if (devices.length > 0) {
+                // Tính tổng số thiết bị từ thuộc tính `total` của thiết bị đầu tiên (giả định tất cả thiết bị có chung `total`)
+                return devices[0].total || 0;
+            }
+
+            return 0; // Nếu không có thiết bị nào, trả về 0
+        } catch (error) {
+            console.error("Lỗi lấy tổng số thiết bị:", error);
+            return 0; // Trả về 0 nếu xảy ra lỗi
+        }
+    };
+
     useEffect(() => {
-        axios.get("http://localhost:5000/api/phong")
-            .then(response => setData(response.data))
-            .catch(error => console.error("Lỗi tải dữ liệu:", error));
+        const fetchData = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/phong");
+                const rooms = response.data;
+
+                // Lấy tổng số thiết bị cho từng phòng
+                const updatedRooms = await Promise.all(
+                    rooms.map(async (room) => {
+                        const totalDevices = await fetchTotalDevices(room.id);
+                        return { ...room, totalDevices }; // Thêm totalDevices vào từng record
+                    })
+                );
+
+                setData(updatedRooms);
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu:", error);
+            }
+        };
+
+        fetchData();
     }, [refresh]);
+
 
     const filteredData = data.filter(record =>
         (!filter.coSo || record.coSo === filter.coSo) &&
@@ -161,6 +197,11 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 <p className="mt-3 z-10"> </p>
                             </div>
                         </th>
+                        <th className="px-4 py-2 text-sm border-b">Danh Sách TB
+                            <div className="flex flex-row justify-center">
+                                <p className="mt-3 z-10"> </p>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -172,6 +213,15 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                             <td className="p-2 border">{record.tang}</td>
                             <td className="p-2 border">{record.soPhong}</td>
                             <td className="p-2 border">{record.chucNang}</td>
+                            <td className="p-2 border">
+                                {record.totalDevices ? (
+                                    <span>Có
+                                        <strong className="font-bold text-red-400"> {record.totalDevices}</strong> thiết bị
+                                        </span>
+                                ) : (
+                                    <span className="text-gray-500">-</span>
+                                )}
+                            </td>
                         </tr>
                     ))}
                 </tbody>

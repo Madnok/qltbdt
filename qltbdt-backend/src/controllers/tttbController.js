@@ -265,3 +265,48 @@ exports.createThietBiCoSan = async (req, res) => {
         res.status(500).send("Lỗi server");
     }
 };
+
+exports.createThemThietBiVaoPhong = async (req, res) => {
+    const { phong_id, thietbi_id, soLuong } = req.body;
+
+    if (!phong_id || !thietbi_id || !soLuong) {
+        return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
+    }
+
+    try {
+        // Lấy tên thiết bị từ bảng thietbi
+        const [thietbiRows] = await pool.query("SELECT tenThietBi FROM thietbi WHERE id = ?", [thietbi_id]);
+        if (thietbiRows.length === 0) {
+            return res.status(400).json({ message: "Thiết bị không tồn tại" });
+        }
+
+        const tenThietBi = thietbiRows[0].tenThietBi;
+
+        // Kiểm tra xem thiết bị này đã có trong phòng chưa
+        const [rows] = await pool.execute(
+            "SELECT id, soLuong FROM thongtinthietbi WHERE thietbi_id = ? AND phong_id = ?",
+            [thietbi_id, phong_id]
+        );
+
+        if (rows.length > 0) {
+            // Nếu đã có thiết bị trong phòng, cập nhật số lượng
+            await pool.execute(
+                "UPDATE thongtinthietbi SET soLuong = soLuong + ? WHERE id = ?",
+                [soLuong, rows[0].id]
+            );
+        } else {
+            // Nếu chưa có, thêm mới vào bảng thongtinthietbi
+            await pool.execute(
+                "INSERT INTO thongtinthietbi (thietbi_id, phong_id, soLuong, tenThietBi) VALUES (?, ?, ?, ?)",
+                [thietbi_id, phong_id, soLuong, tenThietBi]
+            );
+        }
+
+        return res.json({ message: "Lưu thiết bị thành công" });
+    } catch (error) {
+        console.error("Lỗi khi lưu thiết bị:", error);
+        return res.status(500).json({ message: "Lỗi server", error });
+    }
+};
+
+

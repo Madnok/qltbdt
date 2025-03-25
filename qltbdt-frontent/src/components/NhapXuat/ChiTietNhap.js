@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useFormattedPrice } from "../../utils/helpers";
-import FormPhieuNhap from "../forms/FormPhieuNhap";
 
 const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     const formatPrice = useFormattedPrice();
     const [thietBiNhapData, setThietBiNhapData] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [isFormOpen, setIsFormOpen] = useState(false);
     const [backupThietBiNhapData, setBackupThietBiNhapData] = useState([]);
     const [backupTruongHopNhap, setBackupTruongHopNhap] = useState("");
     const [backupThoiGianBaoHanh, setBackupThoiGianBaoHanh] = useState("");
@@ -79,33 +77,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
         setBackupThoiGianBaoHanh(backupThoiGianBaoHanh);
         setIsEditing(false);
     };
-
-    const handleAddDevice = (newDevice) => {
-        setThietBiNhapData((prev) => {
-            const existingIndex = prev.findIndex(
-                (tb) =>
-                    tb.thietbi_id === newDevice.thietbi_id &&
-                    tb.tenThietBi === newDevice.tenThietBi &&
-                    tb.thoiGianBaoHanh === newDevice.thoiGianBaoHanh
-            );
-    
-            if (existingIndex !== -1) {
-                // Nếu thiết bị đã tồn tại với cùng ID, tên và thời gian bảo hành => Cộng dồn số lượng
-                const updatedList = [...prev];
-                updatedList[existingIndex] = {
-                    ...updatedList[existingIndex],
-                    soLuong: updatedList[existingIndex].soLuong + newDevice.soLuong,
-                };
-                return updatedList;
-            } else {
-                // Nếu thiết bị khác ID hoặc khác tên hoặc khác thời gian bảo hành => Thêm mới
-                return [...prev, newDevice];
-            }
-        });
-    
-        console.log("Danh sách thiết bị sau khi thêm:", thietBiNhapData);
-    };
-    
+  
 
     const handleDeletePhieuNhap = () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa phiếu nhập này?")) {
@@ -286,13 +258,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
                     </tbody>
                 </table>
                 {isEditing && (
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                        <button
-                            className="px-4 py-2 text-white bg-yellow-500 rounded"
-                            onClick={() => setIsFormOpen(true)} // Mở FormPhieuNhap
-                        >
-                            Thêm Thiết Bị Khác
-                        </button>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
                         <button
                             className="px-4 py-2 text-white bg-gray-500 rounded"
                             onClick={handleCancelEdit}
@@ -308,15 +274,6 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
                     </div>
                 )}
             </div>
-            {/* FormPhieuNhap */}
-            {isFormOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
-                    <FormPhieuNhap
-                        onClose={() => setIsFormOpen(false)} // Đóng FormPhieuNhap
-                        onAddThietBi={handleAddDevice}
-                    />
-                </div>
-            )}
         </div>
     );
 };

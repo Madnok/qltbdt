@@ -5,6 +5,7 @@ const thietBiController = require("../controllers/thietbiController");
 const router = express.Router();
 
 router.get("/", thietBiController.getAllThietBi);
+router.get("/thongtin/:thietbi_id", thietBiController.getThongTinThietBi);
 router.get("/:id", thietBiController.getThietBiById);
 router.post("/", thietBiController.createThietBi);
 router.put("/:id", thietBiController.updateThietBi);

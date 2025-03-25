@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { getTinhTrangLabel } from "../../../utils/constants";
 
 const ChiTietTTTB = ({ onClose, record, refreshData }) => {
-    const [phongList, setPhongList] = useState([]);
     const [thietBiList, setThietBiList] = useState([]);
     const [editData, setEditData] = useState(record);
     const [isEditing, setIsEditing] = useState(false);
@@ -30,10 +29,6 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     };
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/phong-list")
-            .then(response => setPhongList(response.data))
-            .catch(error => console.error("Lỗi tải danh sách phòng:", error));
-
         axios.get("http://localhost:5000/api/tttb/thietbi-list")
             .then(response => setThietBiList(response.data))
             .catch(error => console.error("Lỗi tải danh sách thiết bị:", error));
@@ -162,31 +157,6 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                         <input
                             type="text"
                             value={getTenThietBi(record.thietbi_id)}
-                            className="w-full p-2 border"
-                            disabled
-                        />
-                    )}
-                </div>
-
-                {/* Chọn Phòng */}
-                <div>
-                    <label className="font-semibold">Phòng:</label>
-                    {isEditing ? (
-                        <select name="phong_id"
-                            value={editData.phong_id || ""}
-                            onChange={handleChange}
-                            className="w-full p-2 border"
-                        >
-                            <option value="">Chưa có</option>
-                            {phongList.map(p => (
-                                <option key={p.id} value={p.id}>{p.phong}</option>
-                            ))}
-                        </select>
-
-                    ) : (
-                        <input
-                            type="text"
-                            value={record && phongList.length > 0 ? phongList.find(p => p.id === record.phong_id)?.phong || "" : ""}
                             className="w-full p-2 border"
                             disabled
                         />

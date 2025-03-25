@@ -91,3 +91,23 @@ exports.deleteThietBi = async (req, res) => {
     }
 };
 
+// lấy thông tin thiết bị từ bảng tttb
+exports.getThongTinThietBi = async (req, res) => {
+    const { thietbi_id } = req.params;
+
+    try {
+        const [result] = await pool.query(
+            "SELECT id AS thongtinthietbi_id FROM thongtinthietbi WHERE thietbi_id = ? LIMIT 1",
+            [thietbi_id]
+        );
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị!" });
+        }
+
+        res.json(result[0]);
+    } catch (error) {
+        console.error("Lỗi lấy thông tin thiết bị:", error);
+        res.status(500).json({ error: "Lỗi server!" });
+    }
+};

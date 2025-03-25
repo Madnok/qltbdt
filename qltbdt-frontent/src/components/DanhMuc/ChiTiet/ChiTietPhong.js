@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { maxTangTheoToa } from "../../../utils/constants";
+import { maxTangTheoToa, getTinhTrangLabel } from "../../../utils/constants";
 import { BsTrash, BsSearch } from "react-icons/bs";
 
 const ChiTietPhong = ({ record, onClose, refreshData }) => {
@@ -11,11 +11,13 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
+        if (!record) return;
+
         setEditData(record);
 
         const fetchData = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/tttb/phong/${record.id}`);
+                const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${record.id}`);
                 setThietBiList(response.data);
                 setFilteredThietBiList(response.data);
             } catch (error) {
@@ -25,6 +27,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
 
         fetchData();
     }, [record]);
+
 
     // Cập nhật dữ liệu khi người dùng thay đổi giá trị input
     const handleChange = (e) => {
@@ -67,23 +70,26 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     };
 
     // Xóa thiết bị trong phòng
-    const handleDeleteThietBi = async (id) => {
-        console.log("Gỡ thiết bị ID:", id);
+    const handleDeleteThietBi = async (thietbi_id) => {
+        console.log("Gỡ thiết bị ID:", thietbi_id);
+    
         if (!window.confirm("Bạn có chắc chắn muốn gỡ thiết bị này khỏi phòng không?")) return;
-
+    
         try {
-            await axios.put(`http://localhost:5000/api/tttb/thietbi/${id}/remove-from-phong`);
-
-            // Gọi lại API để cập nhật danh sách thiết bị
-            const response = await axios.get(`http://localhost:5000/api/tttb/phong/${record.id}`);
+            const response = await axios.post("http://localhost:5000/api/phong/xoathietbi", {
+                phong_id: record.id,
+                thietbi_id,
+            });
+    
             setThietBiList(response.data);
             setFilteredThietBiList(response.data);
-
+    
             alert("Xóa Thiết Bị Khỏi Phòng Thành Công!");
         } catch (error) {
             console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error);
         }
     };
+    
 
     // Xóa phòng
     const handleDelete = async () => {
@@ -220,6 +226,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                             <tr>
                                 <th className="px-4 py-2 border">Tên Thiết Bị</th>
                                 <th className="px-4 py-2 border">Số Lượng</th>
+                                <th className="px-4 py-2 border">Tình Trạng</th>
                                 <th className="px-4 py-2 border">Hành Động</th>
                             </tr>
                         </thead>
@@ -229,13 +236,15 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                                     <tr key={tb.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-2 border">{tb.tenThietBi}</td>
                                         <td className="px-4 py-2 border text-center">{tb.soLuong}</td>
+                                        <td className="px-4 py-2 border text-center">{getTinhTrangLabel(tb.tinhTrang)}</td>
                                         <td className="px-4 py-2 border text-center">
                                             <button
-                                                onClick={() => handleDeleteThietBi(tb.id)}
+                                                onClick={() => handleDeleteThietBi(tb.thietbi_id)}
                                                 className="text-red-500 hover:text-red-700"
                                             >
                                                 <BsTrash />
                                             </button>
+
                                         </td>
                                     </tr>
                                 ))

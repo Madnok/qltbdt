@@ -103,6 +103,13 @@ const DanhMuc = () => {
                                 >
                                     <i className="mr-2 fas fa-plus"></i> Thêm Thiết Bị
                                 </button>
+                            ) : selectedCategory === "Phong" ? (
+                                <button
+                                    onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
+                                    className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
+                                >
+                                    <i className="mr-2 fas fa-plus"></i> Phòng & Thiết Bị
+                                </button>
                             ) : (
                                 <button
                                     onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
@@ -112,6 +119,7 @@ const DanhMuc = () => {
                                 </button>
                             )
                         )}
+
 
                     </div>
                 </div>
@@ -124,7 +132,7 @@ const DanhMuc = () => {
                     <FormPhieuNhap onClose={() => setShowPhieuNhap(false)} />
                 </div>
             )}
-            
+
             {/* Right Panel */}
             {activeRightPanel && (
                 <div className="w-2/5 transition-all duration-300">
@@ -136,6 +144,3 @@ const DanhMuc = () => {
 };
 
 export default DanhMuc;
-
-
-

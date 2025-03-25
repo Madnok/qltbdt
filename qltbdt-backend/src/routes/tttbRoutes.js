@@ -17,5 +17,6 @@ router.put("/thietbi/:id/remove-from-phong", tttbController.deleteThongTinThietB
 router.post("/phong/:phongId/themthietbicosan", tttbController.createThietBiCoSan);
 router.get("/theloai", tttbController.getTheLoaiList)
 router.get("/thietbi/:theLoai", tttbController.getThietBiByTheLoai);
+router.post("/themthietbivaophong", tttbController.createThemThietBiVaoPhong);
 
 module.exports = router;

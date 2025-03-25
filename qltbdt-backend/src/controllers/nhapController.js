@@ -189,65 +189,58 @@ exports.updatePhieuNhap = async (req, res) => {
             throw new Error("Không tìm thấy phiếu nhập để cập nhật!");
         }
 
-        // Lấy danh sách thiết bị cũ của phiếu nhập
+        // Lấy danh sách thiết bị cũ trong phiếu nhập
         const [existingDevices] = await connection.query(
-            "SELECT thietbi_id, thoiGianBaoHanh, soLuong FROM thongtinthietbi WHERE phieunhap_id = ?",
+            "SELECT thietbi_id, soLuong, thoiGianBaoHanh FROM thongtinthietbi WHERE phieunhap_id = ?",
             [id]
         );
 
-        // Tạo map để kiểm tra thiết bị đã tồn tại (kèm thời gian bảo hành)
+        // Chuyển danh sách thiết bị cũ thành Map để tiện tra cứu
         const existingMap = {};
         existingDevices.forEach((device) => {
-            const key = `${device.thietbi_id}_${device.thoiGianBaoHanh}`;
-            existingMap[key] = device.soLuong;
+            existingMap[device.thietbi_id] = {
+                soLuong: device.soLuong,
+                thoiGianBaoHanh: device.thoiGianBaoHanh
+            };
         });
 
-        const newDeviceIds = new Set();
+        const updatedDeviceIds = new Set();
 
-        // Xử lý cập nhật, thêm mới
+        // Xử lý cập nhật thiết bị
         for (const item of thietBiNhap) {
-            const key = `${item.thietbi_id}_${item.thoiGianBaoHanh}`;
+            if (existingMap[item.thietbi_id]) {
+                const oldQuantity = existingMap[item.thietbi_id].soLuong;
+                const newQuantity = item.soLuong;
+                const oldWarranty = existingMap[item.thietbi_id].thoiGianBaoHanh;
+                const newWarranty = item.thoiGianBaoHanh;
 
-            if (existingMap[key] !== undefined) {
-                // Nếu thiết bị đã tồn tại với cùng ID và thời gian bảo hành => Cộng dồn số lượng
-                const updatedQuantity = existingMap[key] + item.soLuong;
+                // Cập nhật số lượng thiết bị trong tồn kho
+                const quantityDiff = newQuantity - oldQuantity;
+                await connection.query(
+                    "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
+                    [quantityDiff, item.thietbi_id]
+                );
 
+                // Cập nhật thiết bị trong phiếu nhập
                 await connection.query(
                     `UPDATE thongtinthietbi 
-                     SET soLuong = ?
-                     WHERE phieunhap_id = ? AND thietbi_id = ? AND thoiGianBaoHanh = ?`,
-                    [updatedQuantity, id, item.thietbi_id, item.thoiGianBaoHanh]
-                );
-
-                await connection.query(
-                    "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-                    [item.soLuong, item.thietbi_id]
-                );
-            } else {
-                // Nếu thiết bị chưa tồn tại hoặc có khác thời gian bảo hành => Thêm mới
-                await connection.query(
-                    `INSERT INTO thongtinthietbi (
-                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, soLuong
-                    ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH), ?)`,
-                    [item.thietbi_id, id, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh, item.soLuong]
-                );
-
-                await connection.query(
-                    "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-                    [item.soLuong, item.thietbi_id]
+                     SET soLuong = ?, thoiGianBaoHanh = ?, 
+                         ngayBaoHanhKetThuc = DATE_ADD(
+                             (SELECT ngayTao FROM phieunhap WHERE id = ?), INTERVAL ? MONTH) 
+                     WHERE phieunhap_id = ? AND thietbi_id = ?`,
+                    [newQuantity, newWarranty, id, newWarranty, id, item.thietbi_id]
                 );
             }
 
-            newDeviceIds.add(`${item.thietbi_id}_${item.thoiGianBaoHanh}`);
+            updatedDeviceIds.add(item.thietbi_id);
         }
 
-        // Xóa thiết bị bị loại bỏ khỏi danh sách nhập
+        // Xóa thiết bị không còn trong danh sách nhập
         for (const device of existingDevices) {
-            const key = `${device.thietbi_id}_${device.thoiGianBaoHanh}`;
-            if (!newDeviceIds.has(key)) {
+            if (!updatedDeviceIds.has(device.thietbi_id)) {
                 await connection.query(
-                    "DELETE FROM thongtinthietbi WHERE phieunhap_id = ? AND thietbi_id = ? AND thoiGianBaoHanh = ?",
-                    [id, device.thietbi_id, device.thoiGianBaoHanh]
+                    "DELETE FROM thongtinthietbi WHERE phieunhap_id = ? AND thietbi_id = ?",
+                    [id, device.thietbi_id]
                 );
 
                 await connection.query(
