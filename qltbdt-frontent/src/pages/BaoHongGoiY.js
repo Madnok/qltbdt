@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthProvider";
 import Footer from "../components/layout/Footer";
 import BaoHong from "../components/BaoHongGopY/BaoHong";
 import GopY from "../components/BaoHongGopY/GopY";
+import '@fortawesome/fontawesome-free/css/all.css';
 
 const BaoHongGoiY = () => {
     return (
@@ -11,12 +12,11 @@ const BaoHongGoiY = () => {
             <Header />
             <div className="flex-grow p-6 font-inter">
                 <div className="max-w-6xl mx-auto space-y-8">
-                    <div className="grid gap-8 md:grid-cols-2">
+                    <div className="grid gap-8 md:grid-rows-2">
                         {/* Báo Hỏng */}
-                        <BaoHong/>
-
+                        <BaoHong />
                         {/* Gợi Ý */}
-                        <GopY/>
+                        <GopY />
                     </div>
                 </div>
             </div>
@@ -46,15 +46,23 @@ const Header = () => {
                     </h1>
                 </div>
                 <nav>
-                    <ul className="flex space-x-6">
-                        <li>
+                    <ul className="flex space-x-6 justify-between">
+                        <li className="list-none hover:shadow-lg space-x-10">
                             {!user ? (
-                                <button
-                                    onClick={() => navigate(user ? "/nguoidung" : "/login")}
-                                    className="transition-colors hover:text-accent"
-                                >
-                                    {"Đăng Nhập"}
-                                </button>
+                                <>
+                                    <button className="py-2 rounded  transition-transform  hover:bg-gray-700 hover:scale-105">
+                                        Báo Hỏng
+                                    </button>
+                                    <button className="p-2 rounded  transition-transform  hover:bg-gray-700 hover:scale-105">
+                                        Góp Ý
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(user ? "/nguoidung" : "/login")}
+                                        className="py-2 rounded  transition-transform  hover:bg-gray-700 hover:scale-105"
+                                    >
+                                        {"Đăng Nhập"}
+                                    </button>
+                                </>
                             ) : (
                                 <div className="relative">
                                     <button
@@ -101,6 +109,16 @@ const Header = () => {
                                                             onClick={() => navigate("/nguoidung")}
                                                         >
                                                             <i className="mr-2 fas fa-user"></i> Tài khoản
+                                                        </li>
+                                                        <li
+                                                            className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
+                                                        >
+                                                            <i className="mr-2 fas fa-solid fa-triangle-exclamation"></i> Báo Hỏng
+                                                        </li>
+                                                        <li
+                                                            className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"
+                                                        >
+                                                            <i className="mr-2 fas fa-comment-alt"></i> Góp Ý
                                                         </li>
                                                         <li
                                                             className="px-4 py-2 text-sm transition-all cursor-pointer hover:bg-gray-100"

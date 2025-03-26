@@ -60,16 +60,19 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="flex w-full max-w-4xl bg-white rounded-lg shadow-lg">
+    <div
+      className="flex items-center justify-center h-screen bg-cover bg-center"
+      style={{ backgroundImage: "url('/iuh1.png')" }}
+    >
+      <div className="flex w-full max-w-4xl bg-white bg-opacity-60 rounded-lg shadow-lg">
         <div className="w-1/2 h-full p-10">
-          <h1 className="text-3xl font-bold text-center text-gray-900">Trang Quản Lý Thiết Bị Cơ Sở Vật Chất</h1>
+          <h1 className="text-3xl font-bold text-center text-black">Trang Quản Lý Thiết Bị Cơ Sở Vật Chất</h1>
           <div className="text-center my-9">
-            <p className="mb-8 text-base text-gray-700">
+            <p className="mb-8 text-base text-black">
               Tài khoản chưa được kích hoạt? Vẫn có thể báo hỏng và góp ý ở đây.
             </p>
             <button
-              className="w-full p-3 text-white transition duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="w-full p-3 text-white transition opacity-90 duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
               onClick={() => navigate("/")}
             >
               Góp Ý - Báo Hỏng
@@ -79,12 +82,12 @@ const Login = () => {
             </p>
           </div>
         </div>
-        <div className="w-1/2 p-10 bg-white rounded-lg shadow-md">
-          <h2 className="mb-6 text-2xl font-bold text-center text-gray-800">Đăng Nhập</h2>
+        <div className="w-1/2 p-10 bg-opacity-60 rounded-lg shadow-md">
+          <h2 className="mb-6 text-3xl font-bold text-center text-black">Đăng Nhập</h2>
           {error && <p className="text-center text-red-500">{error}</p>}
-          <input type="text" placeholder="Tên đăng nhập" className="w-full p-3 mb-4 border rounded-lg" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input type="text" placeholder="Tên đăng nhập" className="w-full p-3 mb-4 border  rounded-lg" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input type="password" placeholder="Mật khẩu" className="w-full p-3 mb-4 border rounded-lg" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button className="w-full p-3 text-white bg-gray-800 rounded-lg hover:bg-gray-500" onClick={handleLogin}>Đăng Nhập</button>
+          <button className="w-full p-3 text-white bg-gray-800 opacity-90 rounded-lg hover:bg-black" onClick={handleLogin}>Đăng Nhập</button>
           <p className="mt-4 text-center text-gray-600">
             Chưa có tài khoản? <span className="text-blue-500 cursor-pointer" onClick={() => setShowRegister(true)}>Đăng Ký Ngay.</span>
           </p>
