@@ -33,7 +33,7 @@ CREATE TABLE `phieunhap` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `phieunhap_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,7 +42,7 @@ CREATE TABLE `phieunhap` (
 
 LOCK TABLES `phieunhap` WRITE;
 /*!40000 ALTER TABLE `phieunhap` DISABLE KEYS */;
-INSERT INTO `phieunhap` VALUES (1,1,'Admin','2025-03-03 02:53:08','taiTro'),(4,1,'Admin','2025-03-14 14:13:00','taiTro'),(37,1,'Admin','2025-03-20 02:00:00','taiTro'),(53,1,'Admin','2025-03-23 03:12:00','taiTro'),(59,1,'Admin','2025-03-24 01:22:00','muaMoi');
+INSERT INTO `phieunhap` VALUES (1,1,'Admin','2025-03-03 02:53:08','taiTro'),(4,1,'Admin','2025-03-14 14:13:00','taiTro'),(37,1,'Admin','2025-03-20 02:00:00','taiTro'),(53,1,'Admin','2025-03-23 03:12:00','taiTro'),(59,1,'Admin','2025-03-24 01:22:00','muaMoi'),(63,1,'Admin','2025-03-26 03:18:00','muaMoi'),(64,1,'Admin','2025-03-26 04:43:00','muaMoi');
 /*!40000 ALTER TABLE `phieunhap` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -62,7 +62,7 @@ CREATE TABLE `phong` (
   `chucNang` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `phong_chk_1` CHECK ((`soPhong` between 1 and 20))
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -71,7 +71,7 @@ CREATE TABLE `phong` (
 
 LOCK TABLES `phong` WRITE;
 /*!40000 ALTER TABLE `phong` DISABLE KEYS */;
-INSERT INTO `phong` VALUES (1,'Chính','A',1,1,'Phòng Học'),(2,'Chính','A',2,3,'Phòng Học'),(3,'Chính','A',3,5,'Phòng Học'),(4,'Chính','A',7,5,'Phòng Học'),(5,'Chính','A',5,9,'Phòng Học'),(6,'Chính','A',6,11,'Phòng Học'),(7,'Chính','A',7,13,'Phòng Học'),(8,'Chính','X',1,1,'Phòng Học'),(9,'Chính','X',5,8,'Phòng Học'),(10,'Chính','X',10,12,'Phòng Học'),(11,'Chính','X',14,15,'Phòng Học'),(12,'Chính','E',1,1,'Hội Trường'),(13,'Chính','E',2,2,'Hội Trường'),(14,'Chính','E',3,3,'Hội Trường'),(15,'Chính','G',1,1,'KTX Nữ'),(16,'Chính','G',5,6,'KTX Nữ'),(17,'Chính','G',10,12,'KTX Nữ'),(18,'Chính','I',1,2,'KTX Nam'),(19,'Chính','I',6,7,'KTX Nam'),(20,'Chính','I',12,15,'KTX Nam'),(21,'Chính','Bãi giữ xe',1,1,'Bãi giữ xe'),(22,'Chính','Bãi giữ xe',2,2,'Bãi giữ xe'),(23,'Chính','Bãi giữ xe',3,3,'Bãi giữ xe'),(24,'Chính','B',2,2,'Phòng Học'),(25,'Chính','C',2,3,'Phòng Học'),(26,'Chính','D',3,5,'Phòng Học'),(27,'Chính','F',4,7,'Phòng Học'),(28,'Chính','H',5,9,'Phòng Học'),(29,'Chính','T',6,12,'Phòng Học'),(30,'Phụ','J',1,1,'Phòng Học'),(31,'Phụ','K',2,4,'Phòng Học'),(33,'Chính','X',14,20,'Phòng Kiểm Tra'),(34,'Phụ','K',6,20,'Phòng Thực Hành');
+INSERT INTO `phong` VALUES (1,'Chính','A',1,1,'Phòng Học'),(2,'Chính','A',2,3,'Phòng Học'),(3,'Chính','A',3,5,'Phòng Học'),(4,'Chính','A',7,5,'Phòng Học'),(5,'Chính','A',5,9,'Phòng Học'),(6,'Chính','A',6,11,'Phòng Học'),(7,'Chính','A',7,13,'Phòng Học'),(8,'Chính','X',1,1,'Phòng Học'),(9,'Chính','X',5,8,'Phòng Học'),(10,'Chính','X',10,12,'Phòng Học'),(11,'Chính','X',14,15,'Phòng Học'),(12,'Chính','E',1,1,'Hội Trường'),(13,'Chính','E',2,2,'Hội Trường'),(14,'Chính','E',3,3,'Hội Trường'),(15,'Chính','G',1,1,'KTX Nữ'),(16,'Chính','G',5,6,'KTX Nữ'),(17,'Chính','G',10,12,'KTX Nữ'),(18,'Chính','I',1,2,'KTX Nam'),(19,'Chính','I',6,7,'KTX Nam'),(20,'Chính','I',12,15,'KTX Nam'),(21,'Chính','Bãi giữ xe',1,1,'Giữ xe'),(22,'Chính','Bãi giữ xe',2,2,'Giữ xe'),(23,'Chính','Bãi giữ xe',3,3,'Giữ xe'),(24,'Chính','B',2,2,'Phòng Học'),(25,'Chính','C',2,3,'Phòng Học'),(26,'Chính','D',3,5,'Phòng Học'),(27,'Chính','F',4,7,'Phòng Học'),(28,'Chính','H',5,9,'Phòng Học'),(29,'Chính','T',6,12,'Phòng Học'),(30,'Phụ','J',1,1,'Phòng Học'),(31,'Phụ','K',2,4,'Phòng Học'),(33,'Chính','X',14,20,'Phòng Kiểm Tra'),(34,'Phụ','K',6,20,'Phòng Thực Hành'),(40,'Phụ','L',1,2,'Phòng Học');
 /*!40000 ALTER TABLE `phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -95,7 +95,7 @@ CREATE TABLE `phong_thietbi` (
   CONSTRAINT `phong_thietbi_ibfk_1` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `phong_thietbi_ibfk_2` FOREIGN KEY (`thietbi_id`) REFERENCES `thietbi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `phong_thietbi_ibfk_3` FOREIGN KEY (`thongtinthietbi_id`) REFERENCES `thongtinthietbi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +104,6 @@ CREATE TABLE `phong_thietbi` (
 
 LOCK TABLES `phong_thietbi` WRITE;
 /*!40000 ALTER TABLE `phong_thietbi` DISABLE KEYS */;
-INSERT INTO `phong_thietbi` VALUES (4,1,1,89,1);
 /*!40000 ALTER TABLE `phong_thietbi` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -186,7 +185,7 @@ CREATE TABLE `thietbi` (
 
 LOCK TABLES `thietbi` WRITE;
 /*!40000 ALTER TABLE `thietbi` DISABLE KEYS */;
-INSERT INTO `thietbi` VALUES (1,1,'Laptop Sony VPL','Độ phân giải Full HD',10000000,1),(2,4,'Bóng Đèn Huỳnh Quang','Công Suất Cao Tiết Kiệm Điện',120000,3),(3,2,'Micro Shure SM58','Dòng micro dynamic',310000,4),(4,2,'Micro AKG D5','Thiết kế chống hú',275000,1),(6,3,'Máy In Canon PIXMA','In màu, kết nối WiFi',18500000,0),(7,4,'Bóng Đèn Philips LED','Công suất 9W, tiết kiệm điện',150000,3),(8,4,'Bóng Đèn Rạng Đông','Bóng LED 18W, ánh sáng trắng',160000,5),(9,1,'Laptop MSI','Dùng để chơi game',25000000,2),(18,5,'Desktop Gaming','I5 12400F, RTX 5090, 64 gb Ram',20000000,4),(20,12,'Airpod Pro 2025','Tai Nghe của hãng Apple, Chống Ồn, Âm Thanh 3D sống động',4000000,2),(21,3,'Máy In Hp','Máy In Hp hiện đại ',18000000,1);
+INSERT INTO `thietbi` VALUES (1,1,'Laptop Sony VPL','Độ phân giải Full HD',10000000,1),(2,4,'Bóng Đèn Huỳnh Quang','Công Suất Cao Tiết Kiệm Điện',120000,7),(3,2,'Micro Shure SM58','Dòng micro dynamic',310000,4),(4,2,'Micro AKG D5','Thiết kế chống hú',275000,1),(6,3,'Máy In Canon PIXMA','In màu, kết nối WiFi',18500000,5),(7,4,'Bóng Đèn Philips LED','Công suất 9W, tiết kiệm điện',150000,3),(8,4,'Bóng Đèn Rạng Đông','Bóng LED 18W, ánh sáng trắng',160000,10),(9,1,'Laptop MSI','Dùng để chơi game',25000000,2),(18,5,'Desktop Gaming','I5 12400F, RTX 5090, 64 gb Ram',20000000,4),(20,12,'Airpod Pro 2025','Tai Nghe của hãng Apple, Chống Ồn, Âm Thanh 3D sống động',4000000,2),(21,3,'Máy In Hp','Máy In Hp hiện đại ',18000000,1);
 /*!40000 ALTER TABLE `thietbi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -215,7 +214,7 @@ CREATE TABLE `thongtinthietbi` (
   CONSTRAINT `ThongTinThietBi_ibfk_1` FOREIGN KEY (`thietbi_id`) REFERENCES `thietbi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `ThongTinThietBi_ibfk_2` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `ThongTinThietBi_ibfk_3` FOREIGN KEY (`phieunhap_id`) REFERENCES `phieunhap` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=134 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=139 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -224,7 +223,7 @@ CREATE TABLE `thongtinthietbi` (
 
 LOCK TABLES `thongtinthietbi` WRITE;
 /*!40000 ALTER TABLE `thongtinthietbi` DISABLE KEYS */;
-INSERT INTO `thongtinthietbi` VALUES (24,18,NULL,NULL,'Desktop Gaming',4,'con_bao_hanh',12,'2026-03-23',4),(25,20,NULL,NULL,'Airpod Pro 2025',4,'con_bao_hanh',12,'2026-03-23',2),(63,2,NULL,NULL,'Bóng Đèn Huỳnh Quang',37,'con_bao_hanh',12,'2026-03-23',2),(89,1,NULL,NULL,'Laptop Sony VPL',1,'con_bao_hanh',36,'2028-03-23',1),(90,2,NULL,NULL,'Bóng Đèn Huỳnh Quang',1,'con_bao_hanh',36,'2028-03-23',3),(91,3,NULL,NULL,'Micro Shure SM58',1,'con_bao_hanh',36,'2028-03-23',4),(92,4,NULL,NULL,'Micro AKG D5',1,'con_bao_hanh',24,'2027-03-23',1),(112,8,NULL,NULL,'Bóng Đèn Rạng Đông',53,'con_bao_hanh',12,'2026-03-23',5),(113,7,NULL,NULL,'Bóng Đèn Philips LED',53,'con_bao_hanh',6,'2025-09-23',3),(130,9,NULL,NULL,'Laptop MSI',59,'con_bao_hanh',36,'2028-03-24',2),(131,21,NULL,NULL,'Máy In Hp',59,'con_bao_hanh',36,'2028-03-24',1);
+INSERT INTO `thongtinthietbi` VALUES (24,18,NULL,NULL,'Desktop Gaming',4,'con_bao_hanh',12,'2026-03-23',4),(25,20,NULL,NULL,'Airpod Pro 2025',4,'con_bao_hanh',12,'2026-03-23',2),(63,2,NULL,NULL,'Bóng Đèn Huỳnh Quang',37,'con_bao_hanh',12,'2026-03-20',4),(89,1,NULL,NULL,'Laptop Sony VPL',1,'con_bao_hanh',36,'2028-03-23',1),(90,2,NULL,NULL,'Bóng Đèn Huỳnh Quang',1,'con_bao_hanh',36,'2028-03-23',3),(91,3,NULL,NULL,'Micro Shure SM58',1,'con_bao_hanh',36,'2028-03-23',4),(92,4,NULL,NULL,'Micro AKG D5',1,'con_bao_hanh',24,'2027-03-23',1),(113,7,NULL,NULL,'Bóng Đèn Philips LED',53,'con_bao_hanh',6,'2025-09-23',3),(130,9,NULL,NULL,'Laptop MSI',59,'con_bao_hanh',36,'2028-03-24',2),(131,21,NULL,NULL,'Máy In Hp',59,'con_bao_hanh',36,'2028-03-24',1),(137,6,NULL,NULL,'Máy In Canon PIXMA',63,'con_bao_hanh',36,'2028-03-26',5),(138,8,NULL,NULL,'Bóng Đèn Rạng Đông',64,'con_bao_hanh',24,'2027-03-26',10);
 /*!40000 ALTER TABLE `thongtinthietbi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -259,7 +258,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on'),(2,'hung1806','$2b$10$CNvZl4yWWejIXICC8zz79.HcKQlRfInP5hBNqNzOyi9oc/MYRO5US','Phạm Minh Hùng','2001-06-18','Khác','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải 1','2011-11-10','Nam','012345678','dinhlekhai@gmail.com',NULL,'nhanvien','on'),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-10-08','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740919997/avatars/nbm5heihwzluedfnk2tp.png','nguoidung','on'),(20,'nhanvien1','$2b$10$rje80jL8dm7QZr2O9rEEceXmVEnDq5QAOQF6A/1fVXPQgVyrn9e9y','Nhân Văn Viên ',NULL,'Khác',NULL,'nv1@gmail.com',NULL,'nhanvien','on'),(21,'nhanvien2','$2b$10$kNxJBoupO9bC2Z5m9vb31eSnlzp1tpg7NvumJnesqixj.N59OfwPW','Viên Nhân Phan',NULL,'Nữ',NULL,'nv2@mail.com',NULL,'nhanvien','on'),(22,'nhanvien3','$2b$10$4TgPFoD2rZws3UWf8ij.i.Lk.t.jUP4DnfBchfmNxOwzpVofjZz72','Hoàng Huy Hùng',NULL,'Nam',NULL,'tripleh@mail.com',NULL,'nhanvien','on'),(23,'nhanvien4','$2b$10$dsLE37W1mPHuvN.pK/cKROALQBy9avOE/5cXOTxkE3h3ZnIhFNnZG','Phùng Văn Từ',NULL,'Nữ',NULL,'pvtu4@mail.com',NULL,'nhanvien','on'),(24,'nhanvien5','$2b$10$rRYQ9f7EoAusLSkmH9/7t.FLylNCbxOUjsSTyCiUFDCgCLVSrybgi','Nguyễn Phan Lưu Chương',NULL,'Nam',NULL,'nguyenphanluuchuong1@mail.com',NULL,'nhanvien','on'),(25,'nhanvien6','$2b$10$F2Mkg62nsHHWWsO1bE6YEeofs7qOV2Kmx2jexa8p3PAF2LWAuvzi.','Văn Hải Quỳnh',NULL,'Nữ',NULL,'nv5@mail.com',NULL,'nhanvien','on'),(26,'testuser1','$2b$10$1aI9Mdg6SuhIqmPAf8DnVOPJ9pyjgieOCJcgqdv8aKq0l5tz/fIBi','Phạm Minh Bạch ',NULL,'Khác',NULL,'test1@mail.com',NULL,'nguoidung','on');
+INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on'),(2,'hung1806','$2b$10$CNvZl4yWWejIXICC8zz79.HcKQlRfInP5hBNqNzOyi9oc/MYRO5US','Phạm Minh Hùng','2001-06-18','Khác','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải','2011-11-09','Nam','012345678','dinhlekhai@gmail.com',NULL,'nhanvien','on'),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-10-08','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740919997/avatars/nbm5heihwzluedfnk2tp.png','nguoidung','on'),(20,'nhanvien1','$2b$10$rje80jL8dm7QZr2O9rEEceXmVEnDq5QAOQF6A/1fVXPQgVyrn9e9y','Nhân Văn Viên ',NULL,'Khác',NULL,'nv1@gmail.com',NULL,'nhanvien','on'),(21,'nhanvien2','$2b$10$kNxJBoupO9bC2Z5m9vb31eSnlzp1tpg7NvumJnesqixj.N59OfwPW','Viên Nhân Phan',NULL,'Nữ',NULL,'nv2@mail.com',NULL,'nhanvien','on'),(22,'nhanvien3','$2b$10$4TgPFoD2rZws3UWf8ij.i.Lk.t.jUP4DnfBchfmNxOwzpVofjZz72','Hoàng Huy Hùng',NULL,'Nam',NULL,'tripleh@mail.com',NULL,'nhanvien','on'),(23,'nhanvien4','$2b$10$dsLE37W1mPHuvN.pK/cKROALQBy9avOE/5cXOTxkE3h3ZnIhFNnZG','Phùng Văn Từ',NULL,'Nữ',NULL,'pvtu4@mail.com',NULL,'nhanvien','on'),(24,'nhanvien5','$2b$10$rRYQ9f7EoAusLSkmH9/7t.FLylNCbxOUjsSTyCiUFDCgCLVSrybgi','Nguyễn Phan Lưu Chương',NULL,'Nam',NULL,'nguyenphanluuchuong1@mail.com',NULL,'nhanvien','on'),(25,'nhanvien6','$2b$10$F2Mkg62nsHHWWsO1bE6YEeofs7qOV2Kmx2jexa8p3PAF2LWAuvzi.','Văn Hải Quỳnh',NULL,'Nữ',NULL,'nv5@mail.com',NULL,'nhanvien','on'),(26,'testuser1','$2b$10$1aI9Mdg6SuhIqmPAf8DnVOPJ9pyjgieOCJcgqdv8aKq0l5tz/fIBi','Phạm Minh Bạch ',NULL,'Khác',NULL,'test1@mail.com',NULL,'nguoidung','on');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -280,4 +279,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-03-25 17:43:41
+-- Dump completed on 2025-03-27 17:55:18
