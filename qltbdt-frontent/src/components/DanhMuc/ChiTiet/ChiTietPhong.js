@@ -2,13 +2,16 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { maxTangTheoToa, getTinhTrangLabel } from "../../../utils/constants";
 import { BsTrash, BsSearch } from "react-icons/bs";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const ChiTietPhong = ({ record, onClose, refreshData }) => {
     const [thietBiList, setThietBiList] = useState([]);
+    // eslint-disable-next-line
     const [filteredThietBiList, setFilteredThietBiList] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [editData, setEditData] = useState(record);
     const [isEditing, setIsEditing] = useState(false);
+    const [expandedRows, setExpandedRows] = useState([]);
 
     useEffect(() => {
         if (!record) return;
@@ -26,8 +29,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
         };
 
         fetchData();
-    }, [record]);
-
+    }, [record], setFilteredThietBiList);
 
     // Cập nhật dữ liệu khi người dùng thay đổi giá trị input
     const handleChange = (e) => {
@@ -70,34 +72,59 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     };
 
     // Xóa thiết bị trong phòng
-    const handleDeleteThietBi = async (thietbi_id, soLuong) => {
-        console.log("Gỡ thiết bị ID:", thietbi_id, "Số lượng:", soLuong);
-    
+    const handleDeleteThietBi = async (thongtinthietbi_id) => {
+        console.log("Gỡ thiết bị với Mã Định Danh:", thongtinthietbi_id);
+
         if (!window.confirm("Bạn có chắc chắn muốn gỡ thiết bị này khỏi phòng không?")) return;
-    
+
         try {
             await axios.post("http://localhost:5000/api/phong/xoathietbi", {
                 phong_id: record.id,
-                thietbi_id,
-                soLuong,
+                thongtinthietbi_id,
             });
-    
+
             // Cập nhật danh sách thiết bị sau khi xóa
-            const updatedThietBiList = thietBiList.filter(tb => tb.thietbi_id !== thietbi_id);
+            const updatedThietBiList = thietBiList.filter(tb => tb.thongtinthietbi_id !== thongtinthietbi_id);
             setThietBiList(updatedThietBiList);
             setFilteredThietBiList(updatedThietBiList);
-    
+
             alert("Xóa Thiết Bị Khỏi Phòng Thành Công!");
             refreshData();
         } catch (error) {
             console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error);
+            alert("Xóa thiết bị thất bại, vui lòng thử lại!");
         }
     };
-    
+
+    // Xử lý toggle hiển thị chi tiết
+    const toggleRow = (theLoai) => {
+        if (expandedRows.includes(theLoai)) {
+            setExpandedRows(expandedRows.filter((row) => row !== theLoai));
+        } else {
+            setExpandedRows([...expandedRows, theLoai]);
+        }
+    };
+
+    // Nhóm danh sách thiết bị theo thể loại
+    const groupedThietBiList = Array.isArray(thietBiList) ? thietBiList.reduce((acc, curr) => {
+        const existingGroup = acc.find(group => group.theLoai === curr.theLoai);
+        if (existingGroup) {
+            existingGroup.devices.push(curr);
+            existingGroup.total += 1; // Mỗi thiết bị được đếm là 1
+        } else {
+            acc.push({
+                theLoai: curr.theLoai,
+                devices: [curr],
+                total: 1 // Bắt đầu với 1 thiết bị
+            });
+        }
+        return acc;
+    }, []) : [];
+
 
     const handleDelete = async () => {
         if (!window.confirm("Bạn có chắc muốn xóa phòng này không?")) return;
-    
+
         try {
             await axios.delete(`http://localhost:5000/api/phong/${record.id}`);
             alert("Xóa phòng thành công!");
@@ -105,10 +132,10 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
             onClose();
         } catch (error) {
             console.error("Lỗi xóa phòng:", error);
-    
+
             if (error.response) {
                 const { status, data } = error.response;
-    
+
                 if (status === 400) {
                     alert(`Không thể xóa phòng: ${data.error}`);
                 } else if (status === 404) {
@@ -123,7 +150,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
             }
         }
     };
-    
+
 
     // Hủy chỉnh sửa
     const handleCancel = () => {
@@ -245,37 +272,76 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                     <table className="w-full border border-gray-300 table-auto">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-4 py-2 border">Tên Thiết Bị</th>
-                                <th className="px-4 py-2 border">Số Lượng</th>
-                                <th className="px-4 py-2 border">Tình Trạng</th>
-                                <th className="px-4 py-2 border">Hành Động</th>
+                                <th className="px-4 py-2 border text-center">STT</th>
+                                <th className="px-4 py-2 border">Thể Loại</th>
+                                <th className="px-4 py-2 border text-center">Tổng TB</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredThietBiList.length > 0 ? (
-                                filteredThietBiList.map((tb) => (
-                                    <tr key={tb.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2 border">{tb.tenThietBi}</td>
-                                        <td className="px-4 py-2 text-center border">{tb.soLuong}</td>
-                                        <td className="px-4 py-2 text-center border">{getTinhTrangLabel(tb.tinhTrang)}</td>
-                                        <td className="px-4 py-2 text-center border">
-                                            <button
-                                                onClick={() => handleDeleteThietBi(tb.thietbi_id, tb.soLuong)}
-                                                className="text-red-500 hover:text-red-700"
-                                            >
-                                                <BsTrash />
-                                            </button>
-
+                            {groupedThietBiList.map((group, index) => (
+                                <>
+                                    {/* Bảng cha */}
+                                    <tr key={index} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2 border text-center">{index + 1}</td>
+                                        <td className="px-4 py-2 border">
+                                            <div className="flex items-center justify-between">
+                                                {group.theLoai}
+                                                <button
+                                                    onClick={() => toggleRow(group.theLoai)}
+                                                    className="ml-2"
+                                                >
+                                                    {expandedRows.includes(group.theLoai) ? (
+                                                        <FaChevronUp />
+                                                    ) : (
+                                                        <FaChevronDown />
+                                                    )}
+                                                </button>
+                                            </div>
                                         </td>
+                                        <td className="px-4 py-2 border text-center">{group.total}</td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
-                                        Không có thiết bị nào trong phòng này.
-                                    </td>
-                                </tr>
-                            )}
+
+                                    {/* Bảng con */}
+                                    {expandedRows.includes(group.theLoai) && (
+                                        <tr>
+                                            <td colSpan={1}></td>
+                                            <td colSpan={3} className=" border">
+                                                <table className="w-full border border-gray-300 table-auto">
+                                                    <thead className="bg-gray-100">
+                                                        <tr>
+                                                            <th className="text-sm border text-center">STT</th>
+                                                            <th className="text-sm border">Mã Định Danh</th>
+                                                            <th className="text-sm border">Tên Thiết Bị</th>
+                                                            <th className="text-sm border text-center">Tình Trạng</th>
+                                                            <th className="text-sm border text-center">Hành Động</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {group.devices.map((tb, subIndex) => (
+                                                            <tr key={tb.id} className="hover:bg-gray-50">
+                                                                <td className="text-sm text-center border">{subIndex + 1}</td>
+                                                                <td className="text-sm border">{tb.thongtinthietbi_id}</td>
+                                                                <td className="text-sm border">{tb.tenThietBi}</td>
+                                                                <td className="text-sm text-center border">
+                                                                    {getTinhTrangLabel(tb.tinhTrang)}
+                                                                </td>
+                                                                <td className="text-center border">
+                                                                    <button
+                                                                        onClick={() => handleDeleteThietBi(tb.thongtinthietbi_id)}
+                                                                        className="text-red-500 hover:text-red-700"
+                                                                    >
+                                                                        <BsTrash />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </>
+                            ))}
                         </tbody>
                     </table>
                 </div>

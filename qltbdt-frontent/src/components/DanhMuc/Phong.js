@@ -14,19 +14,16 @@ const Phong = ({ setSelectedRecord, refresh }) => {
     const fetchTotalDevices = async (phongId) => {
         try {
             const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${phongId}`);
-            const devices = response.data; // API trả về danh sách các thiết bị với trường `total`
+            const devices = response.data; // API trả về danh sách thiết bị thuộc phòng
 
-            if (devices.length > 0) {
-                // Tính tổng số thiết bị từ thuộc tính `total` của thiết bị đầu tiên (giả định tất cả thiết bị có chung `total`)
-                return devices[0].total || 0;
-            }
-
-            return 0; // Nếu không có thiết bị nào, trả về 0
+            // Tính tổng số thiết bị dựa trên số lượng dòng (tức là số lượng `thongtinthietbi_id`)
+            return devices.length || 0;
         } catch (error) {
             console.error("Lỗi lấy tổng số thiết bị:", error);
             return 0; // Trả về 0 nếu xảy ra lỗi
         }
     };
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -38,11 +35,11 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                 const updatedRooms = await Promise.all(
                     rooms.map(async (room) => {
                         const totalDevices = await fetchTotalDevices(room.id);
-                        return { ...room, totalDevices }; // Thêm totalDevices vào từng record
+                        return { ...room, totalDevices }; // Thêm tổng số thiết bị vào phòng
                     })
                 );
 
-                setData(updatedRooms);
+                setData(updatedRooms); // Cập nhật danh sách phòng với tổng số thiết bị
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
             }
@@ -214,10 +211,10 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                             <td className="p-2 border">{record.soPhong}</td>
                             <td className="p-2 border">{record.chucNang}</td>
                             <td className="p-2 border">
-                                {record.totalDevices ? (
+                                {record.totalDevices > 0 ? (
                                     <span>Có
                                         <strong className="font-bold text-red-400"> {record.totalDevices}</strong> thiết bị
-                                        </span>
+                                    </span>
                                 ) : (
                                     <span className="text-gray-500">-</span>
                                 )}

@@ -81,7 +81,7 @@ const FormPhong = ({ onClose, refreshData }) => {
     // Xử lý thêm thiết bị vào bảng dữ liệu chờ để lưu
     const handleAddThietBi = () => {
         const selectedPhongDetails = phongList.find(p => p.id === parseInt(selectedPhong, 10));
-        const thietBiDetails = dsThietBi.find(tb => tb.tenThietBi === selectedThietBi.tenThietBi);
+        const thietBiDetails = dsThietBi.find(tb => tb.id === selectedThietBi.id);
 
         if (!selectedPhongDetails || !thietBiDetails) {
             console.error("Phòng hoặc thiết bị chưa được chọn.");
@@ -93,33 +93,39 @@ const FormPhong = ({ onClose, refreshData }) => {
             return;
         }
 
+        // Cập nhật tồn kho
         const updatedThietBiList = dsThietBi.map(tb =>
-            tb.tenThietBi === selectedThietBi.tenThietBi
+            tb.id === selectedThietBi.id
                 ? { ...tb, remainingStock: tb.remainingStock - 1 }
                 : tb
         );
         setDsThietBi(updatedThietBiList);
 
-        const existingIndex = thietBiTrongPhong.findIndex(
-            item => item.phong === selectedPhongDetails.phong && item.ten === selectedThietBi.tenThietBi
-        );
+        // Kiểm tra nếu thiết bị cùng tên đã tồn tại trong danh sách chờ
+        const existingIndex = thietBiTrongPhong.findIndex(item => item.ten === selectedThietBi.tenThietBi);
 
         if (existingIndex !== -1) {
-            const updatedList = thietBiTrongPhong.map((item, index) =>
+            // Nếu thiết bị đã tồn tại, tăng số lượng
+            const updatedThietBiTrongPhong = thietBiTrongPhong.map((item, index) =>
                 index === existingIndex
                     ? { ...item, soLuong: item.soLuong + 1 }
                     : item
             );
-            setThietBiTrongPhong(updatedList);
+            setThietBiTrongPhong(updatedThietBiTrongPhong);
         } else {
+            // Nếu thiết bị chưa tồn tại, thêm dòng mới
             const newEntry = {
                 phong: selectedPhongDetails.phong,
                 ten: selectedThietBi.tenThietBi,
-                soLuong: 1
+                thongtinthietbi_id: selectedThietBi.thongtinthietbi_id,
+                soLuong: 1,
+                tonKho: selectedThietBi.tonKho
             };
             setThietBiTrongPhong([...thietBiTrongPhong, newEntry]);
         }
     };
+
+
 
 
     // Xử lý lưu phòng
@@ -217,43 +223,60 @@ const FormPhong = ({ onClose, refreshData }) => {
                         return null;
                     }
 
-                    const response = await axios.get(`http://localhost:5000/api/thietbi/thongtin/${thietBi.id}`);
-                    const thongtinthietbi_id = response.data?.thongtinthietbi_id || null;
+                    // Lấy danh sách thiết bị chưa phân bổ từ bảng thongtinthietbi
+                    const response = await axios.get(`http://localhost:5000/api/tttb/unassigned`, {
+                        params: { thietbi_id: thietBi.id }
+                    }).catch(error => {
+                        console.error("Lỗi khi lấy danh sách thiết bị chưa phân bổ:", error);
+                        alert(`Không thể lấy danh sách thiết bị (${item.ten}).`);
+                        return null;
+                    });
 
-                    return {
-                        phong_id: selectedPhong,
-                        thietbi_id: thietBi.id,
-                        thongtinthietbi_id,
-                        soLuong: item.soLuong
-                    };
+                    if (!response || !response.data || response.data.length === 0) {
+                        alert(`Không có thiết bị chưa phân bổ khả dụng cho ${item.ten}.`);
+                        return null;
+                    }
+
+                    const thongTinThietBiList = response.data;
+
+                    // Kiểm tra số lượng yêu cầu với số lượng thực tế
+                    if (item.soLuong > thongTinThietBiList.length) {
+                        alert(`Số lượng yêu cầu vượt quá giới hạn cho ${item.ten} (Số lượng còn lại: ${thongTinThietBiList.length}).`);
+                        return null;
+                    }
+
+                    // Lấy đúng số lượng thiết bị chưa được phân bổ (theo input từ người dùng)
+                    return thongTinThietBiList.slice(0, item.soLuong).map((device) => ({
+                        phong_id: selectedPhong,            // ID phòng được chọn
+                        thietbi_id: device.thietbi_id,      // ID thiết bị
+                        thongtinthietbi_id: device.id       // Mã định danh thiết bị (thongtinthietbi_id)
+                    }));
                 })
             );
 
-            const validData = requestData.filter(item => item !== null);
+            const validData = requestData.filter(item => item !== null).flat(); // Làm phẳng mảng các thiết bị
 
-            if (validData.length === 0) {
+            if (!validData || validData.length === 0) {
                 alert("Không có thiết bị hợp lệ để lưu!");
                 return;
             }
 
-            // Đợi API cập nhật dữ liệu trước khi refresh
+            // Gửi danh sách thiết bị đã phân bổ đến API
             const response = await axios.post("http://localhost:5000/api/phong/add-thietbi", validData);
 
             if (response.data.success) {
                 alert("Lưu thành công!");
                 setThietBiTrongPhong([]);
-                await new Promise(resolve => setTimeout(resolve, 500)); // Đợi server cập nhật
-                refreshRemainingStock();
-                refreshData();
+                await refreshRemainingStock(); // Làm mới danh sách tồn kho
+                await refreshData(); // Làm mới danh sách thiết bị trong phòng
             } else {
                 throw new Error(response.data.message);
             }
         } catch (error) {
             console.error("Lỗi khi lưu thiết bị:", error);
-            alert("Lưu thất bại!");
+            alert(`Lưu thất bại! Lỗi: ${error.message}`);
         }
     };
-
 
 
     // Hàm làm mới danh sách thiết bị còn lại
@@ -392,6 +415,7 @@ const FormPhong = ({ onClose, refreshData }) => {
                             name="thietbi"
                             onChange={handleThietBiChange}
                             className="w-full p-1 border rounded-lg"
+                            disabled={!selectedTheLoai}
                         >
                             <option value="">Thiết bị</option>
                             {dsThietBi.map(tb => (
@@ -426,7 +450,6 @@ const FormPhong = ({ onClose, refreshData }) => {
                                 <th className="px-4 py-1 border">Phòng</th>
                                 <th className="px-4 py-1 border">Tên Thiết Bị</th>
                                 <th className="px-4 py-1 border">Số Lượng</th>
-                                <th className="px-4 py-1 border">Tồn Kho</th>
                                 <th className="px-4 py-1 border">Xóa</th>
                             </tr>
                         </thead>
@@ -444,10 +467,6 @@ const FormPhong = ({ onClose, refreshData }) => {
                                             min="1"
                                         />
                                     </td>
-                                    <td className="px-4 py-1 text-center border">
-                                        <medium className="ml-2 text-gray-500">{dsThietBi.find(tb => tb.tenThietBi === item.ten)?.tonKho || 0}</medium>
-                                    </td>
-
                                     <td className="px-4 py-1 text-center border">
                                         <button
                                             onClick={() => handleDelete(index)}

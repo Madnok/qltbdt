@@ -1,6 +1,7 @@
 import RightPanel from "../components/layout/RightPanel";
 import { useState } from "react";
 import PhanCa from "../components/LichTruc/PhanCa";
+import ThongTinBaoHong from "../components/LichTruc/ThongTinBaoHong";
 
 const LichTruc = () => {
     const [activeTab, setActiveTab] = useState("users");
@@ -31,22 +32,21 @@ const LichTruc = () => {
                 </button>
             </div>
             {activeTab === "users" && (
-                <div>
+                <div className="h-screen">
                     <PhanCa />
                 </div>
             )}
 
             {activeTab === "schedule" && (
-                <div>
+                <div className="h-screen">
                     <h3 className="text-lg font-semibold mb-2">Phân Ca Làm Việc</h3>
                     <p>Chức năng đang được phát triển...</p>
                 </div>
             )}
 
             {activeTab === "reports" && (
-                <div>
-                    <h3 className="text-lg font-semibold mb-2">Thông Tin Báo Hỏng</h3>
-                    <p>Chức năng đang được phát triển...</p>
+                <div className="h-screen">
+                    <ThongTinBaoHong/>
                 </div>
             )}
             <RightPanel />

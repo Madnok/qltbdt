@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", tttbController.getAllThongTinThietBi); // lấy danh sách thông tin tb
 router.get("/next-id", tttbController.getNextId); // lấy id tiếp theo
+router.get("/unassigned", tttbController.getUnassignedThongTinThietBi) // lấy danh sách thông tin tb chưa được gán vào phòng
 router.get("/thietbi-list", tttbController.getListThietBi); // lấy ds thiết bị
 router.get("/phong-list", tttbController.getListPhong); // lấy danh sách phòng
 router.post("/", tttbController.createThongTinThietBi); // tạo thông tin thiết bị

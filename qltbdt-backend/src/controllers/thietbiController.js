@@ -158,18 +158,38 @@ exports.getThietBiConLai = async (req, res) => {
             SELECT
                 tb.id,
                 tb.tenThietBi,
-                tb.tonKho - COALESCE(SUM(pt.soLuong), 0) AS remainingStock
+                tb.tonKho - COALESCE(
+                    (SELECT COUNT(*) 
+                     FROM thongtinthietbi tttb 
+                     WHERE tttb.thietbi_id = tb.id AND tttb.phong_id IS NOT NULL), 0
+                ) AS remainingStock
             FROM
                 thietbi tb
-            LEFT JOIN
-                phong_thietbi pt
-            ON
-                tb.id = pt.thietbi_id
-            GROUP BY
-                tb.id, tb.tenThietBi, tb.tonKho
         `);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ error: "Lỗi khi lấy danh sách thiết bị còn lại!!" });
+        console.error("Lỗi khi lấy danh sách thiết bị còn lại:", error);
+        res.status(500).json({ error: "Lỗi server khi lấy danh sách thiết bị còn lại!" });
+    }
+};
+// Lấy số lượng thiết bị còn lại
+exports.getThietBiConLai = async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT
+                tb.id,
+                tb.tenThietBi,
+                tb.tonKho - COALESCE(
+                    (SELECT COUNT(*) 
+                     FROM phong_thietbi ptb 
+                     WHERE ptb.thietbi_id = tb.id), 0
+                ) AS remainingStock
+            FROM
+                thietbi tb
+        `);
+        res.json(rows);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách thiết bị còn lại:", error);
+        res.status(500).json({ error: "Lỗi server khi lấy danh sách thiết bị còn lại!" });
     }
 };

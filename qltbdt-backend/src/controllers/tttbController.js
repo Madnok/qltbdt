@@ -26,6 +26,31 @@ exports.getThongTinThietBiById = async (req, res) => {
     }
 };
 
+// Lấy danh sách thiết bị chưa phân bổ vào phòng
+exports.getUnassignedThongTinThietBi = async (req, res) => {
+    const { thietbi_id } = req.query;
+
+    try {
+        if (!thietbi_id) {
+            return res.status(400).json({ error: "Thiếu ID thiết bị!" });
+        }
+
+        // Lọc thiết bị chưa được gán vào phòng (không có phong_id trong bảng phong_thietbi)
+        const [rows] = await pool.query(
+            `SELECT tttb.* 
+             FROM thongtinthietbi tttb
+             WHERE tttb.thietbi_id = ? 
+             AND tttb.id NOT IN (SELECT thongtinthietbi_id FROM phong_thietbi)`,
+            [thietbi_id]
+        );
+
+        res.json(rows);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách thiết bị chưa phân bổ:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Lấy ID tiếp theo của bảng thongtinthietbi
 exports.getNextId = async (req, res) => {
     try {
