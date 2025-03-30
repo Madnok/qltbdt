@@ -45,15 +45,31 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
 
     const handleDelete = async () => {
         if (!window.confirm("Bạn có chắc muốn xóa thiết bị này không?")) return;
+    
         try {
-            await axios.delete(`http://localhost:5000/api/thietbi/${record.id}`);
-            alert("Xóa thành công!");
+            const response = await axios.delete(`http://localhost:5000/api/thietbi/${record.id}`);
+            alert(response.data.message || "Xóa thành công!");
             refreshData();
             onClose();
         } catch (error) {
             console.error("Lỗi xóa thiết bị:", error);
+    
+            if (error.response) {
+                const errorMessage = error.response.data.error || "Không thể xóa thiết bị!";
+                
+                if (errorMessage.includes("tồn kho")) {
+                    alert("Không thể xóa thiết bị vì vẫn còn trong kho.");
+                } else if (errorMessage.includes("thông tin thiết bị")) {
+                    alert("Không thể xóa thiết bị vì còn thông tin thiết bị liên quan.");
+                } else {
+                    alert(`Lỗi: ${errorMessage}`);
+                }
+            } else {
+                alert("Lỗi kết nối đến server!");
+            }
         }
     };
+    
 
     const handleCancel = () => {
         setEditData(record);

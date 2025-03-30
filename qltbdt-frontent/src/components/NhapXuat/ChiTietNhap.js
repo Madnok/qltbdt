@@ -1,16 +1,48 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useFormattedPrice } from "../../utils/helpers";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     const formatPrice = useFormattedPrice();
     const [thietBiNhapData, setThietBiNhapData] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [backupThietBiNhapData, setBackupThietBiNhapData] = useState([]);
-    const [backupTruongHopNhap, setBackupTruongHopNhap] = useState("");
-    const [backupThoiGianBaoHanh, setBackupThoiGianBaoHanh] = useState("");
+    // const [backupThietBiNhapData, setBackupThietBiNhapData] = useState([]);
+    // const [backupTruongHopNhap, setBackupTruongHopNhap] = useState("");
+    // const [backupThoiGianBaoHanh, setBackupThoiGianBaoHanh] = useState("");
     const [truongHopNhap, setTruongHopNhap] = useState(selectedRecord.truongHopNhap);
     const [thoiGianBaoHanh, setThoiGianBaoHanh] = useState("");
+
+    const [expandedRows, setExpandedRows] = useState([]);
+
+    const toggleRow = (id) => {
+        if (expandedRows.includes(id)) {
+            setExpandedRows(expandedRows.filter((rowId) => rowId !== id));
+        } else {
+            setExpandedRows([...expandedRows, id]);
+        }
+    };
+
+    const groupedData = thietBiNhapData.reduce((acc, item) => {
+        const existing = acc.find((tb) => tb.thietbi_id === item.thietbi_id);
+        if (existing) {
+            existing.soLuong += 1; // Tăng số lượng
+            existing.tongTien += item.donGia; // Tăng tổng tiền
+            existing.chiTiet.push(item); // Thêm bản ghi vào chi tiết
+        } else {
+            acc.push({
+                thietbi_id: item.thietbi_id,
+                tenThietBi: item.tenThietBi,
+                thoiGianBaoHanh: item.thoiGianBaoHanh,
+                donGia: item.donGia,
+                truongHopNhap : item.truongHopNhap,
+                soLuong: 1,
+                tongTien: item.donGia,
+                chiTiet: [item], // Danh sách chi tiết
+            });
+        }
+        return acc;
+    }, []);
 
     useEffect(() => {
         if (selectedRecord?.id) {
@@ -31,24 +63,24 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
         }
     }, [selectedRecord]);
 
-    const handleEdit = () => {
-        setBackupThietBiNhapData([...thietBiNhapData]); // Sao lưu danh sách thiết bị
-        setBackupTruongHopNhap(truongHopNhap); // Sao lưu trường hợp nhập
-        setBackupThoiGianBaoHanh(thoiGianBaoHanh);
-        setIsEditing(true);
-    };
+    // const handleEdit = () => {
+    //     setBackupThietBiNhapData([...thietBiNhapData]); // Sao lưu danh sách thiết bị
+    //     setBackupTruongHopNhap(truongHopNhap); // Sao lưu trường hợp nhập
+    //     setBackupThoiGianBaoHanh(thoiGianBaoHanh);
+    //     setIsEditing(true);
+    // };
 
-    const handleDeleteDevice = (thietbi_id) => {
-        setThietBiNhapData((prev) => prev.filter((tb) => tb.thietbi_id !== thietbi_id));
-    };
+    // const handleDeleteDevice = (thietbi_id) => {
+    //     setThietBiNhapData((prev) => prev.filter((tb) => tb.thietbi_id !== thietbi_id));
+    // };
 
-    const handleUpdateThietBi = (thietbi_id, field, value) => {
-        setThietBiNhapData((prev) =>
-            prev.map((tb) =>
-                tb.thietbi_id === thietbi_id ? { ...tb, [field]: value } : tb
-            )
-        );
-    };
+    // const handleUpdateThietBi = (thietbi_id, field, value) => {
+    //     setThietBiNhapData((prev) =>
+    //         prev.map((tb) =>
+    //             tb.thietbi_id === thietbi_id ? { ...tb, [field]: value } : tb
+    //         )
+    //     );
+    // };
 
     const handleSaveChanges = () => {
 
@@ -71,13 +103,13 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
             .catch((error) => console.error("Lỗi khi cập nhật phiếu nhập:", error));
     };
 
-    const handleCancelEdit = () => {
-        setThietBiNhapData([...backupThietBiNhapData]); // Phục hồi danh sách thiết bị
-        setTruongHopNhap(backupTruongHopNhap); // Phục hồi trường hợp nhập
-        setBackupThoiGianBaoHanh(backupThoiGianBaoHanh);
-        setIsEditing(false);
-    };
-  
+    // const handleCancelEdit = () => {
+    //     setThietBiNhapData([...backupThietBiNhapData]); // Phục hồi danh sách thiết bị
+    //     setTruongHopNhap(backupTruongHopNhap); // Phục hồi trường hợp nhập
+    //     setBackupThoiGianBaoHanh(backupThoiGianBaoHanh);
+    //     setIsEditing(false);
+    // };
+
 
     const handleDeletePhieuNhap = () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa phiếu nhập này?")) {
@@ -114,12 +146,13 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
                     </button>
 
                     {/* Nút Sửa */}
-                    <button
+                    {/* <button
                         className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-yellow-500 hover:text-white"
                         onClick={handleEdit}
                     >
                         <i className="text-lg text-black fas fa-edit"></i>
-                    </button>
+                    </button> */}
+
                     {/* Nút Đóng */}
                     <button
                         className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-300"
@@ -187,81 +220,68 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
                 <table className="w-full mt-2 border">
                     <thead>
                         <tr className="bg-gray-200">
-                            <th className="px-4 py-2 border-b">TB ID</th>
                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
                             <th className="px-4 py-2 border-b">Số Lượng</th>
-                            <th className="px-4 py-2 border-b text-sm grid-cols-2">Bảo Hành <span className="text-sm text-gray-500">(Tháng)</span></th>
+                            <th className="px-4 py-2 border-b">Bảo Hành (Tháng)</th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
-                            {isEditing ? (
-                                <th className="px-4 py-2 border-b">Thao Tác</th>
-                            ) : (
-                                <th className="px-4 py-2 border-b">Tổng Tiền</th>
-                            )}
+                            <th className="px-4 py-2 border-b">Tổng Tiền</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {thietBiNhapData.length > 0 ? (
-                            thietBiNhapData.map((tb) => (
-                                <tr key={tb.id} className="text-center">
-                                    <td className="p-2 border">{tb.thietbi_id}</td>
-                                    <td className="p-2 border">{tb.tenThietBi}</td>
+                        {groupedData.map((tb) => (
+                            <>
+                                {/* Hàng bảng cha */}
+                                <tr key={tb.thietbi_id} className="text-center bg-white">
                                     <td className="p-2 border">
-                                        {isEditing ? (
-                                            <input
-                                                type="number"
-                                                value={tb.soLuong}
-                                                min="1"
-                                                onChange={(e) =>
-                                                    handleUpdateThietBi(tb.thietbi_id, "soLuong", Number(e.target.value))
-                                                }
-                                                className="w-1/2 p-1 border rounded"
-                                            />
-                                        ) : (
-                                            tb.soLuong
-                                        )}
-                                    </td>
-                                    <td className="p-2 border">
-                                        {isEditing ? (
-                                            <input
-                                                type="number"
-                                                value={tb.thoiGianBaoHanh || 1}
-                                                min="1"
-                                                onChange={(e) => handleUpdateThietBi(tb.thietbi_id, "thoiGianBaoHanh", Number(e.target.value))}
-                                                className="w-1/2 p-1 border rounded"
-                                            />
-                                        ) : (
-                                            tb.thoiGianBaoHanh || "Chưa Có"
-                                        )}
-                                    </td>
-                                    <td className="p-2 border">{formatPrice(tb.donGia)}</td>
-                                    {isEditing ? (
-                                        <td className="p-2 border">
-                                            <button
-                                                className="px-3 py-1 text-white bg-red-500 rounded"
-                                                onClick={() => handleDeleteDevice(tb.thietbi_id)}
-                                            >
-                                                Xóa
+                                        <div className="flex items-center justify-between">
+                                            {tb.tenThietBi}
+                                            <button onClick={() => toggleRow(tb.thietbi_id)} className="ml-2">
+                                                {expandedRows.includes(tb.thietbi_id) ? (
+                                                    <FaChevronUp />
+                                                ) : (
+                                                    <FaChevronDown />
+                                                )}
                                             </button>
-                                        </td>
-                                    ) : (
-                                        <td className="p-2 border">{formatPrice(tb.soLuong * tb.donGia)}</td>
-                                    )}
+                                        </div>
+                                    </td>
+                                    <td className="p-2 border">{tb.soLuong}</td>
+                                    <td className="p-2 border">{tb.thoiGianBaoHanh}</td>
+                                    <td className="p-2 border">{formatPrice(tb.donGia)}</td>
+                                    <td className="p-2 border">{formatPrice(tb.tongTien)}</td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" className="p-2 text-center border">
-                                    Không có thiết bị nào
-                                </td>
-                            </tr>
-                        )}
+
+                                {/* Hàng bảng con */}
+                                {expandedRows.includes(tb.thietbi_id) && (
+                                    <tr className="bg-gray-100">
+                                        <td colSpan="6" className="p-2 border">
+                                            <table className="w-full border">
+                                                <thead>
+                                                    <tr className="bg-gray-300">
+                                                        <th className="px-4 py-2 border-b">STT</th>
+                                                        <th className="px-4 py-2 border-b">{tb.tenThietBi}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {tb.chiTiet.map((detail, index) => (
+                                                        <tr key={index} className="text-center bg-white">
+                                                            <td className="p-2 border">{index+1}</td>
+                                                            <td className="p-2 border"><span className="text-sm text-gray-500">Mã định danh: </span>{`${detail.id}`}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                )}
+                            </>
+                        ))}
                     </tbody>
                 </table>
                 {isEditing && (
                     <div className="grid grid-cols-2 gap-4 mt-4">
                         <button
                             className="px-4 py-2 text-white bg-gray-500 rounded"
-                            onClick={handleCancelEdit}
+                            // onClick={handleCancelEdit}
                         >
                             Hủy
                         </button>

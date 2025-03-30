@@ -95,9 +95,9 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
     };
     
 
-    // Xóa phòng
     const handleDelete = async () => {
         if (!window.confirm("Bạn có chắc muốn xóa phòng này không?")) return;
+    
         try {
             await axios.delete(`http://localhost:5000/api/phong/${record.id}`);
             alert("Xóa phòng thành công!");
@@ -105,8 +105,25 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
             onClose();
         } catch (error) {
             console.error("Lỗi xóa phòng:", error);
+    
+            if (error.response) {
+                const { status, data } = error.response;
+    
+                if (status === 400) {
+                    alert(`Không thể xóa phòng: ${data.error}`);
+                } else if (status === 404) {
+                    alert("Phòng không tồn tại hoặc đã bị xóa!");
+                } else if (status === 500) {
+                    alert("Lỗi server! Vui lòng thử lại sau.");
+                } else {
+                    alert(`Đã xảy ra lỗi: ${data.error || "Không xác định"}`);
+                }
+            } else {
+                alert("Không thể kết nối đến server! Kiểm tra kết nối mạng.");
+            }
         }
     };
+    
 
     // Hủy chỉnh sửa
     const handleCancel = () => {

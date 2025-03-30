@@ -64,13 +64,15 @@ exports.createPhieuNhap = async (req, res) => {
 
         // Duyệt danh sách thiết bị
         for (const item of danhSachThietBi) {
-            // Chèn vào bảng `thongtinthietbi` với số lượng
-            await connection.query(
-                `INSERT INTO thongtinthietbi (
-                    thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, soLuong
-                ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH), ?)`,
-                [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh, item.soLuong]
-            );
+            // Lặp lại `n` lần để tạo `n` bản ghi riêng biệt
+            for (let i = 0; i < item.soLuong; i++) {
+                await connection.query(
+                    `INSERT INTO thongtinthietbi (
+                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc
+                    ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH))`,
+                    [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh]
+                );
+            }
 
             // Cập nhật tồn kho trong bảng `thietbi`
             await connection.query(
@@ -90,16 +92,17 @@ exports.createPhieuNhap = async (req, res) => {
 };
 
 
+
 // Lấy danh sách thiết bị trong phiếu nhập
 exports.getThietBiInPhieuNhap = async (req, res) => {
     const { phieuNhapId } = req.params;
 
     try {
         const [rows] = await db.execute(
-            `SELECT 
+            `SELECT
+                ttb.id,
                 ttb.thietbi_id, 
                 ttb.tenThietBi, 
-                ttb.soLuong, 
                 ttb.thoiGianBaoHanh,
                 tb.donGia, 
                 pn.truongHopNhap 
@@ -127,12 +130,19 @@ exports.deletePhieuNhap = async (req, res) => {
     try {
         await connection.beginTransaction();
 
+        // Kiểm tra tồn tại của phiếu nhập
+        const [phieuNhap] = await connection.query("SELECT id FROM phieunhap WHERE id = ?", [id]);
+        if (phieuNhap.length === 0) {
+            throw new Error("Phiếu nhập không tồn tại!");
+        }
+
         // Lấy danh sách số lượng và thietbi_id để cập nhật tồn kho
         const [thietBiList] = await connection.query(
-            "SELECT thietbi_id, SUM(soLuong) AS tongSoLuong FROM thongtinthietbi WHERE phieunhap_id = ? GROUP BY thietbi_id",
+            "SELECT thietbi_id, COUNT(*) AS tongSoLuong FROM thongtinthietbi WHERE phieunhap_id = ? GROUP BY thietbi_id",
             [id]
         );
 
+        // Trừ tồn kho
         for (const item of thietBiList) {
             await connection.query(
                 "UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?",
@@ -145,7 +155,6 @@ exports.deletePhieuNhap = async (req, res) => {
 
         // Xóa phiếu nhập
         const [result] = await connection.query("DELETE FROM phieunhap WHERE id = ?", [id]);
-
         if (result.affectedRows === 0) {
             throw new Error("Không tìm thấy phiếu nhập để xóa!");
         }
@@ -159,6 +168,7 @@ exports.deletePhieuNhap = async (req, res) => {
         connection.release();
     }
 };
+
 
 
 // Cập nhật phiếu nhập theo ID

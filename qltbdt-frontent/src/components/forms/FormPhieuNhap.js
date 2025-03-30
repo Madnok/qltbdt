@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 // import { FaExchangeAlt } from "react-icons/fa";
 
-const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
+const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }) => {
     const [thietBiList, setThietBiList] = useState([]);
     const [selectedThietBi, setSelectedThietBi] = useState(null);
     const [soLuong, setSoLuong] = useState(1);
@@ -35,8 +35,18 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
     //         [deviceId]: !prevMap[deviceId], // Chuyển đổi trạng thái chỉnh sửa cho thiết bị cụ thể
     //     }));
     // };
-
-    const handleAdd = () => {
+    
+    const getNextId = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/api/tttb/next-id"); // Gọi API
+            return response.data.nextId; // Trả về nextId từ API
+        } catch (error) {
+            console.error("Lỗi lấy nextId:", error);
+            return null; // Trả về null nếu lỗi
+        }
+    };
+    
+    const handleAdd = async () => {
         if (!selectedThietBi) {
             alert("Vui lòng chọn thiết bị!");
             return;
@@ -45,21 +55,40 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
             alert("Vui lòng nhập thời gian bảo hành hợp lệ (lớn hơn 0)!");
             return;
         }
-
+    
+        const nextId = await getNextId(); // Gọi API để lấy ID tiếp theo
+    
+        if (nextId === null) {
+            alert("Không thể lấy ID tiếp theo! Vui lòng thử lại.");
+            return;
+        }
+    
+        // Tạo danh sách chi tiết thiết bị
+        const listThietBi = Array.from({ length: soLuong }, (_, index) => ({ 
+            tttb_id: nextId + index, // Sử dụng ID tăng dần từ nextId
+            thietbi_id: selectedThietBi.id,// ID của thiết bị
+            tenThietBi: selectedThietBi.tenThietBi,
+            donGia: donGia,
+            thoiGianBaoHanh: thoiGianBaoHanh,
+        }));
+    
+        // Tạo đối tượng thiết bị
         const newThietBi = {
-            id: selectedThietBi.id,
-            thietbi_id: selectedThietBi.id,
+            tttb_id: nextId,
+            thietbi_id: selectedThietBi.id, // ID của thiết bị
             tenThietBi: selectedThietBi.tenThietBi,
             soLuong: soLuong,
             donGia: donGia,
             thoiGianBaoHanh: thoiGianBaoHanh,
+            chiTiet: listThietBi, // Danh sách chi tiết
         };
-
+    
         console.log("Thêm thiết bị:", newThietBi);
-        onAddThietBi(newThietBi);
+        onAddThietBi(newThietBi); // Truyền sang formNhap
         onClose();
     };
-
+    
+    
     return (
         <div className="w-1/2 bg-white rounded-lg shadow-lg">
             <div className="flex items-center justify-between p-4 bg-gray-100 border-b">
@@ -87,7 +116,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi }) => {
                         ))}
                     </select>
                 </div>
-                
+
                 {/* Đơn Giá */}
                 <div>
                     <label className="block font-medium">Đơn Giá

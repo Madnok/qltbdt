@@ -73,17 +73,33 @@ exports.deletePhong = async (req, res) => {
     const { id } = req.params;
 
     try {
+        // Kiểm tra xem phòng có chứa thiết bị không (tối ưu bằng EXISTS)
+        const [[deviceCheck]] = await pool.query(
+            "SELECT EXISTS(SELECT 1 FROM phong_thietbi WHERE phong_id = ?) AS hasDevice",
+            [id]
+        );
+
+        // Nếu phòng có thiết bị, không cho phép xóa
+        if (deviceCheck.hasDevice) {
+            return res.status(400).json({
+                error: "Không thể xóa phòng vì phòng này đang chứa thiết bị!",
+            });
+        }
+
+        // Xóa phòng nếu không có thiết bị
         const [result] = await pool.query("DELETE FROM phong WHERE id = ?", [id]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Không tìm thấy phòng để xóa" });
+            return res.status(404).json({ error: "Không tìm thấy phòng để xóa!" });
         }
 
         res.json({ message: "Xóa phòng thành công!" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Lỗi khi xóa phòng:", error);
+        res.status(500).json({ error: "Lỗi server!" });
     }
 };
+
 
 // Lấy danh sách phòng (Dropdown)
 exports.getListPhong = async (req, res) => {
@@ -99,10 +115,10 @@ exports.getListPhong = async (req, res) => {
     }
 };
 
-// Thêm thiết bị vào phòng và cập nhật tồn kho
+// Thêm thiết bị vào phòng
 exports.addThietBiToPhong = async (req, res) => {
     try {
-        const thietbiList = req.body; // Nhận danh sách thiết bị
+        const thietbiList = req.body; // Nhận danh sách thiết bị từ frontend
 
         for (let item of thietbiList) {
             const { phong_id, thietbi_id, thongtinthietbi_id, soLuong } = item;
@@ -111,25 +127,38 @@ exports.addThietBiToPhong = async (req, res) => {
                 return res.status(400).json({ error: "Thiếu dữ liệu, vui lòng kiểm tra lại!" });
             }
 
-            // Kiểm tra tồn kho
-            const [thietBi] = await pool.query("SELECT tonKho FROM thietbi WHERE id = ?", [thietbi_id]);
-            if (thietBi.length === 0) continue;
+            // Kiểm tra tổng số lượng thiết bị đã phân bổ vào tất cả các phòng
+            const [[allocatedSum]] = await pool.query(
+                "SELECT COALESCE(SUM(soLuong), 0) AS totalAllocated FROM phong_thietbi WHERE thietbi_id = ?",
+                [thietbi_id]
+            );
 
-            if (soLuong > thietBi[0].tonKho) {
-                return res.status(400).json({ error: "Số lượng thiết bị vượt quá tồn kho!" });
+            // Lấy tồn kho thực tế của thiết bị
+            const [[thietBi]] = await pool.query(
+                "SELECT tonKho FROM thietbi WHERE id = ?",
+                [thietbi_id]
+            );
+            if (!thietBi) {
+                return res.status(404).json({ error: "Không tìm thấy thiết bị trong cơ sở dữ liệu!" });
             }
 
-            // Thêm vào phòng
+            const remainingStock = thietBi.tonKho - allocatedSum.totalAllocated;
+
+            // Kiểm tra số lượng tồn kho còn lại
+            if (soLuong > remainingStock) {
+                return res.status(400).json({
+                    error: `Số lượng thiết bị vượt quá tồn kho còn lại (${remainingStock}). Vui lòng kiểm tra lại!`,
+                });
+            }
+
+            // Thêm vào phòng (không trừ tồn kho)
             await pool.query(
                 "INSERT INTO phong_thietbi (phong_id, thietbi_id, thongtinthietbi_id, soLuong) VALUES (?, ?, ?, ?)",
                 [phong_id, thietbi_id, thongtinthietbi_id, soLuong]
             );
-
-            // Cập nhật tồn kho
-            await pool.query("UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?", [soLuong, thietbi_id]);
         }
 
-        res.json({ success: true, message: "Thêm thiết bị vào phòng và cập nhật tồn kho thành công!" });
+        res.json({ success: true, message: "Thêm thiết bị vào phòng thành công!" });
     } catch (error) {
         console.error("Lỗi thêm thiết bị vào phòng:", error);
         res.status(500).json({ success: false, message: "Lỗi server!" });
@@ -218,13 +247,13 @@ exports.removeThietBiFromPhong = async (req, res) => {
             await pool.query("DELETE FROM phong_thietbi WHERE phong_id = ? AND thietbi_id = ?", [phong_id, thietbi_id]);
         } else {
             // Nếu số lượng yêu cầu xóa nhỏ hơn, chỉ cập nhật số lượng
-            await pool.query("UPDATE phong_thietbi SET soLuong = soLuong - ? WHERE phong_id = ? AND thietbi_id = ?", [soLuong, phong_id, thietbi_id]);
+            await pool.query(
+                "UPDATE phong_thietbi SET soLuong = soLuong - ? WHERE phong_id = ? AND thietbi_id = ?",
+                [soLuong, phong_id, thietbi_id]
+            );
         }
 
-        // Cập nhật tồn kho
-        await pool.query("UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?", [soLuong, thietbi_id]);
-
-        res.status(200).json({ message: "Xóa thiết bị khỏi phòng và cập nhật tồn kho thành công!" });
+        res.status(200).json({ message: "Xóa thiết bị khỏi phòng thành công!" });
     } catch (error) {
         console.error("Lỗi khi xóa thiết bị khỏi phòng:", error);
         res.status(500).json({ error: "Lỗi server!" });

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import FormPhieuNhap from "./FormPhieuNhap";
 import { useFormattedPrice } from "../../utils/helpers";
+import { FaTrash, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const FormNhap = ({ onClose, refreshData }) => {
     const [showPhieuNhap, setShowPhieuNhap] = useState(false);
@@ -39,72 +40,116 @@ const FormNhap = ({ onClose, refreshData }) => {
             .catch((error) => console.error("Lỗi lấy danh sách thiết bị:", error));
     }, [phieuNhapId]);
 
+    // xử lý bảng dữ liệu 
+    const [expandedRows, setExpandedRows] = useState([]);
+
+    const toggleRow = (tttb_id) => {
+        if (expandedRows.includes(tttb_id)) {
+            setExpandedRows(expandedRows.filter((rowId) => rowId !== tttb_id));
+        } else {
+            setExpandedRows([...expandedRows, tttb_id]);
+        }
+    };
+
+    const groupedData = thietBiNhap.reduce((acc, item) => {
+        const existing = acc.find((tb) => tb.thietbi_id === item.thietbi_id);
+        if (existing) {
+            existing.tongTien += item.donGia * item.soLuong;
+            existing.soLuong += item.soLuong;
+            existing.chiTiet.push(...item.chiTiet); // Kết hợp danh sách chiTiet
+        } else {
+            acc.push({
+                tttb_id: item.tttb_id,
+                thietbi_id: item.thietbi_id,
+                tenThietBi: item.tenThietBi,
+                thoiGianBaoHanh: item.thoiGianBaoHanh,
+                donGia: item.donGia,
+                soLuong: item.soLuong,
+                tongTien: item.donGia * item.soLuong,
+                chiTiet: item.chiTiet || [], // Khởi tạo danh sách chi tiết nếu chưa có
+            });
+        }
+        return acc;
+    }, []);
+
+
     const handleAddThietBi = (newThietBi) => {
-        let isDuplicate = false;
-    
         setThietBiNhap((prev) => {
             const existingIndex = prev.findIndex(
-                (tb) => tb.thietbi_id === newThietBi.thietbi_id && tb.tenThietBi === newThietBi.tenThietBi
+                (tb) =>
+                    tb.thietbi_id === newThietBi.thietbi_id &&
+                    tb.tenThietBi === newThietBi.tenThietBi &&
+                    tb.thoiGianBaoHanh === newThietBi.thoiGianBaoHanh
             );
-    
+
             if (existingIndex !== -1) {
-                // Nếu tìm thấy thiết bị có cùng ID và tên
-                if (prev[existingIndex].thoiGianBaoHanh === newThietBi.thoiGianBaoHanh) {
-                    // Cùng thời gian bảo hành thì Cộng dồn số lượng
-                    const updatedList = [...prev];
-                    updatedList[existingIndex] = {
-                        ...updatedList[existingIndex],
-                        soLuong: updatedList[existingIndex].soLuong + newThietBi.soLuong,
-                    };
-                    return updatedList;
-                } else {
-                    // Khác thời gian bảo hành => Đánh dấu lỗi
-                    isDuplicate = true;
-                    return prev;
-                }
+                const updatedList = [...prev];
+                updatedList[existingIndex] = {
+                    ...updatedList[existingIndex],
+                    soLuong: updatedList[existingIndex].soLuong + newThietBi.soLuong,
+                    tongTien: updatedList[existingIndex].tongTien + (newThietBi.soLuong * newThietBi.donGia),
+                    chiTiet: [
+                        ...updatedList[existingIndex].chiTiet,
+                        ...newThietBi.chiTiet, // Sử dụng danh sách chiTiet được truyền từ formPhieuNhap
+                    ],
+                };
+                return updatedList;
             } else {
-                // Nếu không tìm thấy thiết bị trùng, thêm mới
-                return [...prev, newThietBi];
+                return [...prev, newThietBi]; // Thêm thiết bị mới vào danh sách
             }
         });
-    
-        // Hiện alert ngoài setState
-        if (isDuplicate) {
-            alert(`Vui lòng nhập cùng thời gian bảo hành cho 1 lô thiết bị ${newThietBi.tenThietBi} giống nhau.`);
-        }
-    
-        console.log("Danh sách thiết bị sau khi thêm:", thietBiNhap);
     };
-    
+
     const handleDeleteThietBi = (thietbi_id) => {
         setThietBiNhap((prev) => prev.filter((tb) => tb.thietbi_id !== thietbi_id));
     };
 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (thietBiNhap.length === 0) {
-            alert("Chưa có thiết bị nào để nhập!");
+        if (thietBiNhap.length === 0 || !thietBiNhap.every((tb) => tb.chiTiet && tb.chiTiet.length > 0)) {
+            alert("Danh sách thiết bị nhập không hợp lệ!");
             return;
         }
 
-        const data = {
-            userId: 1,
-            truongHopNhap,
-            ngayTao,
-            danhSachThietBi: thietBiNhap, // Gửi luôn danh sách thiết bị nhập
-        };
+        if (!["muaMoi", "taiTro"].includes(truongHopNhap)) {
+            alert("Trường hợp nhập không hợp lệ!");
+            return;
+        }
+
+
+        const danhSachThietBi = thietBiNhap.map((tb) => ({
+            thietbi_id: tb.thietbi_id,
+            tenThietBi: tb.tenThietBi,
+            thoiGianBaoHanh: tb.thoiGianBaoHanh,
+            soLuong: tb.soLuong,
+            chiTiet: tb.chiTiet.map((detail) => ({
+                thietbi_id: detail.thietbi_id,
+                tenThietBi: detail.tenThietBi,
+                thoiGianBaoHanh: detail.thoiGianBaoHanh,
+            })),
+        }));
+
 
         try {
-            await axios.post("http://localhost:5000/api/nhap", data);
+            await axios.post("http://localhost:5000/api/nhap", {
+                userId: 1,
+                truongHopNhap,
+                ngayTao,
+                danhSachThietBi,
+            });
             alert("Tạo phiếu nhập thành công!");
             refreshData();
             onClose();
         } catch (error) {
-            console.error("Lỗi:", error);
-            alert("Lỗi khi tạo phiếu nhập!");
+            console.error("Lỗi khi tạo phiếu nhập:", error.response || error.message);
+            const errorMessage =
+                error.response?.data?.error || "Đã xảy ra lỗi không xác định!";
+            alert(`Lỗi khi tạo phiếu nhập: ${errorMessage}`);
         }
     };
+
 
     return (
         <div className="flex flex-col h-full bg-white border-l shadow-md">
@@ -151,33 +196,73 @@ const FormNhap = ({ onClose, refreshData }) => {
                 <table className="w-full mt-2 border">
                     <thead>
                         <tr className="bg-gray-200">
-                            <th className="px-4 py-2 border-b">ID</th>
-                            <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
+                            <th className="px-4 py-2 border-b">Id Thiết Bị</th>
+                            <th className="px-4 py-2 border-b">Tên</th>
                             <th className="px-4 py-2 border-b">Số Lượng</th>
                             <th className="px-4 py-2 border-b text-sm grid-cols-2">Bảo Hành <span className="text-sm text-gray-500">(Tháng)</span></th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
                             <th className="px-4 py-2 border-b">Tổng Tiền</th>
-                            <th className="px-4 py-2 border-b"></th>
+                            <th className="px-4 py-2 border-b">Chức Năng</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {thietBiNhap.map((tb, index) => (
-                            <tr key={index} className="text-center">
-                                <td className="p-2 border">{tb.thietbi_id}</td>
-                                <td className="p-2 border">{tb.tenThietBi}</td>
-                                <td className="p-2 border">{tb.soLuong}</td>
-                                <td className="p-2 border">{tb.thoiGianBaoHanh}</td>
-                                <td className="p-2 border">{formatPrice(tb.donGia)}</td>
-                                <td class="p-2 border">{formatPrice(tb.soLuong * tb.donGia)}</td>
-                                <td className="p-2 border">
-                                    <button
-                                        className="px-3 py-1 text-white bg-red-500 rounded"
-                                        onClick={() => handleDeleteThietBi(tb.thietbi_id)}
-                                    >
-                                        Xóa
-                                    </button>
-                                </td>
-                            </tr>
+                        {groupedData.map((tb) => (
+                            <>
+                                {/* Hàng bảng cha */}
+                                <tr key={tb.thietbi_id} className="text-center">
+                                    <td className="p-2 border">{tb.thietbi_id}</td>
+                                    <td className="p-2 border">
+                                        <div className="flex items-center justify-between">
+                                            {tb.tenThietBi}
+                                            <button onClick={() => toggleRow(tb.thietbi_id)} className="ml-2">
+                                                {expandedRows.includes(tb.thietbi_id) ? (
+                                                    <FaChevronUp />
+                                                ) : (
+                                                    <FaChevronDown />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="p-2 border">{tb.soLuong}</td>
+                                    <td className="p-2 border">{tb.thoiGianBaoHanh}</td>
+                                    <td className="p-2 border">{formatPrice(tb.donGia)}</td>
+                                    <td class="p-2 border">{formatPrice(tb.soLuong * tb.donGia)}</td>
+                                    <td className="p-2 border">
+                                        <div className="flex justify-center space-x-2">
+                                            <button
+                                                className="px-1 py-1 text-white bg-red-500 rounded"
+                                                onClick={() => handleDeleteThietBi(tb.thietbi_id)}
+                                                title="Xóa thiết bị"
+                                            >
+                                                <FaTrash />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {/* Hàng bảng con */}
+                                {expandedRows.includes(tb.thietbi_id) && (
+                                    <tr className="bg-gray-100">
+                                        <td colSpan="5" className="p-2 border">
+                                            <table className="w-full border">
+                                                <thead>
+                                                    <tr className="bg-gray-300">
+                                                        <th className="px-4 py-2 border-b">STT</th>
+                                                        <th className="px-4 py-2 border-b">Mã định danh</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {tb.chiTiet.map((detail, index) => (
+                                                        <tr key={detail.tttb_id} className="text-center bg-white">
+                                                            <td className="p-2 border">{index + 1}</td>
+                                                            <td className="p-2 border"><span className="text-sm text-gray-500">Mã định danh: </span>{detail.tttb_id}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                )}
+                            </>
                         ))}
                     </tbody>
                 </table>

@@ -114,10 +114,10 @@ const FormThietBi = ({ onClose, refreshData }) => {
                 </div>
 
                 {/* Tồn Kho */}
-                <div>
+                {/* <div>
                     <label className="block font-medium">Tồn Kho</label>
                     <input type="number" value="0" disabled className="w-full p-2 mt-1 bg-gray-100 border rounded" />
-                </div>
+                </div> */}
 
                 {/* Mô Tả */}
                 <div>

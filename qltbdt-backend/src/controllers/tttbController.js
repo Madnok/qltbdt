@@ -212,7 +212,7 @@ exports.getThietBiTrongPhong = async (req, res) => {
     const { phong_id } = req.params;
     try {
         const [rows] = await pool.query(`
-            SELECT tttb.id, tttb.thietbi_id, tttb.tenThietBi, tttb.soLuong, tttb.nguoiDuocCap
+            SELECT tttb.id, tttb.thietbi_id, tttb.tenThietBi, tttb.nguoiDuocCap
             FROM thongtinthietbi tttb
             WHERE tttb.phong_id = ?
         `, [phong_id]);

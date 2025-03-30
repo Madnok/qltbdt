@@ -7,7 +7,6 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     const [editData, setEditData] = useState(record);
     const [isEditing, setIsEditing] = useState(false);
 
-
     const tinhTrangList = ["het_bao_hanh", "con_bao_hanh"].map(value => ({
         value,
         label: getTinhTrangLabel(value),
@@ -61,19 +60,19 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
         }
     };
 
-    const handleDelete = async () => {
-        if (window.confirm("Bạn có chắc chắn muốn xóa thông tin thiết bị này?")) {
-            try {
-                await axios.delete(`http://localhost:5000/api/tttb/${record.id}`, { withCredentials: true });
-                alert("Xóa thông tin thiết bị thành công!");
-                refreshData();
-                onClose();
-            } catch (error) {
-                console.error("Lỗi khi xóa thông tin thiết bị:", error);
-                alert("Có lỗi xảy ra khi xóa thông tin thiết bị!");
-            }
-        }
-    };
+    // const handleDelete = async () => {
+    //     if (window.confirm("Bạn có chắc chắn muốn xóa thông tin thiết bị này?")) {
+    //         try {
+    //             await axios.delete(`http://localhost:5000/api/tttb/${record.id}`, { withCredentials: true });
+    //             alert("Xóa thông tin thiết bị thành công!");
+    //             refreshData();
+    //             onClose();
+    //         } catch (error) {
+    //             console.error("Lỗi khi xóa thông tin thiết bị:", error);
+    //             alert("Có lỗi xảy ra khi xóa thông tin thiết bị!");
+    //         }
+    //     }
+    // };
 
     const handleCancel = () => {
         setEditData(record);
@@ -92,17 +91,19 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
 
                 <div className="flex space-x-2">
                     {/* xóa */}
-                    <button className="w-10 h-10 rounded-full hover:bg-red-500 hover:text-white"
+                    {/* <button className="w-10 h-10 rounded-full hover:bg-red-500 hover:text-white"
                         onClick={handleDelete}>
                         <i className="text-lg text-black fas fa-trash"></i>
-                    </button>
+                    </button> */}
                     {/* nút sửa */}
                     <button className="w-10 h-10 rounded-full hover:bg-yellow-500 hover:text-white"
+                        title="Sửa"
                         onClick={toggleEdit}>
                         <i className="text-lg text-black fas fa-edit"></i>
                     </button>
                     {/* Nút đóng rightpanel */}
                     <button className="w-10 h-10 rounded-full hover:bg-gray-300"
+                        title="Đóng"
                         onClick={onClose}>
                         <i className="text-lg text-black fas fa-times"></i>
                     </button>
@@ -110,57 +111,33 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 p-2 pb-8">
-                {/* ID */}
-                <div>
-                    <label className="font-semibold">ID Thông Tin TB:</label>
-                    <input type="text" value={`TTTB${record.id}`} className="w-full p-2 bg-gray-100 border" disabled />
-                </div>
-
                 {/* ID thiết bị */}
                 <div>
                     <label className="font-semibold">ID Thiết Bị:</label>
                     <input type="text" value={`TB${isEditing ? editData.thietbi_id : record.thietbi_id}`} className="w-full p-2 bg-gray-100 border" disabled />
                 </div>
 
-                {/* ID Phiếu Nhập */}
+                {/* MDD */}
                 <div>
-                    <label className="font-semibold">ID Phiếu Nhập:</label>
-                    <input type="text" value={`GN${record.phieunhap_id}`} className="w-full p-2 bg-gray-100 border" disabled />
+                    <label className="font-semibold">Mã Định Danh Thiết Bị:</label>
+                    <input type="text" value={`${record.id}`} className="w-full p-2 bg-gray-100 border" disabled />
                 </div>
 
-                {/* Số Lượng */}
+                {/* ID Phiếu Nhập */}
                 <div>
-                    <label className="font-semibold">Số Lượng Nhập:</label>
-                    <input
-                        type="text"
-                        name="soLuong"
-                        value={record.soLuong || 0 }
-                        className="w-full p-2 border"
-                        disabled />
+                    <label className="font-semibold">Mã Phiếu Nhập:</label>
+                    <input type="text" value={`GN${record.phieunhap_id}`} className="w-full p-2 bg-gray-100 border" disabled />
                 </div>
 
                 {/* Chọn Tên Thiết Bị */}
                 <div>
                     <label className="font-semibold">Tên Thiết Bị:</label>
-                    {isEditing ? (
-                        <select
-                            name="thietbi_id"
-                            value={editData.thietbi_id}
-                            onChange={handleChange}
-                            className="w-full p-2 border"
-                        >
-                            {thietBiList.map(tb => (
-                                <option key={tb.id} value={tb.id}>{tb.tenThietBi}</option>
-                            ))}
-                        </select>
-                    ) : (
-                        <input
-                            type="text"
-                            value={getTenThietBi(record.thietbi_id)}
-                            className="w-full p-2 border"
-                            disabled
-                        />
-                    )}
+                    <input
+                        type="text"
+                        value={getTenThietBi(record.thietbi_id)}
+                        className="w-full p-2 border"
+                        disabled
+                    />
                 </div>
 
                 {/* Chọn Trạng Thái */}
@@ -225,8 +202,12 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                         <button className="px-4 py-2 text-white bg-gray-500 rounded"
                             onClick={handleCancel}>Hủy</button>
                     </div>
+
                 )}
             </div>
+
+
+
             <div className="flex items-center justify-between py-4 pl-2 border-y">
                 <h2 className="text-lg font-semibold">Thông Tin Nhập</h2>
             </div>
@@ -243,5 +224,6 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
         </div>
     )
 }
+
 
 export default ChiTietTTTB;

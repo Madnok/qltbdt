@@ -89,24 +89,38 @@ exports.deleteThietBi = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Kiểm tra xem thiết bị có liên quan trong `thongtinthietbi` không
-        const [rows] = await pool.query("SELECT COUNT(*) AS count FROM thongtinthietbi WHERE thietbi_id = ?", [id]);
-        if (rows[0].count > 0) {
-            return res.status(400).json({ error: "Không thể xóa thiết bị vì đã được sử dụng trong thông tin thiết bị" });
+        // Kiểm tra thông tin thiết bị và tồn kho
+        const [[checkCounts]] = await pool.query(
+            `SELECT 
+                COUNT(tt.id) AS thongTinThietBiCount,
+                t.tonKho 
+            FROM thietbi t
+            LEFT JOIN thongtinthietbi tt ON t.id = tt.thietbi_id
+            WHERE t.id = ?`,
+            [id]
+        );
+
+        // Nếu thiết bị vẫn còn trong thông tin thiết bị hoặc tồn kho > 0, không cho phép xóa
+        if (checkCounts.thongTinThietBiCount > 0 || checkCounts.tonKho > 0) {
+            return res.status(400).json({
+                error: "Không thể xóa thiết bị vì vẫn còn tồn kho hoặc thiết bị đang được sử dụng!"
+            });
         }
 
-        // Nếu không có liên kết, xóa thiết bị
+        // Xóa thiết bị nếu điều kiện hợp lệ
         const [result] = await pool.query("DELETE FROM thietbi WHERE id = ?", [id]);
-
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Không tìm thấy thiết bị để xóa" });
         }
 
         res.json({ message: `Xóa thiết bị ID ${id} thành công!` });
     } catch (error) {
-        res.status(500).json({ error: "Lỗi xóa thiết bị" });
+        console.error("Lỗi khi xóa thiết bị:", error);
+        res.status(500).json({ error: "Lỗi xóa thiết bị!" });
     }
 };
+
+
 
 // Lấy thông tin thiết bị, trừ đi số lượng đã gán vào phòng
 exports.getThongTinThietBi = async (req, res) => {
@@ -134,5 +148,28 @@ exports.getThongTinThietBi = async (req, res) => {
     } catch (error) {
         console.error("Lỗi lấy thông tin thiết bị:", error);
         res.status(500).json({ error: "Lỗi server!" });
+    }
+};
+
+// Lấy số lượng thiết bị còn lại
+exports.getThietBiConLai = async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT
+                tb.id,
+                tb.tenThietBi,
+                tb.tonKho - COALESCE(SUM(pt.soLuong), 0) AS remainingStock
+            FROM
+                thietbi tb
+            LEFT JOIN
+                phong_thietbi pt
+            ON
+                tb.id = pt.thietbi_id
+            GROUP BY
+                tb.id, tb.tenThietBi, tb.tonKho
+        `);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: "Lỗi khi lấy danh sách thiết bị còn lại!!" });
     }
 };
