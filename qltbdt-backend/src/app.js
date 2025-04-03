@@ -11,6 +11,7 @@ const theloaiRoutes = require("./routes/theloaiRoutes");
 const userRoutes = require("./routes/userRoutes");
 const nhapRoutes = require("./routes/nhapRoutes");
 const baohongRoutes = require("./routes/baohongRoutes");
+const lichTrucRoutes = require("./routes/lichtrucRoutes");
 
 const app = express();
 
@@ -31,5 +32,6 @@ app.use("/api/theloai", theloaiRoutes);
 app.use("/api/user", userRoutes);  
 app.use("/api/nhap", nhapRoutes);
 app.use("/api/baohong", baohongRoutes);
+app.use("/api/lichtruc", lichTrucRoutes);
 
 module.exports = app;

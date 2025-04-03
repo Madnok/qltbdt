@@ -11,6 +11,7 @@ import BaoHongGoiY from "./pages/BaoHongGoiY";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "../src/context/AuthProvider";
 import AppLayout from "../src/components/layout/AppLayout";
+import ThongTinBaoHong from "./pages/ThongTinBaoHong";
 
 function Layout() {
   return (
@@ -34,6 +35,7 @@ function Layout() {
         <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
           <Route path="/nhapxuat" element={<NhapXuat />} />
           <Route path="/thongke" element={<ThongKe />} />
+          <Route path="/thongtinbaohong" element={<ThongTinBaoHong />} />
         </Route>
       </Route>
 

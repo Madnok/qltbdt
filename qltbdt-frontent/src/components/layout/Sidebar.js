@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { FaChevronDown, FaChevronUp, FaExclamationCircle, FaCommentDots, FaInfoCircle } from "react-icons/fa";
 
-const Sidebar = ({ isOpen = true }) => {
+const Sidebar = ({ isOpen = true, toggleSidebar }) => { // Nhận hàm toggleSidebar để thay đổi trạng thái
   const [user, setUser] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false); // Trạng thái dropdown
   const location = useLocation(); // Lấy đường dẫn hiện tại
 
   useEffect(() => {
@@ -30,7 +32,6 @@ const Sidebar = ({ isOpen = true }) => {
     { path: "/baotri", icon: "fas fa-tools", text: "Bảo Trì", roles: ["admin", "nhanvien"] },
     { path: "/lichtruc", icon: "fas fa-calendar-alt", text: "Lịch Trực", roles: ["admin", "nhanvien"] },
     { path: "/thongke", icon: "fas fa-chart-bar", text: "Thống Kê", roles: ["admin"] },
-    { path: "/", icon: "fas fa-exclamation-triangle", text: "Báo Hỏng & Góp Ý", roles: ["admin", "nhanvien"] }
   ];
 
   return (
@@ -58,9 +59,47 @@ const Sidebar = ({ isOpen = true }) => {
               </li>
             );
           })}
+        <li className="relative group">
+          {/* Dropdown for Báo Hỏng & Góp Ý */}
+          <div
+            className={`flex items-center p-4 cursor-pointer transition-all duration-200 hover:bg-gray-200`}
+            title="Báo Hỏng & Góp Ý"
+            onClick={() => {
+              if (!isOpen) toggleSidebar(); // Nếu sidebar đang closed thì mở nó
+              setDropdownOpen(!dropdownOpen); // Toggle trạng thái dropdown
+            }}
+          >
+            <i className="mr-2 fas fa-exclamation-triangle" ></i>
+            {isOpen && "Báo Hỏng & Góp Ý"}
+            {isOpen && (dropdownOpen ? <FaChevronUp className="ml-auto" /> : <FaChevronDown className="ml-auto" />)}
+          </div>
+          {dropdownOpen && isOpen && (
+            <ul className="space-y-1 bg-gray-50">
+              <li>
+                <Link to="/" className="flex items-center py-2 pl-8 hover:bg-gray-200">
+                  <FaExclamationCircle className="mr-2 text-gray-800" />
+                  Báo Hỏng
+                </Link>
+              </li>
+              <li>
+                <Link to="/" className="flex items-center py-2 pl-8 hover:bg-gray-200">
+                  <FaCommentDots className="mr-2 text-gray-800" />
+                  Góp Ý
+                </Link>
+              </li>
+              <li>
+                <Link to="/ThongTinBaoHong" className="flex items-center py-2 pl-8 hover:bg-gray-200">
+                  <FaInfoCircle className="mr-2 text-gray-800" /> 
+                  Thông Tin Báo Hỏng
+                </Link>
+              </li>
+            </ul>
+          )}
+        </li>
       </ul>
     </div>
   );
 };
 
 export default Sidebar;
+

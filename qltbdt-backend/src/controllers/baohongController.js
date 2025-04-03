@@ -87,7 +87,9 @@ exports.getThongTinBaoHong = async (req, res) => {
                 baohong.moTa,
                 baohong.hinhAnh,
                 baohong.loaithiethai,
-                baohong.ngayBaoHong
+                baohong.mucDoUuTien,
+                baohong.ngayBaoHong,
+                baohong.trangThai
             FROM baohong
             ORDER BY baohong.ngayBaoHong DESC
         `);
