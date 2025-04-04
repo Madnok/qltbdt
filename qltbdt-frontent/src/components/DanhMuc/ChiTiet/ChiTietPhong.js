@@ -20,7 +20,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
 
         const fetchData = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${record.id}`);
+                const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${record.id}`, {withCredentials:true});
                 setThietBiList(response.data);
                 setFilteredThietBiList(response.data);
             } catch (error) {
@@ -29,7 +29,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
         };
 
         fetchData();
-    }, [record], setFilteredThietBiList);
+    }, [record]);
 
     // Cập nhật dữ liệu khi người dùng thay đổi giá trị input
     const handleChange = (e) => {
@@ -45,8 +45,11 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
 
     // Lưu cập nhật phòng
     const handleSave = async () => {
+        const config ={
+            withCredentials:true
+        };
         try {
-            await axios.put(`http://localhost:5000/api/phong/${record.id}`, editData);
+            await axios.put(`http://localhost:5000/api/phong/${record.id}`, editData, config);
             alert("Cập nhật phòng thành công!");
             refreshData();
             setIsEditing(false);
@@ -78,21 +81,30 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
         if (!window.confirm("Bạn có chắc chắn muốn gỡ thiết bị này khỏi phòng không?")) return;
 
         try {
-            await axios.post("http://localhost:5000/api/phong/xoathietbi", {
+            // Dữ liệu (payload)
+            const payload = {
                 phong_id: record.id,
                 thongtinthietbi_id,
-            });
-
+            };
+            // Cấu hình (config)
+            const config = {
+                withCredentials: true
+            };
+    
+            // Gọi axios.post với 3 tham số
+            await axios.post("http://localhost:5000/api/phong/xoathietbi", payload, config);
+    
             // Cập nhật danh sách thiết bị sau khi xóa
             const updatedThietBiList = thietBiList.filter(tb => tb.thongtinthietbi_id !== thongtinthietbi_id);
             setThietBiList(updatedThietBiList);
-            setFilteredThietBiList(updatedThietBiList);
-
+            setFilteredThietBiList(updatedThietBiList); // Giả sử bạn có state này
+    
             alert("Xóa Thiết Bị Khỏi Phòng Thành Công!");
-            refreshData();
+            // refreshData(); // Gọi refresh nếu cần tải lại toàn bộ
         } catch (error) {
-            console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error);
-            alert("Xóa thiết bị thất bại, vui lòng thử lại!");
+            console.error("Lỗi khi gỡ thiết bị khỏi phòng:", error.response || error.message);
+             const errorMessage = error.response?.data?.error || error.response?.data?.message || "Đã xảy ra lỗi không xác định!";
+            alert(`Xóa thiết bị thất bại: ${errorMessage}`);
         }
     };
 
@@ -124,9 +136,13 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
 
     const handleDelete = async () => {
         if (!window.confirm("Bạn có chắc muốn xóa phòng này không?")) return;
-
+    
+        const config = {
+            withCredentials: true
+        };
+    
         try {
-            await axios.delete(`http://localhost:5000/api/phong/${record.id}`);
+            await axios.delete(`http://localhost:5000/api/phong/${record.id}`, config);
             alert("Xóa phòng thành công!");
             refreshData();
             onClose();
@@ -272,9 +288,9 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                     <table className="w-full border border-gray-300 table-auto">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-4 py-2 border text-center">STT</th>
+                                <th className="px-4 py-2 text-center border">STT</th>
                                 <th className="px-4 py-2 border">Thể Loại</th>
-                                <th className="px-4 py-2 border text-center">Tổng TB</th>
+                                <th className="px-4 py-2 text-center border">Tổng TB</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -282,7 +298,7 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                                 <>
                                     {/* Bảng cha */}
                                     <tr key={index} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2 border text-center">{index + 1}</td>
+                                        <td className="px-4 py-2 text-center border">{index + 1}</td>
                                         <td className="px-4 py-2 border">
                                             <div className="flex items-center justify-between">
                                                 {group.theLoai}
@@ -298,22 +314,22 @@ const ChiTietPhong = ({ record, onClose, refreshData }) => {
                                                 </button>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 border text-center">{group.total}</td>
+                                        <td className="px-4 py-2 text-center border">{group.total}</td>
                                     </tr>
 
                                     {/* Bảng con */}
                                     {expandedRows.includes(group.theLoai) && (
                                         <tr>
                                             <td colSpan={1}></td>
-                                            <td colSpan={3} className=" border">
+                                            <td colSpan={3} className="border ">
                                                 <table className="w-full border border-gray-300 table-auto">
                                                     <thead className="bg-gray-100">
                                                         <tr>
-                                                            <th className="text-sm border text-center">STT</th>
+                                                            <th className="text-sm text-center border">STT</th>
                                                             <th className="text-sm border">Mã Định Danh</th>
                                                             <th className="text-sm border">Tên Thiết Bị</th>
-                                                            <th className="text-sm border text-center">Tình Trạng</th>
-                                                            <th className="text-sm border text-center">Hành Động</th>
+                                                            <th className="text-sm text-center border">Tình Trạng</th>
+                                                            <th className="text-sm text-center border">Hành Động</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>

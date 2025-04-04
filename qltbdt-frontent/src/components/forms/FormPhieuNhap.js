@@ -11,7 +11,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
     const [thoiGianBaoHanh, setThoiGianBaoHanh] = useState(0); // Thêm thời gian bảo hành
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/thietbi-list")
+        axios.get("http://localhost:5000/api/tttb/thietbi-list", { withCredentials: true })
             .then((response) => setThietBiList(response.data))
             .catch((error) => console.error("ERROR", error));
     }, []);
@@ -38,7 +38,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
     
     const getNextId = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/tttb/next-id"); // Gọi API
+            const response = await axios.get("http://localhost:5000/api/tttb/next-id", { withCredentials: true }); // Gọi API
             return response.data.nextId; // Trả về nextId từ API
         } catch (error) {
             console.error("Lỗi lấy nextId:", error);
@@ -130,20 +130,20 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
                             là: {donGia.toLocaleString()} VND
                         </span>
                     </label>
-                    {/* <div className="grid grid-cols-10 items-center gap-2">
+                    {/* <div className="grid items-center grid-cols-10 gap-2">
                         {isEditingMap[selectedThietBi?.id] ? (
                             <input
                                 type="number"
                                 value={donGia}
                                 min="0"
                                 onChange={(e) => setDonGia(Number(e.target.value))}
-                                className="w-full p-2 mt-1 border rounded col-span-9"
+                                className="w-full col-span-9 p-2 mt-1 border rounded"
                             />
                         ) : (
                             <input
                                 type="number"
                                 value={donGia}
-                                className="w-full p-2 mt-1 border rounded bg-gray-200 col-span-9 items-center"
+                                className="items-center w-full col-span-9 p-2 mt-1 bg-gray-200 border rounded"
                                 disabled
                             />
                         )}
@@ -185,7 +185,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
                 </div>
 
                 {/* Buttons */}
-                <div className="grid grid-cols-2 start-2 space-x-2">
+                <div className="grid grid-cols-2 space-x-2 start-2">
                     <button
                         type="button"
                         className="px-4 py-2 text-white bg-yellow-500 rounded"

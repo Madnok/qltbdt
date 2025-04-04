@@ -13,7 +13,7 @@ const FormThietBi = ({ onClose, refreshData }) => {
 
     // Lấy số lượng thiết bị để tạo ID mới
     useEffect(() => {
-        axios.get("http://localhost:5000/api/thietbi")
+        axios.get("http://localhost:5000/api/thietbi", {withCredentials:true})
             .then(response => {
                 setNewId(response.data.length + 1); // ID mới = số lượng thiết bị + 1
             })
@@ -22,7 +22,7 @@ const FormThietBi = ({ onClose, refreshData }) => {
 
     // Lấy danh sách thể loại
     useEffect(() => {
-        axios.get("http://localhost:5000/api/theloai")
+        axios.get("http://localhost:5000/api/theloai",{withCredentials:true})
             .then(response => {
                 setDsTheLoai(response.data);
             })
@@ -37,6 +37,7 @@ const FormThietBi = ({ onClose, refreshData }) => {
     // Xử lý lưu thiết bị
     const handleSubmit = (e) => {
         e.preventDefault();
+        const config = {withCredentials:true};
         const dataToSend = {
             id: newId,
             theloai_id: formData.theloai_id,
@@ -46,7 +47,7 @@ const FormThietBi = ({ onClose, refreshData }) => {
             tonKho: 0,  // Mặc định là 0
         };
 
-        axios.post("http://localhost:5000/api/thietbi", dataToSend)
+        axios.post("http://localhost:5000/api/thietbi", dataToSend, config)
             .then(() => {
                 alert("Thêm thiết bị thành công!");
                 refreshData();

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -13,17 +14,19 @@ const nhapRoutes = require("./routes/nhapRoutes");
 const baohongRoutes = require("./routes/baohongRoutes");
 const lichTrucRoutes = require("./routes/lichtrucRoutes");
 
+
 const app = express();
 
 // Middleware
+app.use(helmet());
 app.use(express.json());
 app.use(cookieParser()); // Thêm dòng này để đọc cookies
 app.use(cors({
   origin: "http://localhost:3000", 
-  credentials: true,  // Quan trọng! Cho phép gửi cookies từ frontend
+  credentials: true,  //Cho phép gửi cookies từ frontend
 }));
 
-// Mount routes
+// routes
 app.use("/api/auth", authRoutes);
 app.use("/api/phong", phongRoutes);
 app.use("/api/thietbi", thietbiRoutes);
@@ -33,5 +36,6 @@ app.use("/api/user", userRoutes);
 app.use("/api/nhap", nhapRoutes);
 app.use("/api/baohong", baohongRoutes);
 app.use("/api/lichtruc", lichTrucRoutes);
+
 
 module.exports = app;

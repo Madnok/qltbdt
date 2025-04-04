@@ -1,6 +1,8 @@
+const { verifyToken } = require("../middleware/authMiddleware");
 const express = require("express");
 const lichtrucController = require("../controllers/lichtrucController");
 const router = express.Router();
+router.use(verifyToken);
 
 router.get("/nhanvien", lichtrucController.getNhanVien);
 router.get("/", lichtrucController.getAllLichTruc); // Hoặc có thể là GET /?startDate=...&endDate=...
@@ -11,7 +13,5 @@ router.put("/:id", lichtrucController.updateLichTruc); // Sửa một lịch tr�
 router.delete("/:id", lichtrucController.deleteLichTruc); // Xóa một lịch trực
 router.post("/bulk-save", lichtrucController.saveBulkChanges); // Lưu nhiều thay đổi
 
-// Cân nhắc xóa route này nếu gộp vào updateLichTruc
-// router.put("/:id/phong", lichtrucController.updatePhongId);
 
 module.exports = router;

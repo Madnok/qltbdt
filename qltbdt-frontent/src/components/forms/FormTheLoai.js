@@ -11,12 +11,13 @@ const FormTheLoai = ({ onClose, refreshData }) => {
         console.log("Dữ liệu gửi:", { theLoai: tenTheLoai }); // Xem dữ liệu gửi đi
 
         try {
-            const response = await axios.get("http://localhost:5000/api/theloai");
+            const response = await axios.get("http://localhost:5000/api/theloai", { withCredentials: true });
             const currentLength = response.data.length; // Độ dài hiện tại
             const newId = currentLength + 1;// Tạo ID mới dựa trên độ dài mảng + 1
 
             await axios.post("http://localhost:5000/api/theloai", { id: newId, theLoai: tenTheLoai }, {
                 headers: { "Content-Type": "application/json" } // Đảm bảo gửi JSON
+                , withCredentials: true
             });
             alert("Thêm thể loại thành công!");
             refreshData();

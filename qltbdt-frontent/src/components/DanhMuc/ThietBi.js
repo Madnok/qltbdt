@@ -12,7 +12,7 @@ const ThietBi = ({ setSelectedRecord, refresh }) => {
     const fetchData = async () => {
         try {
             // Gọi API lấy danh sách thiết bị
-            const thietBiResponse = await axios.get("http://localhost:5000/api/thietbi");
+            const thietBiResponse = await axios.get("http://localhost:5000/api/thietbi",{withCredentials: true});
     
             // Cập nhật state `data` với dữ liệu từ API
             setData(thietBiResponse.data);

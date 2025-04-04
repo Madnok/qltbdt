@@ -23,7 +23,7 @@ const FormNhap = ({ onClose, refreshData }) => {
         setNgayTao(formattedDate);
 
         // Lấy họ tên người tạo
-        axios.get("http://localhost:5000/api/nhap/user/1")
+        axios.get("http://localhost:5000/api/nhap/user/1", { withCredentials: true })
             .then((res) => setNguoiTao(res.data.hoTen))
             .catch((error) => console.error("Lỗi lấy thông tin người tạo:", error));
     }, []);
@@ -32,7 +32,7 @@ const FormNhap = ({ onClose, refreshData }) => {
     useEffect(() => {
         if (!phieuNhapId) return;
 
-        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`)
+        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`, { withCredentials: true })
             .then((res) => {
                 console.log("Thiết bị trong phiếu nhập:", res.data);
                 setThietBiNhap(res.data);
@@ -131,21 +131,31 @@ const FormNhap = ({ onClose, refreshData }) => {
             })),
         }));
 
-
         try {
-            await axios.post("http://localhost:5000/api/nhap", {
-                userId: 1,
+            const payload = {
+                userId: 1, // Lấy từ context (Giả sử bạn có `user` từ useAuth)
                 truongHopNhap,
                 ngayTao,
                 danhSachThietBi,
-            });
+            };
+
+            const config = {
+                withCredentials: true
+            };
+    
+            // Gọi axios.post với 3 tham số: url, data, config
+            await axios.post("http://localhost:5000/api/nhap", payload, config);
+    
             alert("Tạo phiếu nhập thành công!");
-            refreshData();
-            onClose();
+            refreshData(); 
+            onClose(); 
+    
         } catch (error) {
             console.error("Lỗi khi tạo phiếu nhập:", error.response || error.message);
             const errorMessage =
-                error.response?.data?.error || "Đã xảy ra lỗi không xác định!";
+                error.response?.data?.error || 
+                error.response?.data?.message || 
+                "Đã xảy ra lỗi không xác định!";
             alert(`Lỗi khi tạo phiếu nhập: ${errorMessage}`);
         }
     };
@@ -199,7 +209,7 @@ const FormNhap = ({ onClose, refreshData }) => {
                             <th className="px-4 py-2 border-b">Id Thiết Bị</th>
                             <th className="px-4 py-2 border-b">Tên</th>
                             <th className="px-4 py-2 border-b">Số Lượng</th>
-                            <th className="px-4 py-2 border-b text-sm grid-cols-2">Bảo Hành <span className="text-sm text-gray-500">(Tháng)</span></th>
+                            <th className="grid-cols-2 px-4 py-2 text-sm border-b">Bảo Hành <span className="text-sm text-gray-500">(Tháng)</span></th>
                             <th className="px-4 py-2 border-b">Đơn Giá</th>
                             <th className="px-4 py-2 border-b">Tổng Tiền</th>
                             <th className="px-4 py-2 border-b">Chức Năng</th>

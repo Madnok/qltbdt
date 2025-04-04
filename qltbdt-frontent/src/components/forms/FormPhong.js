@@ -25,27 +25,31 @@ const FormPhong = ({ onClose, refreshData }) => {
     const [initialDsThietBi, setInitialDsThietBi] = useState([]); // Thông tin tồn kho ban đầu
 
     useEffect(() => {
+        const config = { withCredentials: true };
+    
         Promise.all([
-            axios.get("http://localhost:5000/api/phong"),
-            axios.get("http://localhost:5000/api/phong/phonglist"),
-            axios.get("http://localhost:5000/api/theloai"),
-            axios.get("http://localhost:5000/api/thietbi/thietbiconlai")
+            axios.get("http://localhost:5000/api/phong", config),
+            axios.get("http://localhost:5000/api/phong/phonglist", config),
+            axios.get("http://localhost:5000/api/theloai", config),
+            axios.get("http://localhost:5000/api/thietbi/thietbiconlai", config)
         ])
-            .then(([phongRes, phongListRes, theLoaiRes, remainingRes]) => {
-                setNewId(phongRes.data.length + 1);
-                setPhongList(phongListRes.data);
-                setTheLoaiList(theLoaiRes.data);
-                setInitialDsThietBi(remainingRes.data); // Lưu thông tin tồn kho ban đầu
-                setDsThietBi(remainingRes.data); // Cập nhật danh sách thiết bị hiện tại
-                console.log("Dữ liệu thiết bị còn lại:", remainingRes.data);
-            })
-            .catch(error => console.error("Lỗi tải dữ liệu:", error));
-    }, []);
+        .then(([phongRes, phongListRes, theLoaiRes, remainingRes]) => {
+            setNewId(phongRes.data.length + 1);
+            setPhongList(phongListRes.data);
+            setTheLoaiList(theLoaiRes.data);
+            setInitialDsThietBi(remainingRes.data);
+            setDsThietBi(remainingRes.data);
+            console.log("Dữ liệu thiết bị còn lại:", remainingRes.data);
+        })
+        .catch(error => {
+            console.error("Lỗi tải dữ liệu ban đầu:", error.response?.data || error.message || error);
+        });
+    }, []); 
 
     // Khi chọn thể loại, lấy danh sách thiết bị
     useEffect(() => {
         if (selectedTheLoai) {
-            axios.get(`http://localhost:5000/api/theloai/${selectedTheLoai}`)
+            axios.get(`http://localhost:5000/api/theloai/${selectedTheLoai}`, { withCredentials: true })
                 .then(response => {
                     console.log("Danh sách thiết bị:", response.data.dsThietBi);
                     // Lọc danh sách thiết bị từ thông tin tồn kho ban đầu
@@ -131,7 +135,8 @@ const FormPhong = ({ onClose, refreshData }) => {
     // Xử lý lưu phòng
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post("http://localhost:5000/api/phong", formData)
+        const config = { withCredentials: true };
+        axios.post("http://localhost:5000/api/phong", formData, config)
             .then(() => {
                 alert("Thêm phòng thành công!");
                 refreshData();
@@ -225,6 +230,7 @@ const FormPhong = ({ onClose, refreshData }) => {
 
                     // Lấy danh sách thiết bị chưa phân bổ từ bảng thongtinthietbi
                     const response = await axios.get(`http://localhost:5000/api/tttb/unassigned`, {
+                        withCredentials: true,
                         params: { thietbi_id: thietBi.id }
                     }).catch(error => {
                         console.error("Lỗi khi lấy danh sách thiết bị chưa phân bổ:", error);
@@ -261,8 +267,9 @@ const FormPhong = ({ onClose, refreshData }) => {
                 return;
             }
 
+            const config = { withCredentials: true };
             // Gửi danh sách thiết bị đã phân bổ đến API
-            const response = await axios.post("http://localhost:5000/api/phong/add-thietbi", validData);
+            const response = await axios.post("http://localhost:5000/api/phong/add-thietbi", validData, config);
 
             if (response.data.success) {
                 alert("Lưu thành công!");
@@ -282,7 +289,7 @@ const FormPhong = ({ onClose, refreshData }) => {
     // Hàm làm mới danh sách thiết bị còn lại
     const refreshRemainingStock = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/thietbi/thietbiconlai");
+            const response = await axios.get("http://localhost:5000/api/thietbi/thietbiconlai",{withCredentials: true});
             setDsThietBi(response.data); // Cập nhật danh sách thiết bị còn lại
         } catch (error) {
             console.error("Lỗi khi tải lại danh sách thiết bị:", error);

@@ -16,7 +16,7 @@ const BangNhap = ({ setSelectedRecord, refreshData }) => {
 
     // Hàm lấy danh sách phiếu nhập
     const fetchData = () => {
-        axios.get("http://localhost:5000/api/nhap/")
+        axios.get("http://localhost:5000/api/nhap/",{ withCredentials: true })
             .then(response => {
                 setData(response.data);
                 response.data.forEach(record => fetchSoLuongThietBi(record.id));
@@ -26,7 +26,7 @@ const BangNhap = ({ setSelectedRecord, refreshData }) => {
 
     // Hàm lấy số lượng thiết bị trong phiếu nhập
     const fetchSoLuongThietBi = (phieuNhapId) => {
-        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`)
+        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`,{ withCredentials: true })
             .then(response => {
                 setSoLuongTB(prevState => ({
                     ...prevState,
@@ -68,7 +68,7 @@ const BangNhap = ({ setSelectedRecord, refreshData }) => {
                             <th className="px-4 py-2 border-b">Ngày tạo</th>
                             <th className="px-4 py-2 border-b">Người tạo</th>
                             <th className="px-4 py-2 border-b">Trường hợp</th>
-                            <th className="px-4 py-2 border-b text-sm">Tổng Số Loại TB</th>
+                            <th className="px-4 py-2 text-sm border-b">Tổng Số Loại TB</th>
                         </tr>
                     </thead>
                     <tbody>

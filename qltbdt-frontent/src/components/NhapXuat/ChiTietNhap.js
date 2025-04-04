@@ -47,7 +47,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     useEffect(() => {
         if (selectedRecord?.id) {
             axios
-                .get(`http://localhost:5000/api/nhap/${selectedRecord.id}/thongtinthietbi`)
+                .get(`http://localhost:5000/api/nhap/${selectedRecord.id}/thongtinthietbi`, { withCredentials: true })
                 .then((response) => {
                     const data = response.data || [];
                     setThietBiNhapData(data);
@@ -91,6 +91,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
 
         axios
             .put(`http://localhost:5000/api/nhap/${selectedRecord.id}`, {
+                credentials: 'include',
                 truongHopNhap,
                 thoiGianBaoHanh,
                 thietBiNhap: thietBiNhapData,
@@ -114,7 +115,7 @@ const ChiTietNhap = ({ selectedRecord, onClose, refreshData }) => {
     const handleDeletePhieuNhap = () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa phiếu nhập này?")) {
             axios
-                .delete(`http://localhost:5000/api/nhap/${selectedRecord.id}`)
+                .delete(`http://localhost:5000/api/nhap/${selectedRecord.id}`, { withCredentials: true })
                 .then(() => {
                     alert("Xóa phiếu nhập thành công!");
                     refreshData();

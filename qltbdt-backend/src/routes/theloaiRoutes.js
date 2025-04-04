@@ -1,9 +1,10 @@
+const { verifyToken } = require("../middleware/authMiddleware");
 const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
 
 // Lấy danh sách thể loại
-router.get("/", async (req, res) => {
+router.get("/", verifyToken,async (req, res) => {
     try {
         const [rows] = await pool.query("SELECT * FROM theloai");
         res.json(rows);
@@ -13,7 +14,7 @@ router.get("/", async (req, res) => {
 });
 
 // Lấy chi tiết thể loại và danh sách thiết bị theo ID thể loại
-router.get("/:id", async (req, res) => {
+router.get("/:id",verifyToken, async (req, res) => {
     const { id } = req.params;
     try {
         const [theLoai] = await pool.query("SELECT * FROM theloai WHERE id = ?", [id]);
@@ -26,7 +27,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Cập nhật thông tin thể loại
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, async (req, res) => {
     const { id } = req.params;
     const { theLoai } = req.body;
     
@@ -38,7 +39,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 // API Thêm thể loại
-router.post("/", async (req, res) => {
+router.post("/",verifyToken,  async (req, res) => {
     console.log("Request body từ frontend:", req.body); // Kiểm tra dữ liệu nhận được
     const { theLoai } = req.body;
 
@@ -54,7 +55,7 @@ router.post("/", async (req, res) => {
     }
 });
 // API Xóa Thể Loại
-router.delete("/:id", async (req, res) => {
+router.delete("/:id",verifyToken,  async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -77,7 +78,7 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-router.get("/theloai/:id", async (req, res) => {
+router.get("/theloai/:id",verifyToken,  async (req, res) => {
     const db = await pool.getConnection();
     try {
         const { id } = req.params;

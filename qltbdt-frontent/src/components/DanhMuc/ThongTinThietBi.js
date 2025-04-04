@@ -1,130 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { paginateData } from "../../utils/helpers";
-// import { getTinhTrangLabel } from "../../utils/constants";
-// import axios from "axios";
-
-// const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
-//     const [data, setData] = useState([]);
-//     const [thietBiList, setThietBiList] = useState([]);
-//     const [expandedRows, setExpandedRows] = useState([]);
-//     const [currentPage, setCurrentPage] = useState(1);
-
-//     const fetchData = () => {
-//         axios.get("http://localhost:5000/api/tttb")
-//             .then(response => setData(response.data))
-//             .catch(error => console.error("Lỗi tải thông tin dữ liệu:", error));
-
-//         axios.get("http://localhost:5000/api/tttb/thietbi-list")
-//             .then(response => setThietBiList(response.data))
-//             .catch(error => console.error("Lỗi tải danh sách thiết bị:", error));
-//     };
-
-//     useEffect(() => {
-//         fetchData();
-//     }, [refresh]);
-
-//     const selectRecord = (record) => {
-//         setSelectedRecord(record);
-//     };
-
-//     const { currentItems, totalPages, indexOfFirstItem } = paginateData(groupedData, currentPage);
-
-//     const goToPage = (pageNumber) => {
-//         if (pageNumber >= 1 && pageNumber <= totalPages) {
-//             setCurrentPage(pageNumber);
-//         }
-//     };
-
-//     const getTenThietBi = (thietbi_id) => {
-//         const thietBi = thietBiList.find(t => Number(t.id) === Number(thietbi_id));
-//         return thietBi ? thietBi.tenThietBi : "";
-//     };
-//     // Xử lý toggle hiển thị chi tiết
-//     const toggleRow = (tttb_id) => {
-//         if (expandedRows.includes(tttb_id)) {
-//             setExpandedRows(expandedRows.filter((rowId) => rowId !== tttb_id));
-//         } else {
-//             setExpandedRows([...expandedRows, tttb_id]);
-//         }
-//     };
-
-//     // Nhóm dữ liệu theo `thietbi_id` và `phieunhap_id`
-//     const groupedData = data.reduce((acc, item) => {
-//         const existing = acc.find(
-//             (tb) => tb.thietbi_id === item.thietbi_id && tb.phieunhap_id === item.phieunhap_id
-//         );
-
-//         if (existing) {
-//             existing.soLuong += 1; // Cộng số lượng
-//             existing.tinhTrang = item.tinhTrang;
-//             existing.chiTiet.push(item);
-//         } else {
-//             acc.push({
-//                 thietbi_id: item.thietbi_id,
-//                 tenThietBi: getTenThietBi(item.thietbi_id),
-//                 phieunhap_id: item.phieunhap_id,
-//                 soLuong: 1,
-//                 tinhTrang: item.tinhTrang,
-//                 chiTiet: [item],
-//             });
-//         }
-//         return acc;
-//     }, []);
-
-//     return (
-//         <div className="w-full overflow-auto">
-//             <div className="max-h-full overflow-x-auto overflow-y-auto border">
-//                 <table className="w-full border min-w-[600px]">
-//                     <thead>
-//                         <tr className="bg-gray-200">
-//                             <th className="px-4 py-2 border-b ">STT</th>
-//                             <th className="px-4 py-2 border-b">ID</th>
-//                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
-//                             <th className="px-4 py-2 border-b">Thông Tin Nhập</th>
-//                             <th className="px-4 py-2 border-b">Tình Trạng</th>
-//                         </tr>
-//                     </thead>
-//                     <tbody>
-//                         {currentItems.map((record, index) => (
-//                             <tr key={record.id}
-//                                 className="text-center cursor-pointer hover:bg-gray-100"
-//                                 onClick={() => selectRecord(record)}
-//                             >
-//                                 <td className="p-2 border">{indexOfFirstItem + index + 1}</td>
-//                                 <td className="p-2 border">{record.id}</td>
-//                                 <td className="p-2 border">{getTenThietBi(record.thietbi_id)}</td>
-//                                 <td className="p-2 border">GN{record.phieunhap_id}</td>
-//                                 <td className="p-2 border">{getTinhTrangLabel(record.tinhTrang)}</td>
-//                             </tr>
-//                         ))}
-//                     </tbody>
-//                 </table>
-
-//                 {/* Phân trang */}
-//                 {totalPages > 1 && (
-//                     <div className="flex justify-center my-4 space-x-2">
-//                         {currentPage > 1 && (
-//                             <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-//                                 onClick={() => goToPage(currentPage - 1)}>← Trước</button>
-//                         )}
-//                         {[...Array(totalPages)].map((_, i) => (
-//                             <button key={i} className={`px-4 py-2 border rounded 
-//                             ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-//                                 onClick={() => goToPage(i + 1)}>{i + 1}</button>
-//                         ))}
-//                         {currentPage < totalPages && (
-//                             <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-//                                 onClick={() => goToPage(currentPage + 1)}>Sau →</button>
-//                         )}
-//                     </div>
-//                 )}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default ThongTinThietBi;
-
 import { useState, useEffect } from "react";
 import { paginateData } from "../../utils/helpers";
 import { getTinhTrangLabel } from "../../utils/constants";
@@ -140,10 +13,10 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
     // Hàm tải dữ liệu
     const fetchData = async () => {
         try {
-            const responseData = await axios.get("http://localhost:5000/api/tttb");
+            const responseData = await axios.get("http://localhost:5000/api/tttb",{withCredentials:true});
             setData(responseData.data);
 
-            const thietBiResponse = await axios.get("http://localhost:5000/api/tttb/thietbi-list");
+            const thietBiResponse = await axios.get("http://localhost:5000/api/tttb/thietbi-list",{withCredentials:true});
             setThietBiList(thietBiResponse.data);
         } catch (error) {
             console.error("Lỗi tải thông tin:", error);
@@ -209,7 +82,7 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
 
     return (
         <div className="w-full overflow-auto">
-            <div className="max-h-full overflow-x-auto overflow-y-auto border">
+            <div className="max-h-full overflow-x-auto overflow-y-auto">
                 <table className="w-full border min-w-[600px] min-h-[200px]">
                     <thead>
                         <tr className="bg-gray-200">
@@ -254,7 +127,7 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
                                 {expandedRows.includes(tb.thietbi_id) && (
                                     <tr className="bg-gray-100">
                                         <td colSpan="2"></td>
-                                        <td colSpan="3" className="p-2 border text-center">
+                                        <td colSpan="3" className="p-2 text-center border">
                                             <table className="w-full border">
                                                 <thead>
                                                     <tr className="bg-gray-200">
@@ -277,12 +150,12 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
                                                             <td className="p-2 border">
                                                                 <span className="text-sm text-gray-500">No.{idx + 1} Mã định danh:</span> {detail.id}
                                                             </td>
-                                                            <td className="p-2 border text-sm">
+                                                            <td className="p-2 text-sm border">
                                                                 {detail.ngayBaoHanhKetThuc.split("T")[0]}
                                                             </td>
                                                             <td className="p-2 border">
                                                                 <button
-                                                                    className="p-1 bg-blue-500 text-white rounded-md hover:bg-green-500 hover:scale-110 transition duration-200 ease-in-out"
+                                                                    className="p-1 text-white transition duration-200 ease-in-out bg-blue-500 rounded-md hover:bg-green-500 hover:scale-110"
                                                                     onClick={() => selectRecord(detail)}
                                                                 >
                                                                     <FaEye className="text-lg" />

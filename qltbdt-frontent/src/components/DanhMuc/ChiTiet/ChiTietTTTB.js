@@ -28,7 +28,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     };
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/thietbi-list")
+        axios.get("http://localhost:5000/api/tttb/thietbi-list", {withCredentials:true})
             .then(response => setThietBiList(response.data))
             .catch(error => console.error("Lỗi tải danh sách thiết bị:", error));
     }, []);
@@ -160,7 +160,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
                             <input
                                 type="text"
                                 value={getTinhTrangLabel(record.tinhTrang)}
-                                className="w-full p-2 border mb-2"
+                                className="w-full p-2 mb-2 border"
                                 disabled
                             />
                             {/* Hiển thị tháng bảo hành còn lại */}
@@ -196,7 +196,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
 
                 {/* Nút Lưu & Hủy */}
                 {isEditing && (
-                    <div className="flex items-start justify-center pl-2 mt-2 space-x-6 col-span-2">
+                    <div className="flex items-start justify-center col-span-2 pl-2 mt-2 space-x-6">
                         <button className="px-4 py-2 text-white bg-green-500 rounded"
                             onClick={handleSave}>Lưu</button>
                         <button className="px-4 py-2 text-white bg-gray-500 rounded"

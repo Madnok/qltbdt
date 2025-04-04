@@ -1,6 +1,8 @@
+const { verifyToken } = require("../middleware/authMiddleware");
 const express = require("express");
 const nhapController = require("../controllers/nhapController");
 const router = express.Router();
+router.use(verifyToken);
 
 router.get("/", nhapController.getAllPhieuNhap);// lấy phiếu nhập
 router.get("/:id", nhapController.getPhieuNhapById); // lấy phiếu nhập theo id

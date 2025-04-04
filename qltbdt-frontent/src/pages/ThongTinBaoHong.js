@@ -20,7 +20,8 @@ const ThongTinBaoHong = () => {
 
     const refreshData = () => {
         // Gọi API lấy thông tin báo hỏng
-        axios.get("http://localhost:5000/api/baohong")
+        const config = {withCredentials:true};
+        axios.get("http://localhost:5000/api/baohong", config)
             .then((response) => {
                 setBaoHongList(response.data); // Lưu dữ liệu vào state
                 setFilteredBaoHongList(response.data); // Sao chép danh sách để lọc
@@ -30,7 +31,7 @@ const ThongTinBaoHong = () => {
             });
 
         // Gọi API lấy danh sách phòng
-        axios.get("http://localhost:5000/api/phong/phonglist")
+        axios.get("http://localhost:5000/api/phong/phonglist", config)
             .then((response) => {
                 setPhongList(response.data); // Lưu danh sách phòng vào state
             })

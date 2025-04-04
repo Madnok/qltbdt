@@ -52,7 +52,9 @@ const PhanCa = () => {
         setLoading(true);
         setApiError(null);
         try {
-            const response = await fetch("http://localhost:5000/api/lichtruc"); // Thay đổi URL nếu cần
+            const response = await fetch("http://localhost:5000/api/lichtruc", {
+                credentials: 'include'
+            }); // Thay đổi URL nếu cần
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
@@ -92,7 +94,7 @@ const PhanCa = () => {
 
     // useEffect fetch employees (không đổi)
     useEffect(() => {
-        fetch("http://localhost:5000/api/lichtruc/nhanvien")
+        fetch("http://localhost:5000/api/lichtruc/nhanvien", { credentials: 'include' })
             .then((response) => response.json())
             .then((data) => {
                 setEmployees(data);
@@ -511,6 +513,7 @@ const PhanCa = () => {
             const bulkPayload = { added, updated, deleted };
             const response = await fetch("http://localhost:5000/api/lichtruc/bulk-save", { // API cần tạo
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bulkPayload)
             });

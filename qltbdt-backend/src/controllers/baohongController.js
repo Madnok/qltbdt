@@ -1,6 +1,5 @@
 
 const pool = require("../config/db");
-const axios = require("axios");
 
 const validateForeignKeys = async (thietbi_id, thongtinthietbi_id, phong_id) => {
     if (thietbi_id) {
@@ -75,9 +74,9 @@ exports.postGuiBaoHong = async (req, res) => {
 
 exports.getThongTinBaoHong = async (req, res) => {
     try {
-        // Lấy thông tin từ bảng baohong
+        // 1. Lấy thông tin từ bảng baohong (Giữ nguyên)
         const [baoHongRows] = await pool.query(`
-            SELECT 
+            SELECT
                 baohong.id,
                 baohong.thietbi_id,
                 baohong.thongtinthietbi_id,
@@ -94,20 +93,27 @@ exports.getThongTinBaoHong = async (req, res) => {
             ORDER BY baohong.ngayBaoHong DESC
         `);
 
-        // Gọi API /phonglist để lấy danh sách phòng
-        const phongListResponse = await axios.get("http://localhost:5000/api/phong/phonglist");
-        const phongList = phongListResponse.data;
+        let phongList = []; 
+        try {
+             const [phongRows] = await pool.query("SELECT id, toa, tang, soPhong FROM phong"); 
+             phongList = phongRows.map(p => ({ 
+                 id: p.id,
+                 phong: `${p.toa}${p.tang}.${p.soPhong}`
+             }));
+        } catch (phongError) {
+             console.error("Lỗi khi truy vấn danh sách phòng trong getThongTinBaoHong:", phongError);
+        }
 
-        // Kết hợp dữ liệu để thêm tên phòng vào danh sách báo hỏng
         const baoHongData = baoHongRows.map((item) => {
             const phong = phongList.find(p => p.id === item.phong_id);
             return {
                 ...item,
-                phong_name: phong ? phong.phong : "Không xác định" // Thêm tên phòng
+                phong_name: phong ? phong.phong : "Không xác định"
             };
         });
 
         res.status(200).json(baoHongData);
+
     } catch (error) {
         console.error("Lỗi khi lấy thông tin báo hỏng:", error);
         res.status(500).json({ error: "Không thể lấy thông tin báo hỏng." });

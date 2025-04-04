@@ -23,14 +23,19 @@ exports.verifyToken = async (req, res, next) => {
   }
 };
 
-exports.requireRole = (roles) => {
+exports.requireRole = (allowedRoles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Bạn không có quyền truy cập!" });
+    // Đảm bảo verifyToken đã chạy và gắn req.user
+    if (!req.user || !req.user.role) {
+       return res.status(401).json({ message: "Người dùng chưa được xác thực hoặc không có vai trò." });
+    }
+
+    // Kiểm tra xem vai trò của người dùng có nằm trong danh sách được phép không
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này!" });
     }
     next();
   };
 };
-
 
 

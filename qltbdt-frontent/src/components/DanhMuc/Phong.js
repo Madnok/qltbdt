@@ -13,7 +13,8 @@ const Phong = ({ setSelectedRecord, refresh }) => {
 
     const fetchTotalDevices = async (phongId) => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${phongId}`);
+            const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${phongId}`, {withCredentials:true});
+
             const devices = response.data; // API trả về danh sách thiết bị thuộc phòng
 
             // Tính tổng số thiết bị dựa trên số lượng dòng (tức là số lượng `thongtinthietbi_id`)
@@ -28,7 +29,9 @@ const Phong = ({ setSelectedRecord, refresh }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get("http://localhost:5000/api/phong");
+                const response = await axios.get("http://localhost:5000/api/phong",{
+                    withCredentials: true,
+                });
                 const rooms = response.data;
 
                 // Lấy tổng số thiết bị cho từng phòng

@@ -9,11 +9,11 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
     const [danhSachTheLoai, setDanhSachTheLoai] = useState([]);
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/thietbi/${record.id}`)
+        axios.get(`http://localhost:5000/api/thietbi/${record.id}`,{withCredentials:true})
             .then(response => setEditData(response.data))
             .catch(error => console.error("Lỗi tải chi tiết:", error));
 
-        axios.get("http://localhost:5000/api/theloai")
+        axios.get("http://localhost:5000/api/theloai",{withCredentials:true})
             .then(response => setDanhSachTheLoai(response.data))
             .catch(error => console.error("Lỗi lấy danh sách thể loại:", error));
     }, [record]);
@@ -33,7 +33,8 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
 
     const handleSave = async () => {
         try {
-            await axios.put(`http://localhost:5000/api/thietbi/${record.id}`, editData);
+            const config = {withCredentials:true};
+            await axios.put(`http://localhost:5000/api/thietbi/${record.id}`, editData, config);
             alert("Cập nhật thành công!");
             setIsEditing(false);
             refreshData();
@@ -47,7 +48,8 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
         if (!window.confirm("Bạn có chắc muốn xóa thiết bị này không?")) return;
     
         try {
-            const response = await axios.delete(`http://localhost:5000/api/thietbi/${record.id}`);
+            const config = {withCredentials:true};
+            const response = await axios.delete(`http://localhost:5000/api/thietbi/${record.id}`, config);
             alert(response.data.message || "Xóa thành công!");
             refreshData();
             onClose();

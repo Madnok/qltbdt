@@ -1,7 +1,9 @@
 const express = require("express");
 const tttbController = require("../controllers/tttbController");
-
+const { verifyToken } = require("../middleware/authMiddleware");
 const router = express.Router();
+
+router.use(verifyToken);
 
 router.get("/", tttbController.getAllThongTinThietBi); // lấy danh sách thông tin tb
 router.get("/next-id", tttbController.getNextId); // lấy id tiếp theo

@@ -53,10 +53,15 @@ exports.login = async (req, res) => {
     }
 
     // Tạo token JWT
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        console.error("❌ Lỗi nghiêm trọng: JWT_SECRET chưa được định nghĩa trong file .env!");
+        return res.status(500).json({ message: "Lỗi cấu hình máy chủ." });
+    }
     const token = jwt.sign(
       { id: user.id, role: user.role },
-      process.env.JWT_SECRET || 'fallbackSecret',
-      { expiresIn: "1h" }
+      jwtSecret,
+      { expiresIn: "2h" }
     );
 
     // Gửi token qua HTTP-Only Cookie
@@ -67,7 +72,7 @@ exports.login = async (req, res) => {
 
     console.log("✅ Đăng nhập thành công:", user.username);
     return res.json({
-      user: { id: user.id, username: user.username, role: user.role },
+      user: { id: user.id, username: user.username, role: user.role, hinhAnh: user.hinhAnh, hoTen:user.hoTen },
       message: "Đăng nhập thành công!",
     });
   } catch (err) {

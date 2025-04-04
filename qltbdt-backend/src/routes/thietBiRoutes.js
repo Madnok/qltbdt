@@ -4,6 +4,10 @@ const thietBiController = require("../controllers/thietbiController");
 
 const router = express.Router();
 
+const { verifyToken } = require("../middleware/authMiddleware");
+
+router.use(verifyToken);
+
 router.get("/", thietBiController.getAllThietBi);
 router.get("/tongsoluongnhap/", thietBiController.getAllThietBiFromPhieuNhap);
 router.get("/thietbiconlai/", thietBiController.getThietBiConLai);

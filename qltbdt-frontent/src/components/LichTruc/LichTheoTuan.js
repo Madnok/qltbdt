@@ -218,13 +218,15 @@ function LichTheoTuan({
                         </tr>
                     </thead>
                     <tbody className="overflow-y-auto bg-white divide-y divide-gray-200" style={{ maxHeight: 'calc(100vh - Ypx)' }}>
-                        {employees.length === 0 ? (
+                        {!Array.isArray(employees) || employees.length === 0 ? ( // Kiểm tra employees có phải là mảng và có phần tử không
                             <tr>
                                 <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                                    Không có dữ liệu nhân viên hoặc lịch trình để hiển thị.
+                                    {/* Hiển thị thông báo phù hợp */}
+                                    {Array.isArray(employees) ? "Không có nhân viên nào để hiển thị." : "Đang tải danh sách nhân viên..."}
                                 </td>
                             </tr>
                         ) : (
+                            // ---- Chỉ thực hiện .map() khi employees là một mảng có dữ liệu ----
                             employees.map(employee => (
                                 <tr key={employee.id} className="group hover:bg-gray-50">
                                     <td className="sticky left-0 z-10 px-4 py-2 text-sm font-medium text-gray-800 bg-white whitespace-nowrap min-w-[180px] border-r border-gray-200 group-hover:bg-gray-50">
