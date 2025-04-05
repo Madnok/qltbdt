@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaChevronDown, FaChevronUp, FaExclamationCircle, FaCommentDots, FaInfoCircle } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaExclamationCircle, FaCommentDots } from "react-icons/fa";
 
 const Sidebar = ({ isOpen = true, toggleSidebar }) => { // Nhận hàm toggleSidebar để thay đổi trạng thái
   const [user, setUser] = useState(null);
@@ -85,12 +85,6 @@ const Sidebar = ({ isOpen = true, toggleSidebar }) => { // Nhận hàm toggleSid
                 <Link to="/" className="flex items-center py-2 pl-8 hover:bg-gray-200">
                   <FaCommentDots className="mr-2 text-gray-800" />
                   Góp Ý
-                </Link>
-              </li>
-              <li>
-                <Link to="/ThongTinBaoHong" className="flex items-center py-2 pl-8 hover:bg-gray-200">
-                  <FaInfoCircle className="mr-2 text-gray-800" /> 
-                  Thông Tin Báo Hỏng
                 </Link>
               </li>
             </ul>

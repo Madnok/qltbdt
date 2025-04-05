@@ -1,32 +1,49 @@
 const pool = require("../config/db");
 
-// Lấy danh sách phòng phụ trách theo ID nhân viên
+// Lấy danh sách phòng phụ trách và tên nhân viên theo ID nhân viên
 exports.getPhuTrachByNhanVien = async (req, res) => {
     const { id } = req.params;
-     if (!id || isNaN(parseInt(id))) { }
+
+    const employeeId = parseInt(id);
+    if (!employeeId || isNaN(employeeId) || employeeId <= 0) {
+        // Nếu ID không hợp lệ, trả về lỗi 400
+        return res.status(400).json({ error: "ID nhân viên không hợp lệ." });
+    }
+
     try {
-        const [rows] = await pool.query(
+        const [userRows] = await pool.query(
+            `SELECT hoTen FROM users WHERE id = ?`,
+            [employeeId]
+        );
+
+        if (userRows.length === 0) {
+            return res.status(404).json({ error: "Không tìm thấy nhân viên với ID này." });
+        }
+        const hoTenNhanVien = userRows[0].hoTen;
+
+        const [roomRows] = await pool.query(
             `SELECT p.id, p.toa, p.tang, p.soPhong
              FROM nhanvien_phong_phutrach npp
              JOIN phong p ON npp.phong_id = p.id
              WHERE npp.nhanvien_id = ?`,
-            [id]
+            [employeeId]
         );
 
-        // **KIỂM TRA KỸ BƯỚC NÀY:** Mapping để tạo tên phòng
-        const phongList = rows.map(p => {
+        const phongList = roomRows.map(p => {
              const tenPhong = `${p.toa}${p.tang}.${p.soPhong}`;
-
              return {
                  id: p.id,
                  phong: tenPhong
              };
         });
 
-        res.json(phongList);
+        res.json({
+            hoTen: hoTenNhanVien,
+            phongList: phongList  
+        });
 
     } catch (error) {
-        console.error(`Lỗi khi lấy danh sách phòng phụ trách cho nhân viên ${id}:`, error);
+        console.error(`Lỗi khi lấy danh sách phòng phụ trách cho nhân viên ${employeeId}:`, error);
         res.status(500).json({ error: "Lỗi máy chủ khi lấy dữ liệu phân công." });
     }
 };

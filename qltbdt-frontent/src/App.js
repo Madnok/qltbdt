@@ -11,7 +11,7 @@ import BaoHongGoiY from "./pages/BaoHongGoiY";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "../src/context/AuthProvider";
 import AppLayout from "../src/components/layout/AppLayout";
-import ThongTinBaoHong from "./pages/ThongTinBaoHong";
+import ThongTinBaoHong from "../src/components/LichTruc/ThongTinBaoHong";
 
 function Layout() {
   return (

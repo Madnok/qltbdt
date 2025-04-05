@@ -1,35 +1,3 @@
-// import axios from "axios";
-
-// const API_URL = "http://localhost:5000";
-
-// export const register = (data) => 
-//   axios.post(`${API_URL}/api/auth/register`, data, { withCredentials: true });
-
-// export const login = async (data) => {
-//   try {
-//     const response = await axios.post(`${API_URL}/api/auth/login`, data, { withCredentials: true });
-//     return response.data;
-//   } catch (error) {
-//     console.error("Lỗi đăng nhập:", error);
-//     return null;
-//   }
-// };
-
-// export const logout = async () =>
-//   axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
-
-// export const getUserFromApi = async () => {
-//   try {
-//     const res = await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
-//     return res.data.user;
-//   } catch (error) {
-//     return null;
-//   }
-// };
-// //test push git
-// export const getThietBi = () => 
-//   axios.get(`${API_URL}/api/thietbi`, { withCredentials: true });
-
 import axios from 'axios';
 
 const api = axios.create({
@@ -51,6 +19,7 @@ api.interceptors.response.use(
 );
 */
 
+// ========= CÁC HÀM API CHO đăng nhập =========================================== //
 export const register = (data) =>
     api.post('/auth/register', data);
 
@@ -80,19 +49,132 @@ export const getUserFromApi = async () => {
 export const getThietBi = () =>
     api.get('/thietbi');
 
-// Lấy danh sách nhân viên (có thể dùng lại từ đâu đó hoặc tạo mới)
-export const fetchNhanVien = () =>
-    api.get('/lichtruc/nhanvien'); 
+// ============================================================================================ //
+
+// ======== CÁC HÀM API CHO PHÒNG ============================================================= //
+export const fetchPhongList = async () => {
+    const config = { withCredentials: true };
+    const phongList = await api.get("/phong/phonglist", config);
+    return phongList.data;
+}
+export const fetchPhongListWithDetails = async () => {
+    const config = { withCredentials: true };
+    const [phongRes, phongListRes] = await Promise.all([
+        api.get("/phong", config),
+        api.get("/phong/phonglist", config)
+    ]);
+    const phongDetails = phongRes.data;
+    const phongList = phongListRes.data;
+    const merged = phongList.map((phong) => {
+        const detail = phongDetails.find((d) => d.id === phong.id) || {};
+        return { ...phong, ...detail };
+    });
+    // Lấy tổng số thiết bị (có thể tối ưu sau)
+    const updatedRooms = await Promise.all(
+        merged.map(async (room) => {
+            const totalDevices = await fetchTotalDevicesForRoom(room.id);
+            return { ...room, totalDevices };
+        })
+    );
+    return updatedRooms;
+};
+
+export const fetchTotalDevicesForRoom = async (phongId) => {
+     try {
+        const response = await api.get(`/phong/danhsach-thietbi/${phongId}`);
+        return Array.isArray(response.data) ? response.data.length : 0;
+     } catch (error) {
+         if (error.response && (error.response.status === 404 || error.response.data?.message === "Phòng chưa có thiết bị nào!")) {
+             return 0;
+         }
+        console.error(`Lỗi lấy tổng số thiết bị cho phòng ${phongId}:`, error.response?.data || error.message || error);
+        return 0;
+     }
+};
+
+export const fetchPhongDetail = async (phongId) => {
+    const { data } = await api.get(`/phong/${phongId}`);
+    return data;
+};
+
+export const fetchThietBiTrongPhong = async (phongId) => {
+    const { data } = await api.get(`/phong/danhsach-thietbi/${phongId}`);
+    return data; // Trả về danh sách thiết bị
+};
+
+export const addPhongAPI = async (phongData) => {
+    const { data } = await api.post("/phong", phongData);
+    return data;
+};
+
+export const updatePhongAPI = async ({ id, ...phongData }) => {
+    const { data } = await api.put(`/phong/${id}`, phongData);
+    return data;
+};
+
+export const deletePhongAPI = async (phongId) => {
+    const { data } = await api.delete(`/phong/${phongId}`);
+    return data;
+};
+
+export const addThietBiToPhongAPI = async (thietBiListData) => {
+    const { data } = await api.post("/phong/add-thietbi", thietBiListData);
+    return data;
+};
+
+export const removeThietBiFromPhongAPI = async (payload) => {
+    const { data } = await api.post("/phong/xoathietbi", payload);
+    return data;
+};
+//============================================================================================ //
+
+// ========= CÁC HÀM API CHO Thể loại và Thiết bị =========================================== //
+export const fetchTheLoaiList = async () => {
+    const { data } = await api.get("/theloai");
+    return data;
+};
+
+export const fetchThietBiConLai = async () => {
+    const { data } = await api.get("/thietbi/thietbiconlai");
+    return data;
+};
+
+export const fetchThongTinThietBiChuaPhanBo = async (thietbi_id) => {
+     const { data } = await api.get(`/tttb/unassigned`, { params: { thietbi_id } });
+     return data;
+ };
+// ========================================================================================= //
+
+
+// ======== CÁC HÀM API CHO PHÂN CA ======================================================== //
 
 // Lấy danh sách tất cả phòng (định dạng ID và tên)
 export const fetchAllRooms = () =>
     api.get('/phong/phonglist');
 
 // Lấy danh sách ID phòng được gán cho nhân viên cụ thể
-export const fetchAssignedRooms = (employeeId) =>
-  api.get(`/user/${employeeId}/phong-phutrach`);
+export const fetchAssignedRooms = async (employeeId) => {
+    // Trả về mảng rỗng nếu không có employeeId để tránh lỗi gọi API
+    if (!employeeId) {
+       return [];
+    }
+    try {
+      // Gọi API và đợi kết quả
+      const response = await api.get(`/user/${employeeId}/phong-phutrach`);
+  
+      // Thêm kiểm tra để đảm bảo cấu trúc đúng và phongList là mảng
+      if (response?.data && Array.isArray(response.data.phongList)) {
+        return response.data.phongList; // Chỉ trả về mảng phòng
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.error(`Error fetching assigned rooms for employee ${employeeId}:`, error.response?.data || error.message);
+      return [];
+    }
+  };
 
-// Cập nhật phân công cho nhân viên (gộp cả thêm và xóa) addAssignedRooms và removeAssignedRooms
+// Cập nhật phân công cho nhân viên gồm addAssignedRooms và removeAssignedRooms
 export const updateAssignments = (employeeId, phongIdsArray) =>
     // Ví dụ API là PUT nhận toàn bộ danh sách mới
     api.put(`/nhanvien/${employeeId}/phong-phutrach`, { phongIds: phongIdsArray });
@@ -109,3 +191,197 @@ export const removeAssignedRooms = (employeeId, phongIdsArray) =>
 export const fetchMyScheduleInternal = () => {
   return api.get('/lichtruc/');
 };
+// ======================================================================================= //
+
+
+// ============ CÁC HÀMAPI cho Lịch Trực & Phân Công ===================================== //
+// ** GÁN Nhân Viên VÀO Phòng**
+export const fetchNhanVienList = async () => {
+    try {
+        const response = await api.get('/lichtruc/nhanvien');
+        // Nếu response.data không phải là mảng, báo lỗi hoặc trả về mảng rỗng
+        if (!Array.isArray(response.data)) {
+             console.error("LỖI: API /api/lichtruc/nhanvien KHÔNG trả về một mảng!", response.data);
+             throw new Error("API /api/lichtruc/nhanvien không trả về định dạng mảng như mong đợi.");
+             //  Hoặc trả về mảng rỗng để tránh lỗi.
+             // return [];
+        }
+        return response.data;
+
+    } catch (error) {
+        console.error("Lỗi trong hàm fetchNhanVienList:", error.response?.data || error.message || error);
+        throw error;
+    }
+};
+export const fetchAllRoomsList = async () => { // Thêm async/await
+    try {
+        const response = await api.get('/phong/phonglist'); 
+
+        if (!Array.isArray(response.data)) {
+             console.error("!!! LỖI NGHIÊM TRỌNG: API /api/phong/phonglist KHÔNG trả về một mảng!", response.data);
+             throw new Error("API /api/phong/phonglist không trả về định dạng mảng như mong đợi.");
+        }
+        return response.data; 
+    } catch (error) {
+         console.error("XXX Lỗi trong hàm fetchAllRoomsList:", error.response?.data || error.message || error);
+         throw error;
+    }
+};
+
+export const fetchAssignedRoomsForEmployee = async (employeeId) => {
+    if (!employeeId) {
+      console.log("fetchAssignedRoomsForEmployee called with no employeeId");
+      return []; // Trả về mảng rỗng nếu không có ID
+    }
+    try {
+      const response = await api.get(`/user/${employeeId}/phong-phutrach`);
+  
+      // KIỂM TRA và TRẢ VỀ CHỈ PHẦN phongList
+      if (response && response.data && Array.isArray(response.data.phongList)) {
+          // Trả về mảng phòng nếu cấu trúc đúng
+          return response.data.phongList;
+      } else {
+          // Log lỗi nếu cấu trúc không đúng mong đợi
+          console.error(`Invalid data structure from /user/${employeeId}/phong-phutrach. Expected {hoTen, phongList: [...]}, received:`, response?.data);
+          return []; // Trả về mảng rỗng để tránh lỗi ở component
+      }
+    } catch (error) {
+      console.error(`Error fetching assigned rooms for employee ${employeeId}:`, error.response?.data || error.message);
+      return []; 
+    }
+  };
+export const addAssignedRoomsForEmployee = (employeeId, phongIdsArray) => api.post(`/user/${employeeId}/phong-phutrach`, { phongIds: phongIdsArray });
+export const removeAssignedRoomsForEmployee = (employeeId, phongIdsArray) => api.delete(`/user/${employeeId}/phong-phutrach`, { data: { phongIds: phongIdsArray } });
+
+// **Lịch Trực**
+export const fetchAllLichTruc = async ({ queryKey }) => {
+    const params = queryKey[1]; // Lấy phần tử thứ 2 làm params
+    const { data } = await api.get('/lichtruc', { params });
+    return data;
+};
+
+export const fetchMySchedule = async () => { // Hàm fetch lịch cá nhân
+    const { data } = await api.get('/lichtruc/'); // Endpoint này cần trả về lịch của user đã login
+    return data;
+};
+
+export const addLichTrucAPI = async (lichTrucData) => {
+    const { data } = await api.post('/lichtruc/themlichtruc', lichTrucData);
+    return data;
+};
+
+export const updateLichTrucAPI = async ({ id, ...lichTrucData }) => {
+    const { data } = await api.put(`/lichtruc/${id}`, lichTrucData);
+    return data;
+};
+
+export const deleteLichTrucAPI = async (lichTrucId) => {
+    const { data } = await api.delete(`/lichtruc/${lichTrucId}`);
+    return data;
+};
+
+export const saveBulkLichTrucChangesAPI = async (bulkData) => {
+    const { data } = await api.post('/lichtruc/bulk-save', bulkData);
+    return data;
+};
+
+// ========= API BÁO HỎNG (Bổ sung/Sửa đổi) ================================
+
+// 1. Fetch danh sách báo hỏng (thay thế fetchThongTinBaoHongAPI cũ nếu có)
+export const fetchBaoHongListAPI = async () => {
+    try {
+      const response = await api.get("/baohong"); // Endpoint lấy danh sách báo hỏng
+      // Thêm kiểm tra kiểu dữ liệu trả về
+      if (!Array.isArray(response.data)) {
+        console.error("API /api/baohong did not return an array!", response.data);
+        return []; // Trả về mảng rỗng nếu không đúng cấu trúc
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching BaoHong list:", error.response?.data || error.message);
+      throw error; // Ném lỗi để React Query xử lý
+    }
+  };
+  
+  // 2. Cập nhật thông tin báo hỏng (Dùng cho Gán người xử lý, Đổi trạng thái, Đổi ưu tiên...)
+  // Giả định backend có route PUT /api/baohong/:id nhận object chứa các trường cần update
+  export const updateBaoHongAPI = async ({ id, updateData }) => {
+    // updateData là object chứa các trường cần cập nhật, vd: { nhanvien_id: 5, trangThai: 'Đang Xử Lý', mucDoUuTien: 'Cao' }
+    if (!id || !updateData) {
+        throw new Error("Missing ID or updateData for updating BaoHong");
+    }
+    try {
+      const response = await api.put(`/baohong/${id}`, updateData);
+      return response.data; // Trả về kết quả từ backend (vd: thông báo thành công hoặc object đã cập nhật)
+    } catch (error) {
+      console.error(`Error updating BaoHong ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  };
+  
+  // 3. Xóa một báo hỏng
+  export const deleteBaoHongAPI = async (baoHongId) => {
+    if (!baoHongId) {
+        throw new Error("Missing ID for deleting BaoHong");
+    }
+    try {
+      const response = await api.delete(`/baohong/${baoHongId}`);
+      return response.data; // Trả về thông báo thành công từ backend
+    } catch (error) {
+      console.error(`Error deleting BaoHong ${baoHongId}:`, error.response?.data || error.message);
+      throw error;
+    }
+  };
+  
+  // 4. Xóa hàng loạt báo hỏng (Bulk Delete)
+  // Giả định backend có route DELETE /api/baohong/bulk nhận body { ids: [...] }
+  export const deleteBulkBaohongAPI = async (baoHongIdsArray) => {
+    if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0) {
+      // Có thể trả về Promise.resolve hoặc ném lỗi tùy logic mong muốn
+      console.warn("No IDs provided for bulk delete.");
+      return { message: "Không có ID nào được chọn để xóa." };
+      // throw new Error("No IDs provided for bulk delete.");
+    }
+    try {
+      // Axios yêu cầu data cho DELETE phải nằm trong config object
+      const response = await api.delete(`/baohong/bulk`, { data: { ids: baoHongIdsArray } });
+      return response.data; // Trả về thông báo thành công từ backend
+    } catch (error) {
+      console.error(`Error bulk deleting BaoHong:`, error.response?.data || error.message);
+      throw error;
+    }
+  };
+  
+  // 5. Gán hàng loạt báo hỏng cho một nhân viên (Bulk Assign)
+  // Giả định backend có route POST /api/baohong/bulk-assign nhận body { ids: [...], nhanvien_id: ... }
+  // Backend cũng nên tự động chuyển trạng thái các báo hỏng này thành 'Đang Xử Lý'
+  export const assignBulkBaohongAPI = async ({ baoHongIdsArray, nhanVienId }) => {
+     if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0 || !nhanVienId) {
+       throw new Error("Thiếu IDs báo hỏng hoặc ID nhân viên để gán hàng loạt.");
+     }
+     try {
+       const payload = { ids: baoHongIdsArray, nhanvien_id: nhanVienId };
+       const response = await api.post(`/baohong/bulk-assign`, payload);
+       return response.data; // Trả về thông báo thành công từ backend
+     } catch (error) {
+       console.error(`Error bulk assigning BaoHong:`, error.response?.data || error.message);
+       throw error;
+     }
+  };
+  
+  // === (TÙY CHỌN) API lấy tất cả Users (Nếu cần hiển thị tên người báo cáo) ===
+  // export const fetchAllUsersList = async () => {
+  //   try {
+  //     const response = await api.get("/users"); // Giả sử có API này
+  //     if (!Array.isArray(response.data)) {
+  //       console.error("API /api/users did not return an array!", response.data);
+  //       return [];
+  //     }
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error("Error fetching all users list:", error.response?.data || error.message);
+  //     throw error;
+  //   }
+  // };
+  
+  // ==========================================================================

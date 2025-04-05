@@ -1,357 +1,420 @@
-// import React, { useState } from 'react';
-// import { FaClock, FaUser, FaEdit, FaSave, FaSearch } from 'react-icons/fa';
-
-// const PhanViTri = () => {
-//     //    const [setSelectedDate] = useState(new Date());
-//     const [searchTerm, setSearchTerm] = useState('');
-//     const [filterCriteria, setFilterCriteria] = useState('all');
-
-//     const shiftAssignments = [
-//         {
-//             id: 1,
-//             date: new Date(),
-//             startTime: '09:00',
-//             endTime: '17:00',
-//             employee: {
-//                 name: 'John Doe',
-//                 photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-//                 role: 'Nhân Viên',
-//                 contact: 'john.doe@example.com'
-//             },
-//             status: 'Chờ Phân Ca',
-//             notes: 'Có 3 Thiết Bị Cần Bảo Hành, 2 Thiết Bị Đã Được Sửa'
-//         },
-//         {
-//             id: 2,
-//             date: new Date(),
-//             startTime: '10:00',
-//             endTime: '18:00',
-//             employee: {
-//                 name: 'Jane Smith',
-//                 photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-//                 role: 'Nhân Viên',
-//                 contact: 'jane.smith@example.com'
-//             },
-//             status: 'Đang Làm Việc',
-//             notes: 'Chưa Có'
-//         },
-//     ];
-
-//     // const handleDateChange = (date) => {
-//     //     setSelectedDate(date);
-//     // };
-
-//     const handleSearch = (e) => {
-//         setSearchTerm(e.target.value);
-//     };
-
-//     const handleFilterChange = (criteria) => {
-//         setFilterCriteria(criteria);
-//     };
-
-//     const filteredAssignments = shiftAssignments.filter((assignment) => {
-//         const matchesSearch = assignment.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//             assignment.notes.toLowerCase().includes(searchTerm.toLowerCase());
-//         const matchesFilter = filterCriteria === 'all' || assignment.status === filterCriteria;
-//         return matchesSearch && matchesFilter;
-//     });
-
-//     return (
-//         <div className="container p-4 mx-auto">
-//             {/* Navigation and Filters */}
-//             <div className="flex flex-wrap items-center justify-between mb-6">
-//                 <div className="flex space-x-4">
-//                     <div className="relative">
-//                         <input
-//                             type="text"
-//                             placeholder="Tìm Kiếm..."
-//                             className="py-2 pl-10 pr-4 border rounded-full"
-//                             value={searchTerm}
-//                             onChange={handleSearch}
-//                         />
-//                         <FaSearch className="absolute text-gray-400 left-3 top-3" />
-//                     </div>
-//                     <select
-//                         className="px-4 py-2 border rounded-full"
-//                         value={filterCriteria}
-//                         onChange={(e) => handleFilterChange(e.target.value)}
-//                     >
-//                         <option value="all">Tất Cả Trạng Thái</option>
-//                         <option value="Chờ Phân Ca">Chờ Phân Ca</option>
-//                         <option value="Đang Làm Việc">Đang Làm Việc</option>
-//                     </select>
-//                 </div>
-//             </div>
-
-
-//             {/* Shift Assignments */}
-//             <div className="space-y-6">
-//                 {filteredAssignments.map((assignment) => (
-//                     <div key={assignment.id} className="p-6 transition duration-300 ease-in-out transform bg-white rounded-lg shadow-lg hover:scale-105">
-//                         <div className="flex flex-wrap items-center justify-between mb-4">
-//                             <div className="flex items-center mb-4 space-x-4 sm:mb-0">
-//                                 <img
-//                                     src={assignment.employee.photo}
-//                                     alt={assignment.employee.name}
-//                                     className="w-12 h-12 rounded-full"
-//                                 />
-//                                 <div>
-//                                     <h2 className="text-xl font-semibold">{assignment.employee.name}</h2>
-//                                     <p className="text-gray-600">{assignment.employee.role}</p>
-//                                 </div>
-//                             </div>
-//                         </div>
-
-//                         <div className="flex items-center mb-4 space-x-2">
-//                             <FaClock className="text-gray-400" />
-//                             <span>{assignment.startTime} - {assignment.endTime}</span>
-//                         </div>
-//                         <div className="flex items-center mb-4 space-x-2">
-//                             <FaUser className="text-gray-400" />
-//                             <span>{assignment.employee.contact}</span>
-
-//                         </div>
-//                         <div className="mb-4">
-//                             <span className={`px-3 py-1 rounded-full text-sm font-semibold ${{
-//                                 'Đang Làm Việc': 'bg-blue-200 text-blue-800',
-//                                 'Chờ Phân Ca': 'bg-green-200 text-green-800'
-//                             }[assignment.status]}`}>
-//                                 {assignment.status}
-//                             </span>
-//                         </div>
-//                         <div className="mb-4">
-//                             <div className='w-1/2 grid-cols-1'>
-//                                 <h3 className="mb-2 text-lg font-semibold">Báo cáo công việc</h3>
-//                                 <div className="p-3 bg-gray-100 rounded">
-//                                     <p>{assignment.notes}</p>
-//                                 </div>
-//                             </div>
-//                         </div>
-//                         <div className="flex justify-start space-x-2">
-//                             <button className="px-4 py-2 text-white transition duration-300 bg-blue-500 rounded hover:bg-blue-600">
-//                                 <FaEdit className="inline-block mr-2" />
-//                                 Phân Ca
-//                             </button>
-//                             <button className="px-4 py-2 text-white transition duration-300 bg-green-500 rounded hover:bg-green-600">
-//                                 <FaSave className="inline-block mr-2" />
-//                                 Lưu Lịch
-//                             </button>
-//                         </div>
-//                     </div>
-//                 ))}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default PhanViTri;
-
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchNhanVien, fetchAllRooms, fetchAssignedRooms, addAssignedRooms, removeAssignedRooms } from '../../api';
+import {
+    fetchNhanVienList,
+    fetchAllRoomsList,
+    fetchAssignedRoomsForEmployee,
+    addAssignedRoomsForEmployee,
+    removeAssignedRoomsForEmployee,
+} from '../../api';
+
+import { XMarkIcon } from '@heroicons/react/20/solid';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Component con cho Tab phân khu
+const AssignRoomsTab = ({
+    allRoomsData,
+    isLoadingAllRooms,
+    isErrorAllRooms,
+    roomSearchTerm,
+    setRoomSearchTerm,
+    pendingAssignedRoomIds,
+    handleToggleRoom,
+    isLoadingAssignedRooms, // Cần để disable input search
+    saveAssignmentMutation, // Cần để disable checkbox khi đang lưu
+    handleSaveChanges,
+}) => {
+    const filteredRooms = useMemo(() => {
+        if (isLoadingAllRooms || isErrorAllRooms || !Array.isArray(allRoomsData)) {
+            return [];
+        }
+        return allRoomsData.filter(room => {
+            const phong = room?.phong ?? '';
+            return phong.toLowerCase().includes(roomSearchTerm.toLowerCase());
+        });
+    }, [allRoomsData, isLoadingAllRooms, isErrorAllRooms, roomSearchTerm]);
+
+    console.log("AssignRoomsTab rendering. pendingAssignedRoomIds:", pendingAssignedRoomIds);
+
+    return (
+        <>
+            <input
+                type="text"
+                placeholder="Tìm phòng để phân công..."
+                value={roomSearchTerm}
+                onChange={(e) => setRoomSearchTerm(e.target.value)}
+                className="w-full p-2 mb-2 border rounded shrink-0"
+                disabled={isLoadingAllRooms || isLoadingAssignedRooms}
+            />
+            {/* Container cho danh sách phòng */}
+            <div className="flex-grow overflow-y-auto border rounded p-2 mb-2 max-h-96 min-h-[200px]">
+                {isLoadingAllRooms ? (
+                    <p className="text-center text-gray-500">Đang tải danh sách phòng...</p>
+                ) : (
+                    <>
+                        {isErrorAllRooms && <p className="text-red-500">Lỗi tải danh sách phòng!</p>}
+                        {!isErrorAllRooms && filteredRooms.length === 0 && <p className="text-gray-500">Không có phòng nào.</p>}
+                        {!isErrorAllRooms && filteredRooms.map(room => {
+                            const isChecked = pendingAssignedRoomIds.has(room.id);
+                            if ([1, 2, 3].includes(room.id)) {
+                                console.log(`Room ${room.id} - Checkbox should be checked?: ${isChecked}`, pendingAssignedRoomIds);
+                            }
+                            return (
+                                <div key={room.id} className="flex items-center p-1 mb-1 hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        id={`room-assign-${room.id}`}
+                                        checked={isChecked}
+                                        onChange={() => handleToggleRoom(room.id)}
+                                        className="mr-2"
+                                        disabled={saveAssignmentMutation.isPending}
+                                    />
+                                    <label htmlFor={`room-assign-${room.id}`}>{room.phong}</label>
+                                </div>
+                            );
+                        })}
+                    </>
+                )}
+            </div>
+            {/* Nút Lưu */}
+            <button
+                onClick={handleSaveChanges}
+                disabled={saveAssignmentMutation.isPending || isLoadingAssignedRooms || isLoadingAllRooms}
+                className="px-4 py-2 mt-auto text-white bg-green-500 rounded shrink-0 hover:bg-green-600 disabled:bg-gray-400"
+            >
+                {saveAssignmentMutation.isPending ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+            </button>
+        </>
+    );
+};
+
+// Component con cho Tab Xem phòng đã phân khu
+const ViewAssignedRoomsTab = ({
+    assignedRoomsData,
+    isLoadingAssignedRooms,
+    handleRemoveSingleRoom,
+    selectedEmployee,
+    isRemoving
+}) => {
+    // Kiểm tra trạng thái Loading
+    if (isLoadingAssignedRooms) {
+        return <p className="flex-grow text-center text-gray-500">Đang tải phòng đã phân công...</p>;
+    }
+    if (!Array.isArray(assignedRoomsData)) {
+        return <p className="flex-grow text-center text-red-500">DATA không hợp lê!!</p>;
+    }
+    return (
+        <div className="flex-grow p-2 overflow-y-auto">
+            {assignedRoomsData.length === 0 ? (
+                <p className="italic text-gray-600">Nhân viên <span className='font-medium'>{selectedEmployee?.hoTen}</span> chưa được phân công phòng nào.</p>
+            ) : (
+                <div>
+                    <h4 className="mb-2 text-sm font-medium text-gray-700">Các phòng <span className='font-semibold'>{selectedEmployee?.hoTen}</span> đang phụ trách:</h4>
+                    {/* Sử dụng flex-wrap để tự động xuống dòng */}
+                    <div className="flex flex-wrap gap-2">
+                        {assignedRoomsData.map(room => (
+                            <span
+                                key={room.id}
+                                className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full ring-1 ring-inset ring-blue-200"
+                            >
+                                {room.phong}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        console.log("Attempting to call handleRemoveSingleRoom for room:", room.id);
+                                        // Kiểm tra lại kiểu ở đây nếu cần
+                                        if (typeof handleRemoveSingleRoom === 'function') {
+                                            handleRemoveSingleRoom(room.id);
+                                        } else {
+                                            console.error("handleRemoveSingleRoom is still not a function right before calling!");
+                                        }
+                                    }} // Gọi hàm xử lý xóa với ID phòng
+                                    disabled={isRemoving}
+                                    className="ml-1.5 inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-blue-500 hover:bg-blue-200 hover:text-blue-700 focus:bg-blue-700 focus:text-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                    aria-label={`Xóa phân công phòng ${room.phong}`}
+                                >
+                                    <XMarkIcon className="w-3 h-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const PhanCongKhuVuc = () => {
-    const [employees, setEmployees] = useState([]);
-    const [allRooms, setAllRooms] = useState([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
-    const [assignedRoomIds, setAssignedRoomIds] = useState(new Set()); // Dùng Set để dễ kiểm tra và cập nhật
-    const [pendingAssignedRoomIds, setPendingAssignedRoomIds] = useState(new Set()); // Lưu thay đổi tạm thời
-
+    const [pendingAssignedRoomIds, setPendingAssignedRoomIds] = useState(new Set());
     const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
     const [roomSearchTerm, setRoomSearchTerm] = useState('');
-    const [isLoadingRooms, setIsLoadingRooms] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState('assign');
 
-    // Fetch danh sách nhân viên khi mount
+    const queryClient = useQueryClient();
+
+
+    // --- Fetch dữ liệu bằng useQuery ---
+    const {
+        data: employeesData,
+        isLoading: isLoadingEmployees,
+        isError: isErrorEmployees,
+    } = useQuery({
+        queryKey: ['nhanvienList'],
+        queryFn: fetchNhanVienList
+    });
+
+    const {
+        data: allRoomsData,
+        isLoading: isLoadingAllRooms,
+        isError: isErrorAllRooms
+    } = useQuery({
+        queryKey: ['allRoomsList'],
+        queryFn: fetchAllRoomsList
+    });
+
+    // Fetch phòng đã gán cho nhân viên đang chọn
+    const {
+        data: assignedRoomsData = [],
+        isLoading: isLoadingAssignedRooms,
+    } = useQuery({
+        queryKey: ['assignedRooms', selectedEmployeeId],
+        queryFn: () => fetchAssignedRoomsForEmployee(selectedEmployeeId),
+        enabled: !!selectedEmployeeId,
+        onSuccess: (data) => {
+            console.log(`onSuccess RAN for assignedRooms (Emp ID: ${selectedEmployeeId}). Data length: ${data?.length}`);
+        }
+    });
+
+    // --- *** THÊM useEffect ĐỂ ĐỒNG BỘ STATE CHECKBOX *** ---
+    // 1. useEffect để CẬP NHẬT pending IDs khi có employee được chọn VÀ data tương ứng thay đổi
     useEffect(() => {
-        // 2. Gọi hàm đã import
-        fetchNhanVien()
-            .then(res => {
-                if (Array.isArray(res.data)) {
-                    setEmployees(res.data);
+        console.log(`useEffect [assignedRoomsData, selectedEmployeeId] running to SET IDs. EmpID: ${selectedEmployeeId}`);
+        // Chỉ chạy logic cập nhật khi có ID VÀ có data (dù là mảng rỗng)
+        if (selectedEmployeeId && Array.isArray(assignedRoomsData)) {
+            const currentIds = new Set(assignedRoomsData.map(item => item.id));
+            setPendingAssignedRoomIds(currentIds);
+        }
+        // Không làm gì nếu không có selectedEmployeeId trong effect này
+    }, [assignedRoomsData, selectedEmployeeId]);
+    
+    // 2. useEffect để XÓA pending IDs khi không có employee nào được chọn
+    useEffect(() => {
+        console.log(`useEffect [selectedEmployeeId] running to CLEAR IDs. EmpID: ${selectedEmployeeId}`);
+        if (!selectedEmployeeId) {
+            setPendingAssignedRoomIds(currentSet => {
+                if (currentSet.size > 0) {
+                    console.log(`useEffect: Clearing non-empty pending IDs because no employee selected.`);
+                    return new Set();
                 }
-            })
-            .catch(err => console.error("Lỗi tải nhân viên:", err.response?.data || err.message));
+                return currentSet; // Trả về Set cũ (đang rỗng)
+            });
+        }
+        // Không làm gì nếu đang có selectedEmployeeId
+    }, [selectedEmployeeId]); // Chỉ phụ thuộc vào selectedEmployeeId
 
-        // Fetch danh sách tất cả phòng khi mount
-        fetchAllRooms()
-            .then(res => {
-                 if (Array.isArray(res.data)) {
-                    setAllRooms(res.data);
-                 }
-            })
-            .catch(err => console.error("Lỗi tải phòng:", err.response?.data || err.message));
-    }, []);
+    // --- *** KẾT THÚC useEffect *** ---
 
- // Fetch phòng được gán khi chọn nhân viên khác
- useEffect(() => {
-    if (!selectedEmployeeId) {
-        setAssignedRoomIds(new Set());
-        setPendingAssignedRoomIds(new Set());
-        return;
-    }
+    // Tạo Set ID phòng đã gán thực tế (từ query) để so sánh khi lưu (cho Tab 1)
+    const assignedRoomIds = useMemo(() => {
+        return Array.isArray(assignedRoomsData)
+            ? new Set(assignedRoomsData.map(item => item.id))
+            : new Set();
+    }, [assignedRoomsData]);
 
-    setIsLoadingRooms(true);
-    // 2. Gọi hàm đã import
-    fetchAssignedRooms(selectedEmployeeId)
-        .then(res => {
-             // Giả sử API trả về mảng các object { phong_id: ... } hoặc chỉ mảng các ID
-             // Cần kiểm tra cấu trúc res.data thực tế từ API của bạn
-             if (Array.isArray(res.data)) {
-                 const initialIds = new Set(res.data.map(item => item.phong_id || item)); // Lấy ID phòng
-                 setAssignedRoomIds(initialIds);
-                 setPendingAssignedRoomIds(initialIds);
-             } else {
-                 console.error("API phòng được gán không trả về mảng:", res.data);
-                 setAssignedRoomIds(new Set());
-                 setPendingAssignedRoomIds(new Set());
-             }
-        })
-        .catch(err => {
-            console.error("Lỗi tải phòng được gán:", err.response?.data || err.message);
-            setAssignedRoomIds(new Set());
-            setPendingAssignedRoomIds(new Set());
-        })
-        .finally(() => setIsLoadingRooms(false));
+    // --- Mutation để lưu thay đổi ---
+    const saveAssignmentMutation = useMutation({
+        mutationFn: async () => {
+            const addedRoomIds = [...pendingAssignedRoomIds].filter(id => !assignedRoomIds.has(id));
+            const removedRoomIds = [...assignedRoomIds].filter(id => !pendingAssignedRoomIds.has(id));
 
-}, [selectedEmployeeId]);
+            if (addedRoomIds.length === 0 && removedRoomIds.length === 0) {
+                console.log("Không có thay đổi phân khu.");
+                alert('Không có thay đổi nào để lưu.'); // Thông báo cho người dùng
+                return; // Không thực hiện gọi API
+            }
 
+            const promises = [];
+            if (addedRoomIds.length > 0) promises.push(addAssignedRoomsForEmployee(selectedEmployeeId, addedRoomIds));
+            if (removedRoomIds.length > 0) promises.push(removeAssignedRoomsForEmployee(selectedEmployeeId, removedRoomIds));
+
+            await Promise.all(promises);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assignedRooms', selectedEmployeeId] });
+            queryClient.invalidateQueries({ queryKey: ['nhanvienList'] });
+            alert('Cập nhật phân công thành công!');
+        },
+        onError: (error) => {
+            console.error("Lỗi lưu phân công:", error.response?.data || error.message);
+            alert('Lỗi khi lưu phân công. Vui lòng thử lại.');
+            setPendingAssignedRoomIds(assignedRoomIds);
+        }
+    });
+
+    const removeSingleAssignmentMutation = useMutation({
+        mutationFn: ({ employeeId, roomId }) => removeAssignedRoomsForEmployee(employeeId, [roomId]),
+        onSuccess: () => {
+            // Invalidate query lấy phòng đã gán để UI cập nhật
+            queryClient.invalidateQueries({ queryKey: ['assignedRooms', selectedEmployeeId] });
+            console.log('Đã xóa phân công phòng thành công.');
+        },
+        onError: (error) => {
+            console.error("Lỗi xóa phân công phòng:", error.response?.data || error.message);
+            alert('Lỗi khi xóa phân công phòng. Vui lòng thử lại.');
+        }
+    });
+
+    // --- Handlers ---
     // Lọc nhân viên
     const filteredEmployees = useMemo(() => {
-        return employees.filter(emp =>
-            emp.hoTen.toLowerCase().includes(employeeSearchTerm.toLowerCase())
-        );
-    }, [employees, employeeSearchTerm]);
-
-    // Lọc phòng
-    const filteredRooms = useMemo(() => {
-        return allRooms.filter(room =>
-            room.phong.toLowerCase().includes(roomSearchTerm.toLowerCase())
-            // Thêm điều kiện lọc theo tòa, tầng nếu cần
-        );
-    }, [allRooms, roomSearchTerm]);
+        if (isLoadingEmployees || isErrorEmployees || !Array.isArray(employeesData)) {
+            console.log("[filteredEmployees] Returning [] because loading/error/not array", { isLoadingEmployees, isErrorEmployees, isArray: Array.isArray(employeesData) });
+            return [];
+        }
+        try {
+            // Chỉ lọc theo search term, bỏ lọc theo role
+            const result = employeesData.filter(emp => {
+                const hoTen = emp?.hoTen ?? ''; // Dữ liệu API có hoTen
+                const searchTerm = employeeSearchTerm.toLowerCase();
+                const nameLower = hoTen.toLowerCase();
+                return nameLower.includes(searchTerm);
+            });
+            return result;
+        } catch (filterError) {
+            console.error("Lỗi khi filter employees:", filterError, employeesData);
+            return [];
+        }
+    }, [employeesData, isLoadingEmployees, isErrorEmployees, employeeSearchTerm])
 
     // Xử lý chọn nhân viên
     const handleSelectEmployee = (id) => {
         setSelectedEmployeeId(id);
+        setActiveTab('assign'); // Luôn quay về tab 'assign' khi chọn nhân viên mới
+        setRoomSearchTerm('');
     };
 
     // Xử lý check/uncheck phòng
     const handleToggleRoom = (roomId) => {
-        const newPendingIds = new Set(pendingAssignedRoomIds);
-        if (newPendingIds.has(roomId)) {
-            newPendingIds.delete(roomId);
-        } else {
-            newPendingIds.add(roomId);
-        }
-        setPendingAssignedRoomIds(newPendingIds);
+        setPendingAssignedRoomIds(prev => {
+            const newPendingIds = new Set(prev);
+            if (newPendingIds.has(roomId)) {
+                newPendingIds.delete(roomId);
+            } else {
+                newPendingIds.add(roomId);
+            }
+            return newPendingIds;
+        });
     };
 
- // Xử lý Lưu thay đổi
- const handleSaveChanges = async () => {
-    if (!selectedEmployeeId || isSaving) return;
+    // Xử lý Lưu thay đổi
+    const handleSaveChanges = () => {
+        if (!selectedEmployeeId) return;
+        saveAssignmentMutation.mutate();
+    };
 
-    setIsSaving(true);
-    const addedRoomIds = [...pendingAssignedRoomIds].filter(id => !assignedRoomIds.has(id));
-    const removedRoomIds = [...assignedRoomIds].filter(id => !pendingAssignedRoomIds.has(id));
+    // Lấy selectedEmployee từ employeesData đã fetch thành công
+    const selectedEmployee = useMemo(() => {
+        if (!selectedEmployeeId || !Array.isArray(employeesData)) return null;
+        const found = employeesData.find(e => e.id === selectedEmployeeId);
+        return found || null;
+    }, [employeesData, selectedEmployeeId]);
 
-    try {
-        const promises = [];
-        if (addedRoomIds.length > 0) {
-            // 2. Gọi hàm đã import
-            promises.push(addAssignedRooms(selectedEmployeeId, addedRoomIds));
+    const handleRemoveSingleRoom = (roomId) => {
+        if (!selectedEmployeeId) return;
+        if (window.confirm(`Bạn có chắc muốn xóa phân công phòng này khỏi nhân viên ${selectedEmployee?.hoTen}?`)) {
+            removeSingleAssignmentMutation.mutate({ employeeId: selectedEmployeeId, roomId });
         }
-        if (removedRoomIds.length > 0) {
-             // 2. Gọi hàm đã import
-             promises.push(removeAssignedRooms(selectedEmployeeId, removedRoomIds));
-        }
-
-        await Promise.all(promises);
-
-        setAssignedRoomIds(new Set(pendingAssignedRoomIds));
-        alert('Cập nhật phân công thành công!');
-
-    } catch (error) {
-        console.error("Lỗi lưu phân công:", error.response?.data || error.message);
-        alert('Lỗi khi lưu phân công. Vui lòng thử lại.');
-    } finally {
-        setIsSaving(false);
-    }
-};
-
-
-    const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
-
+    };
     return (
-        <div className="container mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-theme.header.height)]">
+        <div className="container grid h-full grid-cols-1 gap-4 p-4 mx-auto md:grid-cols-3">
             {/* Cột trái: Danh sách nhân viên */}
-            <div className="p-4 overflow-y-auto border rounded">
-                <h2 className="mb-2 text-lg font-semibold">Chọn Nhân Viên</h2>
+            <div className="flex flex-col h-full p-4 overflow-hidden border rounded">
+                <h2 className="mb-2 text-lg font-semibold shrink-0">Chọn Nhân Viên</h2>
                 <input
                     type="text"
                     placeholder="Tìm nhân viên..."
                     value={employeeSearchTerm}
                     onChange={(e) => setEmployeeSearchTerm(e.target.value)}
-                    className="w-full p-2 mb-2 border rounded"
+                    className="w-full p-2 mb-2 border rounded shrink-0"
+                    disabled={isLoadingEmployees}
                 />
-                <ul>
-                    {filteredEmployees.map(emp => (
-                        <li key={emp.id}
-                            className={`p-2 cursor-pointer rounded ${selectedEmployeeId === emp.id ? 'bg-blue-200' : 'hover:bg-gray-100'}`}
-                            onClick={() => handleSelectEmployee(emp.id)}
-                        >
-                            {emp.hoTen}
-                        </li>
-                    ))}
-                </ul>
+                {isLoadingEmployees && <p className="flex-grow text-center text-gray-500">Đang tải nhân viên...</p>}
+                {isErrorEmployees && <p className="flex-grow text-center text-red-500">Lỗi tải nhân viên!</p>}
+                {!isLoadingEmployees && !isErrorEmployees && (
+                    <ul className="flex-grow overflow-y-auto">
+                        {filteredEmployees.length === 0 && <li className="p-2 text-gray-500">Không tìm thấy nhân viên.</li>}
+                        {filteredEmployees.map(emp => (
+                            <li key={emp.id}
+                                className={`p-2 border-b border-gray-100 cursor-pointer rounded ${selectedEmployeeId === emp.id ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
+                                onClick={() => handleSelectEmployee(emp.id)}
+                            >
+                                <div className="font-medium">{emp?.hoTen || `Nhân viên ${emp?.id}`}</div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
 
-            {/* Cột phải: Danh sách phòng */}
-            <div className="flex flex-col p-4 overflow-y-auto border rounded md:col-span-2">
-                 <h2 className="mb-2 text-lg font-semibold">
-                     Phân Công Phòng {selectedEmployee ? `cho ${selectedEmployee.hoTen}` : ''}
-                 </h2>
+            {/* Cột phải: Tab Phân công / Xem phân công */}
+            <div className="flex flex-col h-full p-4 overflow-hidden border rounded md:col-span-2">
+                <h2 className="mb-2 text-lg font-semibold shrink-0">
+                    Thông tin Phân Công {selectedEmployee ? `cho ${selectedEmployee.hoTen}` : ''}
+                </h2>
                 {selectedEmployeeId ? (
                     <>
-                        <input
-                            type="text"
-                            placeholder="Tìm phòng..."
-                            value={roomSearchTerm}
-                            onChange={(e) => setRoomSearchTerm(e.target.value)}
-                            className="w-full p-2 mb-2 border rounded"
-                        />
-                        {isLoadingRooms ? (
-                            <p>Đang tải danh sách phòng...</p>
-                        ) : (
-                             <div className="flex-grow pr-2 mb-2 overflow-y-auto"> {/* Cho phép list phòng cuộn */}
-                                {filteredRooms.map(room => (
-                                    <div key={room.id} className="flex items-center p-1 mb-1 hover:bg-gray-50">
-                                        <input
-                                            type="checkbox"
-                                            id={`room-${room.id}`}
-                                            checked={pendingAssignedRoomIds.has(room.id)}
-                                            onChange={() => handleToggleRoom(room.id)}
-                                            className="mr-2"
-                                        />
-                                        <label htmlFor={`room-${room.id}`}>{room.phong}</label> {/* Hiển thị tên phòng */}
-                                    </div>
-                                ))}
-                             </div>
-                        )}
-                         <button
-                            onClick={handleSaveChanges}
-                            disabled={isSaving || isLoadingRooms}
-                            className="px-4 py-2 mt-auto text-white bg-green-500 rounded hover:bg-green-600 disabled:bg-gray-400"
-                         >
-                            {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                         </button>
+                        {/* Tab Navigation */}
+                        <div className="flex border-b shrink-0">
+                            <button
+                                onClick={() => setActiveTab('assign')}
+                                className={`px-4 py-2 ${activeTab === 'assign' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
+                            >
+                                Phân công phòng
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('view')}
+                                className={`px-4 py-2 ${activeTab === 'view' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
+                            >
+                                Xem phòng đã phân công
+                            </button>
+                        </div>
+
+                        {/* Tab Content */}
+                        <div className="flex flex-col flex-grow mt-2 overflow-hidden">
+                            {activeTab === 'assign' && (
+                                <AssignRoomsTab
+                                    key={selectedEmployeeId || 'assign-tab-none'}
+                                    allRoomsData={allRoomsData}
+                                    isLoadingAllRooms={isLoadingAllRooms}
+                                    isErrorAllRooms={isErrorAllRooms}
+                                    roomSearchTerm={roomSearchTerm}
+                                    setRoomSearchTerm={setRoomSearchTerm}
+                                    pendingAssignedRoomIds={pendingAssignedRoomIds}
+                                    handleToggleRoom={handleToggleRoom}
+                                    isLoadingAssignedRooms={isLoadingAssignedRooms}
+                                    saveAssignmentMutation={saveAssignmentMutation}
+                                    handleSaveChanges={handleSaveChanges}
+                                />
+                            )}
+                            {activeTab === 'view' && (
+                                <ViewAssignedRoomsTab
+                                    key={selectedEmployeeId ? `view-${selectedEmployeeId}` : 'view-tab-none'}
+                                    assignedRoomsData={assignedRoomsData}
+                                    isLoadingAssignedRooms={isLoadingAssignedRooms}
+                                    selectedEmployee={selectedEmployee}
+                                    handleRemoveSingleRoom={handleRemoveSingleRoom}
+                                    isRemoving={removeSingleAssignmentMutation.isPending}
+                                />
+                            )}
+                        </div>
                     </>
                 ) : (
-                    <p className="text-gray-500">Vui lòng chọn một nhân viên để xem và chỉnh sửa phân công.</p>
+                    <p className="flex items-center justify-center flex-grow text-center text-gray-500">
+                        Vui lòng chọn một nhân viên để xem hoặc phân công.
+                    </p>
                 )}
             </div>
         </div>
     );
 };
 
-export default PhanCongKhuVuc; // Đổi tên component
+export default PhanCongKhuVuc;

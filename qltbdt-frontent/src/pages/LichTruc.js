@@ -4,6 +4,7 @@ import PhanCongKhuVuc from "../components/LichTruc/PhanCongKhuVuc";
 import PhanCa from "../components/LichTruc/PhanCa";
 import MyScheduleView from "../components/LichTruc/LichNhanVien"; 
 import { useAuth } from "../context/AuthProvider";
+import ThongTinBaoHong from "../components/LichTruc/ThongTinBaoHong";
 
 const LichTruc = () => {
     const { user, loading } = useAuth();
@@ -19,42 +20,49 @@ const LichTruc = () => {
 
 
     // 1. Giao diện cho Admin
-    if (user.role === 'admin') { 
+    if (user.role === 'admin') {
         return (
-            <div className="flex flex-col h-full bg-white border-2"> {/* Thêm h-full nếu cần */}
+            <div className="flex flex-col h-full bg-white border-2"> {/* Giữ h-full */}
                 <div className="flex items-center justify-between p-4 border-b ">
-                    <h2 className="text-xl font-semibold">Công Việc</h2>
+                    <h2 className="text-xl font-semibold">Quản Lý Công Việc & Báo Hỏng</h2> {/* Cập nhật tiêu đề nếu muốn */}
                 </div>
                 {/* Tabs Admin */}
-                <div className="flex border-b shrink-0"> {/* shrink-0 để tab không bị co lại */}
+                <div className="flex border-b shrink-0">
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "users" ? "border-b-2 border-blue-500 font-semibold text-blue-600" : "text-gray-500 hover:bg-gray-100"}`} // Tăng padding, flex-1
+                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "users" ? "border-b-2 border-blue-500 font-semibold text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
                         onClick={() => setActiveTab("users")}
                     >
-                        Phân Công
+                        Phân Công Khu Vực
                     </button>
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "schedule" ? "border-b-2 border-blue-500 font-semibold text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "schedule" ? "border-b-2 border-green-500 font-semibold text-green-600" : "text-gray-500 hover:bg-gray-100"}`}
                         onClick={() => setActiveTab("schedule")}
                     >
-                        Lịch Làm Việc
+                        Phân Ca Làm Việc
                     </button>
+                    {/* === TAB MỚI: Thông Tin Báo Hỏng === */}
+                    <button
+                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "baoHong" ? "border-b-2 border-red-500 font-semibold text-red-600" : "text-gray-500 hover:bg-gray-100"}`} // Đổi màu active border
+                        onClick={() => setActiveTab("baoHong")}
+                    >
+                        Thông Tin Báo Hỏng
+                    </button>
+                    {/* === KẾT THÚC TAB MỚI === */}
                 </div>
                 {/* Nội dung Tabs Admin */}
                 <div className="flex-grow overflow-auto"> {/* Cho phép nội dung cuộn */}
                     {activeTab === "users" && (
-                        // <div className="h-screen"> {/* Bỏ h-screen ở đây */}
-                            <PhanCongKhuVuc />
-                        // </div>
+                        <PhanCongKhuVuc />
                     )}
                     {activeTab === "schedule" && (
-                        // <div className="h-screen"> {/* Bỏ h-screen ở đây */}
-                            <PhanCa />
-                        // </div>
+                        <PhanCa />
                     )}
+                    {/* === HIỂN THỊ COMPONENT BAO HỎNG === */}
+                    {activeTab === "baoHong" && (
+                        <ThongTinBaoHong /> // <-- Gắn component vào đây
+                    )}
+                    {/* === KẾT THÚC HIỂN THỊ === */}
                 </div>
-                {/* RightPanel có thể giữ nguyên hoặc ẩn tùy layout của bạn */}
-                 {/* <RightPanel /> */}
             </div>
         );
     }

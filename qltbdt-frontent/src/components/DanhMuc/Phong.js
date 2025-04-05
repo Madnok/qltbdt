@@ -1,90 +1,66 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { paginateData } from "../../utils/helpers";
+import { fetchPhongListWithDetails } from "../../api";
+import { useQuery } from '@tanstack/react-query';
 import { BsFilter } from "react-icons/bs";
 import { AiOutlineClose } from "react-icons/ai";
 
-const Phong = ({ setSelectedRecord, refresh }) => {
-    const [data, setData] = useState([]);
+
+
+const Phong = ({ setSelectedRecord }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState({ coSo: "", toa: "", tang: "", soPhong: "" });
     const [activeFilter, setActiveFilter] = useState(null);
 
+    // --- Sử dụng useQuery --- //
+    const { data: phongData = [], isLoading, isError, error } = useQuery({
+        queryKey: ['phong'],
+        queryFn: fetchPhongListWithDetails // Hàm fetch dữ liệu
 
-    const fetchTotalDevices = async (phongId) => {
-        try {
-            const response = await axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${phongId}`, {withCredentials:true});
+    });
 
-            const devices = response.data; // API trả về danh sách thiết bị thuộc phòng
-
-            // Tính tổng số thiết bị dựa trên số lượng dòng (tức là số lượng `thongtinthietbi_id`)
-            return devices.length || 0;
-        } catch (error) {
-            console.error("Lỗi lấy tổng số thiết bị:", error);
-            return 0; // Trả về 0 nếu xảy ra lỗi
-        }
-    };
-
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get("http://localhost:5000/api/phong",{
-                    withCredentials: true,
-                });
-                const rooms = response.data;
-
-                // Lấy tổng số thiết bị cho từng phòng
-                const updatedRooms = await Promise.all(
-                    rooms.map(async (room) => {
-                        const totalDevices = await fetchTotalDevices(room.id);
-                        return { ...room, totalDevices }; // Thêm tổng số thiết bị vào phòng
-                    })
-                );
-
-                setData(updatedRooms); // Cập nhật danh sách phòng với tổng số thiết bị
-            } catch (error) {
-                console.error("Lỗi tải dữ liệu:", error);
-            }
-        };
-
-        fetchData();
-    }, [refresh]);
-
-
-    const filteredData = data.filter(record =>
+    // Lọc dữ liệu từ data của useQuery
+    const filteredData = phongData.filter(record =>
         (!filter.coSo || record.coSo === filter.coSo) &&
         (!filter.toa || record.toa === filter.toa) &&
         (!filter.tang || record.tang === parseInt(filter.tang)) &&
         (!filter.soPhong || record.soPhong === parseInt(filter.soPhong))
     );
 
-    const { currentItems, totalPages } = paginateData(filteredData, currentPage);
+    const { currentItems, totalPages,indexOfFirstItem } = paginateData(filteredData, currentPage);
+
     const goToPage = pageNumber => {
         if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
     };
 
     const getDropdownValues = (key) => {
-        return [...new Set(data.map(item => item[key]))].sort((a, b) => {
-            return typeof a === "number" ? a - b : a.localeCompare(b);
+        return [...new Set(phongData.map(item => item[key]))].sort((a, b) => {
+            return typeof a === "number" ? a - b : String(a).localeCompare(String(b));
         });
     };
 
+    if (isLoading) {
+        return <div className="p-4 text-center">Đang tải danh sách phòng...</div>;
+    }
+    if (isError) {
+        return <div className="p-4 text-center text-red-500">Lỗi tải dữ liệu: {error.message}</div>;
+    }
 
     return (
         <div className="w-full overflow-auto">
-            <table className="w-full border">
+            <table className="w-full border min-w-[600px]">
                 <thead>
                     <tr className="bg-gray-200">
+                        {/* Các th */}
                         <th className="px-4 border-b">STT
                             <div className="flex flex-col items-center justify-center">
-                                {/* Kiểm tra nếu bất kỳ filter nào đang được bật */}
                                 {Object.values(filter).some(value => value) && (
                                     <AiOutlineClose
                                         className="text-xl text-red-500 transition cursor-pointer hover:text-red-600"
                                         onClick={() => {
                                             setFilter({ coSo: "", toa: "", tang: "", soPhong: "" });
                                             setActiveFilter(null);
+                                            setCurrentPage(1); // Reset trang
                                         }}
                                     />
                                 )}
@@ -100,7 +76,7 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                     <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("coSo").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                                onClick={() => { setFilter({ ...filter, coSo: value }); setActiveFilter(null); }}
+                                                onClick={() => { setFilter({ ...filter, coSo: value }); setActiveFilter(null); setCurrentPage(1); }}
                                             >
                                                 {value}
                                             </div>
@@ -110,38 +86,38 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 {filter.coSo && (
                                     <AiOutlineClose
                                         className="text-red-500 cursor-pointer"
-                                        onClick={() => setFilter({ ...filter, coSo: "" })}
+                                        onClick={() => { setFilter({ ...filter, coSo: "" }); setCurrentPage(1); }}
                                     />
                                 )}
                             </div>
                         </th>
+                        {/* Tòa */}
                         <th className="px-4 py-2 border-b">
                             Tòa
                             <div className="flex flex-row justify-center">
                                 <BsFilter className={`ml-2 cursor-pointer ${filter.toa ? "text-blue-500" : ""}`}
                                     onClick={() => setActiveFilter(activeFilter === "toa" ? null : "toa")}
                                 />
-                                <div className="flex flex-row justify-center">
-                                    {filter.toa && (
-                                        <AiOutlineClose
-                                            className="ml-2 text-red-500 cursor-pointer"
-                                            onClick={() => setFilter({ ...filter, toa: "" })}
-                                        />
-                                    )}
-                                    {activeFilter === "toa" && (
-                                        <div className="absolute z-10 mt-2 bg-white border">
-                                            {getDropdownValues("toa").map(value => (
-                                                <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                                    onClick={() => { setFilter({ ...filter, toa: value }); setActiveFilter(null); }}
-                                                >
-                                                    {value}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                {filter.toa && (
+                                    <AiOutlineClose
+                                        className="ml-2 text-red-500 cursor-pointer"
+                                        onClick={() => { setFilter({ ...filter, toa: "" }); setCurrentPage(1); }}
+                                    />
+                                )}
+                                {activeFilter === "toa" && (
+                                    <div className="absolute z-10 mt-2 bg-white border">
+                                        {getDropdownValues("toa").map(value => (
+                                            <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                                                onClick={() => { setFilter({ ...filter, toa: value }); setActiveFilter(null); setCurrentPage(1); }}
+                                            >
+                                                {value}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </th>
+                        {/* Tầng */}
                         <th className="px-4 py-2 border-b">
                             Tầng
                             <div className="flex flex-row justify-center">
@@ -151,14 +127,14 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 {filter.tang && (
                                     <AiOutlineClose
                                         className="ml-2 text-red-500 cursor-pointer"
-                                        onClick={() => setFilter({ ...filter, tang: "" })}
+                                        onClick={() => { setFilter({ ...filter, tang: "" }); setCurrentPage(1); }}
                                     />
                                 )}
                                 {activeFilter === "tang" && (
                                     <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("tang").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                                onClick={() => { setFilter({ ...filter, tang: value }); setActiveFilter(null); }}
+                                                onClick={() => { setFilter({ ...filter, tang: value }); setActiveFilter(null); setCurrentPage(1); }}
                                             >
                                                 {value}
                                             </div>
@@ -167,6 +143,7 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 )}
                             </div>
                         </th>
+                        {/* Số Phòng */}
                         <th className="px-4 py-2 border-b">
                             Số Phòng
                             <div className="flex flex-row justify-center">
@@ -176,14 +153,14 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                                 {filter.soPhong && (
                                     <AiOutlineClose
                                         className="ml-2 text-red-500 cursor-pointer"
-                                        onClick={() => setFilter({ ...filter, soPhong: "" })}
+                                        onClick={() => { setFilter({ ...filter, soPhong: "" }); setCurrentPage(1); }}
                                     />
                                 )}
                                 {activeFilter === "soPhong" && (
                                     <div className="absolute z-10 mt-2 bg-white border">
                                         {getDropdownValues("soPhong").map(value => (
                                             <div key={value} className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                                onClick={() => { setFilter({ ...filter, soPhong: value }); setActiveFilter(null); }}
+                                                onClick={() => { setFilter({ ...filter, soPhong: value }); setActiveFilter(null); setCurrentPage(1); }}
                                             >
                                                 {value}
                                             </div>
@@ -207,7 +184,7 @@ const Phong = ({ setSelectedRecord, refresh }) => {
                 <tbody>
                     {currentItems.map((record, index) => (
                         <tr key={record.id} onClick={() => setSelectedRecord(record)} className="text-center cursor-pointer hover:bg-gray-100">
-                            <td className="p-2 border">{index + 1 + (currentPage - 1) * 10}</td>
+                            <td className="p-2 border">{indexOfFirstItem + index + 1}</td> {/* Sửa STT */}
                             <td className="p-2 border">{record.coSo}</td>
                             <td className="p-2 border">{record.toa}</td>
                             <td className="p-2 border">{record.tang}</td>

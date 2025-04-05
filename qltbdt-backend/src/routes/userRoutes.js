@@ -15,6 +15,8 @@ router.delete("/:id", requireRole(['admin']),userController.deleteUser);
 router.post("/uploadAvatar/:id", upload.single("avatar"), userController.uploadAvatar);
 router.put("/status/:id", requireRole(['admin']),userController.toggleUserStatus);
 
+
+
 //route nhân viên về vde phân công
 router.get("/:id/phong-phutrach", verifyToken, requireRole(['admin', 'nhanvien']), userPhanCongController.getPhuTrachByNhanVien);
 router.post("/:id/phong-phutrach", verifyToken, requireRole(['admin']), userPhanCongController.addPhuTrach);

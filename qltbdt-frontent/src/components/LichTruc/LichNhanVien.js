@@ -80,21 +80,14 @@ const LichNhanVien = () => {
 
      // Hàm fetch khu vực được phân công
      const fetchAssignedArea = useCallback(async () => {
-        if (!user?.id) return; // Chỉ chạy khi có user.id
+        if (!user?.id) return; 
         setLoadingRooms(true);
-        // Không cần setError ở đây nếu lỗi không quá nghiêm trọng
         try {
-            // Gọi API mới từ file api.js
-            const response = await fetchAssignedRooms(user.id);
-            if (Array.isArray(response.data)) {
-                setAssignedRooms(response.data); // Lưu danh sách phòng {id, phong}
-            } else {
-                 console.error("API phòng được gán không trả về mảng:", response.data);
-                 setAssignedRooms([]);
-            }
+            const phongListData = await fetchAssignedRooms(user.id);
+            setAssignedRooms(phongListData);
         } catch (err) {
-             console.error("Lỗi khi tải khu vực được phân công:", err.response?.data || err.message || err);
-             setAssignedRooms([]); // Đặt về rỗng nếu lỗi
+            console.error("Lỗi khi tải khu vực được phân công:", err);
+            setAssignedRooms([]);
         } finally {
              setLoadingRooms(false);
         }
@@ -129,7 +122,6 @@ const LichNhanVien = () => {
     if (error && myEvents.length === 0) return <div className="p-3 text-red-600 bg-red-100 border border-red-300 rounded">{error}</div>;
 
     return (
-        // Sử dụng Fragment <>...</> để bọc các phần tử
         <>
              {/* === KHU VỰC HIỂN THỊ PHÒNG PHỤ TRÁCH === */}
              <div className="p-4 mb-4 bg-gray-100 border rounded-md shadow-sm">
@@ -147,7 +139,7 @@ const LichNhanVien = () => {
                          ))}
                      </ul>
                  ) : (
-                      // Hiển thị khi mảng rỗng hoặc đang tải
+                      // Hiển thị khi mảng rỗng hoặc đang tảifetchAssignedArea
                      <p className="text-sm text-gray-600">
                          {loadingRooms ? 'Đang tải...' : 'Bạn chưa được phân công phòng phụ trách cố định.'}
                      </p>

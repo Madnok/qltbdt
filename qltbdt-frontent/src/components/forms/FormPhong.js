@@ -1,305 +1,233 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
+// src/components/forms/FormPhong.js
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { maxTangTheoToa, toaTheoCoSo } from "../../utils/constants";
 import { BsTrash } from "react-icons/bs";
+import {
+    fetchPhongList,
+    fetchTheLoaiList,
+    fetchThietBiConLai,
+    fetchThongTinThietBiChuaPhanBo,
+    addPhongAPI,
+    addThietBiToPhongAPI
+} from "../../api";
 
-const FormPhong = ({ onClose, refreshData }) => {
-    const [activeTab, setActiveTab] = useState("themPhong"); // Quản lý tab đang hiển thị
-    // eslint-disable-next-line
-    const [newId, setNewId] = useState(0); // ID phòng mới
+const FormPhong = ({ onClose }) => {
+    const [activeTab, setActiveTab] = useState("themPhong");
     const [formData, setFormData] = useState({
-        coSo: "",
-        toa: "",
-        tang: "",
-        soPhong: "",
-        chucNang: "",
+        coSo: "", toa: "", tang: "", soPhong: "", chucNang: "",
+    });
+    const [selectedTheLoai, setSelectedTheLoai] = useState("");
+    const [selectedThietBi, setSelectedThietBi] = useState(null); // Khởi tạo là null
+    const [selectedPhong, setSelectedPhong] = useState("");
+    const [thietBiTrongPhong, setThietBiTrongPhong] = useState([]); // Danh sách chờ
+
+    const queryClient = useQueryClient();
+
+    // --- Fetch dữ liệu bằng useQuery ---
+    const { data: phongListData = [] } = useQuery({
+        queryKey: ['phongList'],
+        queryFn: fetchPhongList
     });
 
-    const [phongList, setPhongList] = useState([]);
-    const [theLoaiList, setTheLoaiList] = useState([]);
-    const [selectedTheLoai, setSelectedTheLoai] = useState("");
-    const [selectedThietBi, setSelectedThietBi] = useState("");
-    const [selectedPhong, setSelectedPhong] = useState("");
-    const [dsThietBi, setDsThietBi] = useState([]);
-    const [thietBiTrongPhong, setThietBiTrongPhong] = useState([]);
-    const [initialDsThietBi, setInitialDsThietBi] = useState([]); // Thông tin tồn kho ban đầu
+    const { data: theLoaiListData = [] } = useQuery({
+        queryKey: ['theLoaiList'],
+        queryFn: fetchTheLoaiList
+    });
 
-    useEffect(() => {
-        const config = { withCredentials: true };
-    
-        Promise.all([
-            axios.get("http://localhost:5000/api/phong", config),
-            axios.get("http://localhost:5000/api/phong/phonglist", config),
-            axios.get("http://localhost:5000/api/theloai", config),
-            axios.get("http://localhost:5000/api/thietbi/thietbiconlai", config)
-        ])
-        .then(([phongRes, phongListRes, theLoaiRes, remainingRes]) => {
-            setNewId(phongRes.data.length + 1);
-            setPhongList(phongListRes.data);
-            setTheLoaiList(theLoaiRes.data);
-            setInitialDsThietBi(remainingRes.data);
-            setDsThietBi(remainingRes.data);
-            console.log("Dữ liệu thiết bị còn lại:", remainingRes.data);
-        })
-        .catch(error => {
-            console.error("Lỗi tải dữ liệu ban đầu:", error.response?.data || error.message || error);
-        });
-    }, []); 
+    // Query cho thiết bị còn lại, sẽ refetch khi invalidate
+    const { data: dsThietBiData = [], isLoading: isLoadingStock } = useQuery({
+        queryKey: ['thietBiConLai'],
+        queryFn: fetchThietBiConLai,
+    });
 
-    // Khi chọn thể loại, lấy danh sách thiết bị
-    useEffect(() => {
-        if (selectedTheLoai) {
-            axios.get(`http://localhost:5000/api/theloai/${selectedTheLoai}`, { withCredentials: true })
-                .then(response => {
-                    console.log("Danh sách thiết bị:", response.data.dsThietBi);
-                    // Lọc danh sách thiết bị từ thông tin tồn kho ban đầu
-                    const filteredThietBi = initialDsThietBi.filter(tb =>
-                        response.data.dsThietBi.some(selectedTb => selectedTb.id === tb.id)
-                    );
-                    setDsThietBi(filteredThietBi);
-                })
-                .catch(error => console.error("Lỗi tải thiết bị:", error));
+    // Lọc danh sách thiết bị dựa trên thể loại được chọn và dữ liệu từ query
+    const filteredDsThietBi = dsThietBiData.filter(tb =>
+       selectedTheLoai ? tb.theloai_id === parseInt(selectedTheLoai) : true
+    );
+
+    // --- Mutations ---
+    const addPhongMutation = useMutation({
+        mutationFn: addPhongAPI,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['phong'] });
+            queryClient.invalidateQueries({ queryKey: ['phongList'] });
+            alert("Thêm phòng thành công!");
+            handleReset();
+        },
+        onError: (error) => {
+            console.error("Lỗi thêm phòng:", error.response?.data || error.message);
+            alert(`Thêm phòng thất bại: ${error.response?.data?.error || error.message}`);
         }
-    }, [selectedTheLoai, initialDsThietBi]); // Chạy khi selectedTheLoai hoặc initialDsThietBi thay đổi
+    });
 
+    const addThietBiMutation = useMutation({
+        mutationFn: addThietBiToPhongAPI,
+        onSuccess: (data) => {
+             alert(data.message || "Lưu thiết bị vào phòng thành công!");
+             setThietBiTrongPhong([]);
+             setSelectedPhong("");
+             setSelectedTheLoai("");
+             setSelectedThietBi(null); // Reset về null
+             // Invalidate các query liên quan
+             // Sử dụng queryClient.setQueryData nếu muốn cập nhật cache ngay lập tức thay vì invalidate
+             queryClient.invalidateQueries({ queryKey: ['phong', parseInt(selectedPhong), 'thietbi'] });
+             queryClient.invalidateQueries({ queryKey: ['phong'] });
+             queryClient.invalidateQueries({ queryKey: ['thietBiConLai'] });
+             // không cần refetchDsThietBi vì invalidateQueries sẽ kích hoạt
+        },
+        onError: (error) => {
+             console.error("Lỗi khi lưu thiết bị vào phòng:", error);
+             alert(`Lưu thất bại! Lỗi: ${error.response?.data?.error || error.message}`);
+        }
+     });
 
-    // Xử lý thay đổi input Phòng
+    // --- Handlers ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         let updatedFormData = { ...formData, [name]: value };
-
-        // Reset tầng nếu tòa thay đổi
-        if (name === "toa") {
-            updatedFormData.tang = ""; // Reset tầng
-        }
-
+        if (name === "toa") updatedFormData.tang = "";
+        if (name === "tang") updatedFormData.soPhong = "";
         setFormData(updatedFormData);
     };
 
-    // Xử lý thay đổi input Thiết Bị
-    const handleThietBiChange = (e) => {
-        const thietBi = dsThietBi.find(tb => tb.id === parseInt(e.target.value));
-        setSelectedThietBi(thietBi || "");
+    const handleSubmitPhong = (e) => {
+        e.preventDefault();
+        if (!formData.coSo || !formData.toa || !formData.tang || !formData.soPhong || !formData.chucNang) {
+            alert("Vui lòng nhập đầy đủ thông tin phòng!");
+            return;
+        }
+        addPhongMutation.mutate(formData);
     };
 
-    // Xử lý thêm thiết bị vào bảng dữ liệu chờ để lưu
-    const handleAddThietBi = () => {
-        const selectedPhongDetails = phongList.find(p => p.id === parseInt(selectedPhong, 10));
-        const thietBiDetails = dsThietBi.find(tb => tb.id === selectedThietBi.id);
+    const handleReset = () => {
+        setFormData({ coSo: "", toa: "", tang: "", soPhong: "", chucNang: "" });
+    };
 
-        if (!selectedPhongDetails || !thietBiDetails) {
-            console.error("Phòng hoặc thiết bị chưa được chọn.");
+    const handleThietBiChange = (e) => {
+        const thietBiId = parseInt(e.target.value);
+        const thietBi = dsThietBiData.find(tb => tb.id === thietBiId);
+        setSelectedThietBi(thietBi || null); // Set về null nếu không tìm thấy
+    };
+
+    const handleAddThietBiToTable = () => {
+        const selectedPhongDetails = phongListData.find(p => p.id === parseInt(selectedPhong, 10));
+        // selectedThietBi đã là object hoặc null từ state
+        if (!selectedPhongDetails || !selectedThietBi) return alert("Vui lòng chọn phòng và thiết bị.");
+
+        const stockAvailable = selectedThietBi.remainingStock || 0;
+        const existingIndex = thietBiTrongPhong.findIndex(item => item.thietbi_id === selectedThietBi.id);
+        const currentInTable = existingIndex !== -1 ? thietBiTrongPhong[existingIndex].soLuong : 0;
+
+        if (currentInTable >= stockAvailable) {
+            alert(`Đã thêm tối đa số lượng tồn kho (${stockAvailable}) cho thiết bị này.`);
             return;
         }
-
-        if (thietBiDetails.remainingStock <= 0) {
-            alert(`Không thể thêm thiết bị vì tồn kho đã hết.`);
-            return;
-        }
-
-        // Cập nhật tồn kho
-        const updatedThietBiList = dsThietBi.map(tb =>
-            tb.id === selectedThietBi.id
-                ? { ...tb, remainingStock: tb.remainingStock - 1 }
-                : tb
-        );
-        setDsThietBi(updatedThietBiList);
-
-        // Kiểm tra nếu thiết bị cùng tên đã tồn tại trong danh sách chờ
-        const existingIndex = thietBiTrongPhong.findIndex(item => item.ten === selectedThietBi.tenThietBi);
 
         if (existingIndex !== -1) {
-            // Nếu thiết bị đã tồn tại, tăng số lượng
-            const updatedThietBiTrongPhong = thietBiTrongPhong.map((item, index) =>
-                index === existingIndex
-                    ? { ...item, soLuong: item.soLuong + 1 }
-                    : item
-            );
-            setThietBiTrongPhong(updatedThietBiTrongPhong);
+            const updatedList = [...thietBiTrongPhong];
+            updatedList[existingIndex].soLuong += 1;
+            setThietBiTrongPhong(updatedList);
         } else {
-            // Nếu thiết bị chưa tồn tại, thêm dòng mới
             const newEntry = {
                 phong: selectedPhongDetails.phong,
+                phong_id: selectedPhongDetails.id,
+                thietbi_id: selectedThietBi.id,
                 ten: selectedThietBi.tenThietBi,
-                thongtinthietbi_id: selectedThietBi.thongtinthietbi_id,
                 soLuong: 1,
-                tonKho: selectedThietBi.tonKho
             };
             setThietBiTrongPhong([...thietBiTrongPhong, newEntry]);
         }
     };
 
-
-
-
-    // Xử lý lưu phòng
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const config = { withCredentials: true };
-        axios.post("http://localhost:5000/api/phong", formData, config)
-            .then(() => {
-                alert("Thêm phòng thành công!");
-                refreshData();
-                onClose();
-            })
-            .catch(error => console.error("Lỗi thêm phòng:", error));
-    };
-
-    // Xử lý nút Hủy
-    const handleReset = () => {
-        setFormData({
-            coSo: "",
-            toa: "",
-            tang: "",
-            soPhong: "",
-            chucNang: "",
-        });
-    };
-
-    // Xóa phần tử tại vị trí index
-    const handleDelete = (index) => {
-        // Lấy thông tin dòng bị xóa
-        const removedItem = thietBiTrongPhong[index];
-
-        // Cộng lại vào số lượng thực còn lại (remainingStock)
-        const updatedDsThietBi = dsThietBi.map(tb =>
-            tb.tenThietBi === removedItem.ten
-                ? { ...tb, remainingStock: tb.remainingStock + removedItem.soLuong } // Cộng lại số lượng vào remainingStock
-                : tb
-        );
-        setDsThietBi(updatedDsThietBi);
-
-        // Xóa dòng khỏi bảng
+    const handleDeleteFromTable = (index) => {
         const updatedList = thietBiTrongPhong.filter((_, i) => i !== index);
         setThietBiTrongPhong(updatedList);
     };
 
+    const handleInputChangeTable = (e, index) => {
+        const newSoLuong = parseInt(e.target.value) || 0;
+        const currentItem = thietBiTrongPhong[index];
+        const thietBiDetails = dsThietBiData.find(tb => tb.id === currentItem.thietbi_id);
+        const stockAvailable = thietBiDetails?.remainingStock || 0;
 
-    // Xử lý nhập liệu số lượng
-    const handleInputChange = (e, index) => {
-        const newSoLuong = parseInt(e.target.value) || 1; // Đảm bảo giá trị hợp lệ
-        const currentItem = thietBiTrongPhong[index]; // Lấy dòng hiện tại trong bảng
-        const thietBiDetails = dsThietBi.find(tb => tb.tenThietBi === currentItem.ten); // Lấy thông tin số lượng thực còn lại (remainingStock)
-
-        if (!thietBiDetails) {
-            console.error("Không tìm thấy thông tin số lượng còn lại của thiết bị.");
+        if (newSoLuong > stockAvailable) {
+            alert(`Số lượng (${newSoLuong}) vượt quá tồn kho còn lại (${stockAvailable})!`);
+            e.target.value = currentItem.soLuong;
             return;
         }
 
-        // Tính sự khác biệt (delta) giữa số lượng mới và số lượng cũ
-        const delta = newSoLuong - currentItem.soLuong;
-
-        // Nếu số lượng mới vượt quá số lượng thực còn lại, dừng lại
-        if (delta > 0 && delta > thietBiDetails.remainingStock) {
-            alert(`Số lượng vượt quá giới hạn còn lại! (Số lượng còn lại: ${thietBiDetails.remainingStock})`);
+        if (newSoLuong <= 0) {
+            handleDeleteFromTable(index);
             return;
         }
 
-        // Cập nhật remainingStock của thiết bị
-        const updatedDsThietBi = dsThietBi.map(tb =>
-            tb.tenThietBi === currentItem.ten
-                ? { ...tb, remainingStock: tb.remainingStock - delta } // Giảm hoặc tăng số lượng còn lại dựa trên delta
-                : tb
-        );
-        setDsThietBi(updatedDsThietBi);
-
-        // Cập nhật số lượng trong bảng
         const updatedList = thietBiTrongPhong.map((item, i) =>
             i === index ? { ...item, soLuong: newSoLuong } : item
         );
         setThietBiTrongPhong(updatedList);
     };
 
+     const handleSaveThietBi = async () => {
+         if (!selectedPhong || thietBiTrongPhong.length === 0) {
+             alert("Vui lòng chọn phòng và thêm ít nhất một thiết bị vào bảng chờ!");
+             return;
+         }
 
-    // Lưu thiết bị vào phòng
-    const handleSaveThietBi = async () => {
-        if (!selectedPhong || thietBiTrongPhong.length === 0) {
-            alert("Vui lòng chọn phòng và thêm ít nhất một thiết bị!");
-            return;
-        }
+        const finalPayload = [];
+        let hasError = false; // Cờ để dừng nếu có lỗi
 
-        try {
-            const requestData = await Promise.all(
-                thietBiTrongPhong.map(async (item) => {
-                    const thietBi = dsThietBi.find(tb => tb.tenThietBi === item.ten);
+        for (const itemInTable of thietBiTrongPhong) {
+            if (hasError) break; // Dừng nếu vòng lặp trước đó báo lỗi
+             try {
+                 // Dùng fetchQuery để lấy dữ liệu mới nhất hoặc từ cache nếu còn fresh
+                 const unassignedDevices = await queryClient.fetchQuery({
+                     queryKey: ['thongTinThietBiChuaPhanBo', itemInTable.thietbi_id],
+                     queryFn: () => fetchThongTinThietBiChuaPhanBo(itemInTable.thietbi_id),
+                     staleTime: 0 // Luôn fetch mới khi cần lưu
+                 });
 
-                    if (!thietBi) {
-                        console.error("Không tìm thấy thiết bị:", item.ten);
-                        return null;
-                    }
+                 if (!Array.isArray(unassignedDevices)) throw new Error('Dữ liệu thiết bị chưa phân bổ không hợp lệ');
 
-                    // Lấy danh sách thiết bị chưa phân bổ từ bảng thongtinthietbi
-                    const response = await axios.get(`http://localhost:5000/api/tttb/unassigned`, {
-                        withCredentials: true,
-                        params: { thietbi_id: thietBi.id }
-                    }).catch(error => {
-                        console.error("Lỗi khi lấy danh sách thiết bị chưa phân bổ:", error);
-                        alert(`Không thể lấy danh sách thiết bị (${item.ten}).`);
-                        return null;
-                    });
+                 if (itemInTable.soLuong > unassignedDevices.length) {
+                     throw new Error(`Số lượng yêu cầu (${itemInTable.soLuong}) cho "${itemInTable.ten}" vượt quá số lượng có sẵn (${unassignedDevices.length}). Việc thêm thiết bị có thể đã xảy ra ở tab khác.`);
+                 }
 
-                    if (!response || !response.data || response.data.length === 0) {
-                        alert(`Không có thiết bị chưa phân bổ khả dụng cho ${item.ten}.`);
-                        return null;
-                    }
+                 const selectedTttbIds = unassignedDevices.slice(0, itemInTable.soLuong).map(d => d.id);
 
-                    const thongTinThietBiList = response.data;
+                 selectedTttbIds.forEach(tttbId => {
+                     finalPayload.push({
+                         phong_id: parseInt(selectedPhong),
+                         thietbi_id: itemInTable.thietbi_id,
+                         thongtinthietbi_id: tttbId
+                     });
+                 });
 
-                    // Kiểm tra số lượng yêu cầu với số lượng thực tế
-                    if (item.soLuong > thongTinThietBiList.length) {
-                        alert(`Số lượng yêu cầu vượt quá giới hạn cho ${item.ten} (Số lượng còn lại: ${thongTinThietBiList.length}).`);
-                        return null;
-                    }
+             } catch (error) {
+                 console.error(`Lỗi khi xử lý thiết bị "${itemInTable.ten}":`, error);
+                 alert(`Đã xảy ra lỗi khi chuẩn bị dữ liệu cho thiết bị "${itemInTable.ten}". ${error.message}`);
+                 hasError = true; // Đặt cờ lỗi
+             }
+         }
 
-                    // Lấy đúng số lượng thiết bị chưa được phân bổ (theo input từ người dùng)
-                    return thongTinThietBiList.slice(0, item.soLuong).map((device) => ({
-                        phong_id: selectedPhong,            // ID phòng được chọn
-                        thietbi_id: device.thietbi_id,      // ID thiết bị
-                        thongtinthietbi_id: device.id       // Mã định danh thiết bị (thongtinthietbi_id)
-                    }));
-                })
-            );
+         // Chỉ gọi mutation nếu không có lỗi xảy ra trong quá trình chuẩn bị payload
+         if (!hasError && finalPayload.length > 0) {
+            addThietBiMutation.mutate(finalPayload);
+         } else if (!hasError && finalPayload.length === 0){
+             alert("Không có dữ liệu hợp lệ để lưu (có thể do lỗi hoặc danh sách chờ rỗng).");
+         }
+     };
 
-            const validData = requestData.filter(item => item !== null).flat(); // Làm phẳng mảng các thiết bị
-
-            if (!validData || validData.length === 0) {
-                alert("Không có thiết bị hợp lệ để lưu!");
-                return;
-            }
-
-            const config = { withCredentials: true };
-            // Gửi danh sách thiết bị đã phân bổ đến API
-            const response = await axios.post("http://localhost:5000/api/phong/add-thietbi", validData, config);
-
-            if (response.data.success) {
-                alert("Lưu thành công!");
-                setThietBiTrongPhong([]);
-                await refreshRemainingStock(); // Làm mới danh sách tồn kho
-                await refreshData(); // Làm mới danh sách thiết bị trong phòng
-            } else {
-                throw new Error(response.data.message);
-            }
-        } catch (error) {
-            console.error("Lỗi khi lưu thiết bị:", error);
-            alert(`Lưu thất bại! Lỗi: ${error.message}`);
-        }
-    };
-
-
-    // Hàm làm mới danh sách thiết bị còn lại
-    const refreshRemainingStock = async () => {
-        try {
-            const response = await axios.get("http://localhost:5000/api/thietbi/thietbiconlai",{withCredentials: true});
-            setDsThietBi(response.data); // Cập nhật danh sách thiết bị còn lại
-        } catch (error) {
-            console.error("Lỗi khi tải lại danh sách thiết bị:", error);
-        }
-    };
+     // Tính toán trạng thái disable cho nút "Thêm vào danh sách chờ"
+     const currentDeviceInStock = dsThietBiData.find(tb => tb.id === selectedThietBi?.id);
+     const stockAvailable = currentDeviceInStock?.remainingStock || 0;
+     const alreadyInWaitingList = thietBiTrongPhong.find(item => item.thietbi_id === selectedThietBi?.id)?.soLuong || 0;
+     const canAddToWaitingList = stockAvailable > alreadyInWaitingList;
 
     return (
-        <div className="flex flex-col h-full bg-white border-l shadow-md">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-white border-b">
+         <div className="flex flex-col h-full bg-white border-l shadow-md">
+             {/* Header và Tabs */}
+              <div className="flex items-center justify-between p-4 bg-white border-b">
                 <h2 className="text-lg font-semibold">Các Chức Năng Của Phòng</h2>
                 <div className="flex space-x-4">
                     <button className="flex items-center justify-center w-10 h-10 transition rounded-full hover:bg-gray-300" onClick={onClose}>
@@ -307,8 +235,7 @@ const FormPhong = ({ onClose, refreshData }) => {
                     </button>
                 </div>
             </div>
-            <div className="flex items-center bg-white">
-                {/* Tabs */}
+             <div className="flex items-center bg-white">
                 <div className="flex flex-1 bg-white border-b">
                     <button
                         className={`flex-1 text-center py-4 font-semibold ${activeTab === "themPhong" ? "border-b-4 border-green-500 text-green-500" : "text-gray-400"}`}
@@ -324,11 +251,12 @@ const FormPhong = ({ onClose, refreshData }) => {
                     </button>
                 </div>
             </div>
-            {/* Dữ Liệu Thêm Phòng Mới */}
+
+            {/* Form Thêm Phòng */}
             {activeTab === "themPhong" && (
-                <div className="grid grid-cols-2 gap-2 p-2 mb-2 space-2">
-                    {/* Cơ sở */}
-                    <div>
+                 <form onSubmit={handleSubmitPhong} className="grid grid-cols-2 gap-2 p-2 mb-2 space-2">
+                    {/* Inputs */}
+                     <div>
                         <label className="block font-medium">Cơ Sở</label>
                         <select name="coSo" value={formData.coSo} onChange={handleChange} className="w-full p-1 mt-1 border rounded">
                             <option value="">Chọn cơ sở</option>
@@ -336,33 +264,27 @@ const FormPhong = ({ onClose, refreshData }) => {
                             <option value="Phụ">Phụ</option>
                         </select>
                     </div>
-
-                    {/* Tòa */}
                     <div>
                         <label className="block font-medium">Tòa</label>
                         <select name="toa" value={formData.toa} onChange={handleChange} className="w-full p-1 mt-1 border rounded"
                             disabled={!formData.coSo}>
                             <option value="">Chọn tòa</option>
-                            {formData.coSo && toaTheoCoSo[formData.coSo].map(toa => (
+                            {formData.coSo && toaTheoCoSo[formData.coSo]?.map(toa => (
                                 <option key={toa} value={toa}>{toa}</option>
                             ))}
                         </select>
                     </div>
-
-                    {/* Tầng */}
                     <div>
                         <label className="block font-medium">Tầng</label>
                         <select name="tang" value={formData.tang} onChange={handleChange} className="w-full p-1 mt-1 border rounded"
                             disabled={!formData.toa}>
                             <option value="">Chọn tầng</option>
-                            {formData.toa && Array.from({ length: maxTangTheoToa[formData.toa] }, (_, i) => (
+                            {formData.toa && Array.from({ length: maxTangTheoToa[formData.toa] || 0 }, (_, i) => (
                                 <option key={i + 1} value={i + 1}>{i + 1}</option>
                             ))}
                         </select>
                     </div>
-
-                    {/* Số Phòng */}
-                    <div>
+                     <div>
                         <label className="block font-medium">Số Phòng</label>
                         <select name="soPhong" value={formData.soPhong} onChange={handleChange} className="w-full p-1 mt-1 border rounded"
                             disabled={!formData.tang}>
@@ -372,89 +294,94 @@ const FormPhong = ({ onClose, refreshData }) => {
                             ))}
                         </select>
                     </div>
-                    {/* Chức Năng */}
                     <div className="col-span-2">
                         <label className="block font-medium">Chức Năng</label>
                         <input type="text" name="chucNang" value={formData.chucNang} onChange={handleChange} className="w-full p-1 mt-1 border rounded" />
                     </div>
+                    {/* Buttons */}
                     <button
                         type="submit"
-                        onClick={handleSubmit}
-                        className="w-full p-1 text-sm text-white bg-green-500 border rounded"
+                        disabled={addPhongMutation.isPending}
+                        className="w-full p-1 text-sm text-white bg-green-500 border rounded disabled:opacity-50"
                     >
-                        Lưu Phòng
+                        {addPhongMutation.isPending ? 'Đang lưu...' : 'Lưu Phòng'}
                     </button>
                     <button
                         type="button"
-                        className="w-full text-sm bg-gray-300 border rounded"
+                        className="w-full text-sm bg-gray-300 border rounded disabled:opacity-50"
                         onClick={handleReset}
+                        disabled={addPhongMutation.isPending}
                     >
                         Xóa Trắng
                     </button>
-                </div>
+                </form>
             )}
-            {/* Thêm Thiết Bị Vào Phòng */}
-            {activeTab === "themThietBi" && (
+
+            {/* Form Thêm Thiết Bị Vào Phòng */}
+             {activeTab === "themThietBi" && (
                 <div className="p-4 bg-white border-t-2">
                     <div className="grid grid-cols-3 gap-2 pb-4">
-                        <select
+                         {/* Dropdown chọn Phòng */}
+                         <select
                             name="phong_id"
                             value={selectedPhong}
                             onChange={(e) => setSelectedPhong(e.target.value)}
                             className="w-full p-1 border rounded-lg"
                         >
-                            <option value="">Phòng</option>
-                            {phongList.map(p => (
+                            <option value="">Chọn Phòng</option>
+                            {phongListData.map(p => (
                                 <option key={p.id} value={p.id}>{p.phong}</option>
                             ))}
                         </select>
-                        <select value={selectedTheLoai}
+                         {/* Dropdown chọn Thể loại */}
+                         <select value={selectedTheLoai}
                             className="w-full p-1 border rounded-lg"
                             disabled={!selectedPhong}
-                            onChange={(e) => setSelectedTheLoai(e.target.value)}
+                            onChange={(e) => { setSelectedTheLoai(e.target.value); setSelectedThietBi(null); }} // Reset thiết bị
                         >
-                            <option value="">Thể loại</option>
-                            {theLoaiList.map(tl => (
+                            <option value="">Chọn Thể loại</option>
+                            {theLoaiListData.map(tl => (
                                 <option key={tl.id} value={tl.id}>{tl.theLoai}</option>
                             ))}
                         </select>
-                        <select
+                         {/* Dropdown chọn Thiết bị */}
+                         <select
                             name="thietbi"
+                            value={selectedThietBi?.id || ""}
                             onChange={handleThietBiChange}
                             className="w-full p-1 border rounded-lg"
-                            disabled={!selectedTheLoai}
+                            disabled={!selectedTheLoai || isLoadingStock} // Disable khi đang load stock
                         >
-                            <option value="">Thiết bị</option>
-                            {dsThietBi.map(tb => (
-                                <option key={tb.id} value={tb.id} disabled={(tb.remainingStock) === 0}>
+                            <option value="">{isLoadingStock ? "Đang tải..." : "Chọn Thiết bị"}</option>
+                            {filteredDsThietBi.map(tb => (
+                                <option key={tb.id} value={tb.id} disabled={tb.remainingStock <= 0}>
                                     {tb.tenThietBi} (Còn: {tb.remainingStock || 0})
                                 </option>
                             ))}
                         </select>
-
                     </div>
                     <div className="grid items-center grid-cols-2 gap-2 pb-4">
-                        <button
+                         <button
                             onClick={handleSaveThietBi}
-                            className="w-full p-1 text-sm text-white transition-colors bg-green-500 border rounded hover:bg-green-600"
+                            disabled={addThietBiMutation.isPending || thietBiTrongPhong.length === 0 || isLoadingStock}
+                            className="w-full p-1 text-sm text-white transition-colors bg-green-500 border rounded hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            Lưu Thiết Bị
+                            {addThietBiMutation.isPending ? 'Đang lưu...' : 'Lưu Thiết Bị vào Phòng'}
                         </button>
-                        <button
-                            onClick={handleAddThietBi}
-                            className={`w-full p-1 text-sm text-white transition-colors ${dsThietBi.some(tb => tb.remainingStock > 0) ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-500 cursor-not-allowed"
-                                } rounded`}
-                            disabled={!dsThietBi.some(tb => tb.remainingStock > 0)} // Vô hiệu hóa nếu tất cả remainingStock = 0
+                         <button
+                            onClick={handleAddThietBiToTable}
+                            disabled={!selectedThietBi || !canAddToWaitingList || isLoadingStock || addThietBiMutation.isPending} // Thêm disable khi đang lưu
+                            className={`w-full p-1 text-sm text-white transition-colors bg-blue-500 hover:bg-blue-600 rounded disabled:bg-gray-400 disabled:cursor-not-allowed`}
                         >
-                            Thêm Thiết Bị
+                            Thêm vào danh sách chờ
                         </button>
-
                     </div>
 
-                    <table className="w-full border border-gray-300 table-auto">
+                    {/* Bảng danh sách chờ */}
+                     <table className="w-full border border-gray-300 table-auto">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-4 py-1 border">Phòng</th>
+                                {/* <th className="px-4 py-1 border">Phòng</th> */}
                                 <th className="px-4 py-1 border">Tên Thiết Bị</th>
                                 <th className="px-4 py-1 border">Số Lượng</th>
                                 <th className="px-4 py-1 border">Xóa</th>
@@ -462,22 +389,25 @@ const FormPhong = ({ onClose, refreshData }) => {
                         </thead>
                         <tbody>
                             {thietBiTrongPhong.map((item, index) => (
-                                <tr key={index}>
-                                    <td className="px-4 py-1 text-center border">{item.phong}</td>
+                                <tr key={`${item.thietbi_id}-${index}`}>
+                                    {/* <td className="px-4 py-1 text-center border">{item.phong}</td> */}
                                     <td className="px-4 py-1 text-center border">{item.ten}</td>
                                     <td className="px-4 py-1 text-center border">
                                         <input
                                             type="number"
                                             value={item.soLuong}
-                                            onChange={(e) => handleInputChange(e, index)}
+                                            onChange={(e) => handleInputChangeTable(e, index)}
                                             className="w-16 p-1 text-center border rounded"
                                             min="1"
+                                            // Max động dựa trên tồn kho
+                                            max={dsThietBiData.find(tb => tb.id === item.thietbi_id)?.remainingStock + thietBiTrongPhong.find(i => i.thietbi_id === item.thietbi_id)?.soLuong - item.soLuong + item.soLuong}
                                         />
                                     </td>
                                     <td className="px-4 py-1 text-center border">
                                         <button
-                                            onClick={() => handleDelete(index)}
+                                            onClick={() => handleDeleteFromTable(index)}
                                             className="px-2 py-1 text-white bg-red-500 rounded"
+                                            disabled={addThietBiMutation.isPending} // Disable khi đang lưu
                                         >
                                             <BsTrash />
                                         </button>
@@ -488,9 +418,8 @@ const FormPhong = ({ onClose, refreshData }) => {
                     </table>
                 </div>
             )}
-        </div>
-    );
+         </div>
+     );
 };
 
 export default FormPhong;
-
