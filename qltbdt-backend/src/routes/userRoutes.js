@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyToken, requireRole } = require("../middleware/authMiddleware");
 const userController = require("../controllers/userController");
 const userPhanCongController = require("../controllers/userPhanCongController");
-const upload = require("../middleware/upload");
+const {upload} = require("../middleware/upload");
 router.use(verifyToken);
 
 //route cho user admin  và user thuòng

@@ -1,404 +1,8 @@
-// import axios from "axios";
-// import { useState, useEffect } from "react";
-// import eventBus from "../../utils/eventBus";
-// import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-// import moment from "moment";
-
-// const ThongTinBaoHong = () => {
-//     const [baoHongList, setBaoHongList] = useState([]);
-//     const [filteredBaoHongList, setFilteredBaoHongList] = useState([]);
-//     const [expandedRows, setExpandedRows] = useState([]);
-//     const [phongList, setPhongList] = useState([]);
-//     const [filter, setFilter] = useState({
-//         phong_id: "",
-//         loaithiethai: "",
-//         thiethai: "",
-//         dateOrder: "newest", // Giá trị mặc định: mới nhất
-//     });
-//     const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
-//     const rowsPerPage = 10; // Số hàng mỗi trang
-
-//     const refreshData = () => {
-//         // Gọi API lấy thông tin báo hỏng
-//         const config = {withCredentials:true};
-//         axios.get("http://localhost:5000/api/baohong", config)
-//             .then((response) => {
-//                 setBaoHongList(response.data); // Lưu dữ liệu vào state
-//                 setFilteredBaoHongList(response.data); // Sao chép danh sách để lọc
-//             })
-//             .catch((error) => {
-//                 console.error("Lỗi khi tải thông tin báo hỏng:", error);
-//             });
-
-//         // Gọi API lấy danh sách phòng
-//         axios.get("http://localhost:5000/api/phong/phonglist", config)
-//             .then((response) => {
-//                 setPhongList(response.data); // Lưu danh sách phòng vào state
-//             })
-//             .catch((error) => {
-//                 console.error("Lỗi khi tải danh sách phòng:", error);
-//             });
-//     };
-
-//     useEffect(() => {
-//         refreshData();
-
-//         const handleBaoHongSubmitted = () => {
-//             refreshData();
-//         };
-
-//         eventBus.on('baoHongSubmitted', handleBaoHongSubmitted);
-
-//         return () => {
-//             eventBus.off('baoHongSubmitted', handleBaoHongSubmitted);
-//         };
-//     }, []);
-
-//     // Xử lý thay đổi bộ lọc
-//     const [sortOrder, setSortOrder] = useState(null); // Trạng thái mặc định: chưa sắp xếp
-//     const handleFilterChange = (e, sortOrder = null) => {
-//         const updatedFilter = sortOrder
-//             ? { ...filter, dateOrder: sortOrder }
-//             : { ...filter, [e.target.name]: e.target.value };
-
-//         setFilter(updatedFilter);
-
-//         let filtered = baoHongList.filter((item) => {
-//             const ngayBaoHong = moment(item.ngayBaoHong).format("YYYY-MM-DD"); // Dùng Moment.js để chuẩn hóa định dạng ngày
-//             const specificDate = updatedFilter.specificDate;
-
-//             return (
-//                 (updatedFilter.phong_id === "" || item.phong_id === parseInt(updatedFilter.phong_id)) &&
-//                 (updatedFilter.loaithiethai === "" || item.loaithiethai === updatedFilter.loaithiethai) &&
-//                 (updatedFilter.thiethai === "" || item.thiethai === updatedFilter.thiethai) &&
-//                 (specificDate === "" || ngayBaoHong === specificDate) // So sánh ngày
-//             );
-//         });
-
-//         // Sắp xếp theo thứ tự ngày
-//         filtered.sort((a, b) => {
-//             const dateA = moment(a.ngayBaoHong);
-//             const dateB = moment(b.ngayBaoHong);
-
-//             return updatedFilter.dateOrder === "newest"
-//                 ? dateB - dateA // Mới nhất trước
-//                 : dateA - dateB; // Cũ nhất trước
-//         });
-
-//         setFilteredBaoHongList(filtered);
-//         setCurrentPage(1); // Đặt lại trang về trang đầu
-//     };
-
-
-//     // Xử lý toggle hiển thị bảng con
-//     const toggleRow = (id) => {
-//         if (expandedRows.includes(id)) {
-//             setExpandedRows(expandedRows.filter((row) => row !== id));
-//         } else {
-//             setExpandedRows([...expandedRows, id]);
-//         }
-//     };
-
-//     // Xử lý check box 
-//     const [selectAll, setSelectAll] = useState(false); // Trạng thái chọn tất cả
-//     const [selectedRows, setSelectedRows] = useState([]); // Danh sách các dòng được chọn
-
-//     // Hàm toggle trạng thái tất cả
-//     const handleSelectAll = () => {
-//         if (selectAll) {
-//             // Xóa toàn bộ danh sách được chọn
-//             setSelectedRows([]);
-//         } else {
-//             // Chọn tất cả các dòng hiện tại
-//             const allRowIds = currentRows.map((item) => item.id); // Đảm bảo lấy tất cả ID từ currentRows
-//             setSelectedRows(allRowIds);
-//         }
-//         setSelectAll(!selectAll); // Toggle trạng thái nút
-//     };
-
-//     // Hàm toggle từng dòng
-//     const toggleRowSelection = (id) => {
-//         if (selectedRows.includes(id)) {
-//             // Nếu ID đã có trong danh sách, xóa nó
-//             setSelectedRows(selectedRows.filter((rowId) => rowId !== id));
-//         } else {
-//             // Nếu ID chưa có, thêm nó vào danh sách
-//             setSelectedRows([...selectedRows, id]);
-//         }
-//     };
-
-
-//     // Phân trang
-//     const indexOfLastRow = currentPage * rowsPerPage;
-//     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-//     const currentRows = filteredBaoHongList.slice(indexOfFirstRow, indexOfLastRow);
-
-//     const totalPages = Math.ceil(filteredBaoHongList.length / rowsPerPage);
-
-//     return (
-//         <div className="flex flex-col w-full h-screen min-h-screen overflow-auto bg-white border-r shadow-md">
-//             <div className={`bg-white shadow-md flex flex-col`}>
-//                 <div className="flex items-center justify-between p-4 bg-white border-b">
-//                     <h2 className="text-xl font-semibold">
-//                         Thông Tin Báo Hỏng
-//                     </h2>
-//                 </div>
-//             </div>
-//             <div className="p-6 bg-white">
-//                 {/* Dropdown lọc */}
-//                 <div className="flex flex-wrap mb-4 gap-x-4 gap-y-4">
-//                     {/* Dropdown Phòng */}
-//                     <div className="w-44">
-//                         <label className="block mb-1 text-sm font-medium">Phòng</label>
-//                         <select
-//                             name="phong_id"
-//                             value={filter.phong_id}
-//                             onChange={handleFilterChange}
-//                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-//                         >
-//                             <option value="">Tất cả</option>
-//                             {phongList.map((phong) => (
-//                                 <option key={phong.id} value={phong.id}>
-//                                     {phong.phong}
-//                                 </option>
-//                             ))}
-//                         </select>
-//                     </div>
-
-//                     {/* Dropdown Loại Thiệt Hại */}
-//                     <div className="w-44">
-//                         <label className="block mb-1 text-sm font-medium">Loại Thiệt Hại</label>
-//                         <select
-//                             name="loaithiethai"
-//                             value={filter.loaithiethai}
-//                             onChange={handleFilterChange}
-//                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-//                         >
-//                             <option value="">Tất cả</option>
-//                             <option value="Kết Cấu">Kết Cấu</option>
-//                             <option value="Hệ Thống Điện">Hệ Thống Điện</option>
-//                             <option value="Hệ Thống Nước">Hệ Thống Nước</option>
-//                             <option value="Các Loại Thiết Bị">Các Loại Thiết Bị</option>
-//                             <option value="Khác">Khác</option>
-//                         </select>
-//                     </div>
-
-//                     {/* Dropdown Mức Độ */}
-//                     <div className="w-44">
-//                         <label className="block mb-1 text-sm font-medium">Mức Độ</label>
-//                         <select
-//                             name="thiethai"
-//                             value={filter.thiethai}
-//                             onChange={handleFilterChange}
-//                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-//                         >
-//                             <option value="">Tất cả</option>
-//                             <option value="Nhẹ">Nhẹ</option>
-//                             <option value="Vừa">Vừa</option>
-//                             <option value="Nặng">Nặng</option>
-//                         </select>
-//                     </div>
-
-//                     {/* Dropdown Ngày */}
-//                     <div className="w-44">
-//                         <label className="block mb-1 text-sm font-medium">Chọn Ngày</label>
-//                         <input
-//                             type="date"
-//                             name="specificDate"
-//                             value={filter.specificDate}
-//                             onChange={handleFilterChange}
-//                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-//                         />
-//                     </div>
-//                 </div>
-
-//                 {/* Bảng Dữ liệu */}
-//                 <div className="overflow-y-auto" style={{ maxHeight: "1000px" }}>
-//                     <table className="w-full border border-collapse border-gray-300">
-//                         <thead>
-//                             <tr className="bg-gray-100">
-//                                 <th className="px-4 py-2 border">STT</th>
-//                                 <th className="px-4 py-2 border">Phòng</th>
-//                                 <th className="flex items-center justify-center px-2 py-2">
-//                                     Ngày Báo Hỏng
-//                                     {sortOrder === "oldest" ? (
-//                                         <button
-//                                             onClick={() => {
-//                                                 setSortOrder("newest");
-//                                                 handleFilterChange(null, "newest");
-//                                             }}
-//                                             className="ml-2 text-black hover:text-gray-600"
-//                                             title="Mới nhất"
-//                                         >
-
-//                                             <FaChevronDown />
-//                                         </button>
-//                                     ) : (
-//                                         <button
-//                                             onClick={() => {
-//                                                 setSortOrder("oldest");
-//                                                 handleFilterChange(null, "oldest");
-//                                             }}
-//                                             className="ml-2 text-black hover:text-gray-600"
-//                                             title="Cũ nhất"
-//                                         >
-//                                             <FaChevronUp />
-//                                         </button>
-//                                     )}
-//                                 </th>
-//                                 <th className="px-4 py-2 border">Loại Thiệt Hại</th>
-//                                 <th className="px-4 py-2 border">Mức Độ</th>
-//                                 <th className="px-4 py-2 border">Ưu Tiên</th>
-//                                 <th className="px-4 py-2 border">
-//                                     <div className="flex items-center justify-center">
-//                                         <span>Chọn Tất Cả </span>
-//                                         <input
-//                                             type="checkbox"
-//                                             checked={selectedRows.length === currentRows.length && currentRows.length > 0} // Đã chọn tất cả
-//                                             onChange={handleSelectAll}
-//                                             className="mx-2" // Thêm khoảng cách giữa checkbox và label
-//                                         />
-//                                     </div>
-//                                 </th>
-//                                 <th className="px-4 py-2 border">Người Xử Lý</th>
-//                                 <th className="px-4 py-2 border">Hành Động</th>
-//                             </tr>
-//                         </thead>
-//                         <tbody>
-//                             {currentRows.map((item, index) => (
-//                                 <>
-//                                     {/* Bảng cha */}
-//                                     <tr key={item.id} className="hover:bg-gray-50">
-//                                         <td className="px-4 py-2 text-center border">{indexOfFirstRow + index + 1}</td>
-//                                         <td className="px-4 py-2 border">{item.phong_name}</td>
-//                                         <td className="px-4 py-2 border">
-//                                             {moment(item.ngayBaoHong).format("DD/MM/YYYY HH:mm")}
-//                                         </td>
-//                                         <td className="px-4 py-2 border">{item.loaithiethai}</td>
-//                                         <td className="px-4 py-2 border">{item.thiethai}</td>
-//                                         <td className="px-4 py-2 text-center border">
-//                                             <select value={item.mucDoUuTien} disabled>
-//                                                 <option value="Trung Bình">Trung Bình</option>
-//                                                 <option value="Cao">Cao</option>
-//                                                 <option value="Thấp">Thấp</option>
-//                                             </select>
-//                                         </td>
-//                                         <td className="px-4 py-2 text-center border">
-//                                             {/* Checkbox cho mỗi dòng */}
-//                                             <input
-//                                                 type="checkbox"
-//                                                 checked={selectedRows.includes(item.id)}
-//                                                 onChange={() => toggleRowSelection(item.id)}
-//                                             />
-//                                         </td>
-//                                         <td className="px-4 py-2 border">{item.nhanvien_id}</td>
-//                                         <td className="grid grid-cols-3 px-4 py-2 text-center border">
-//                                             {/* Nút Xem Chi Tiết */}
-//                                             <div>
-//                                                 <button
-//                                                     onClick={() => toggleRow(item.id)}
-//                                                     className="text-blue-500 hover:underline"
-//                                                     title={expandedRows.includes(item.id) ? "Thu Gọn" : "Xem Chi Tiết"}
-//                                                 >
-//                                                     {expandedRows.includes(item.id) ? (
-//                                                         <i className="fas fa-chevron-up"></i> // Icon Thu Gọn
-//                                                     ) : (
-//                                                         <i className="fas fa-chevron-down"></i> // Icon Xem Chi Tiết
-//                                                     )}
-//                                                 </button>
-//                                             </div>
-
-//                                             {/* Nút Xóa Đơn */}
-//                                             <div>
-//                                                 <button
-//                                                     onClick={() => {
-//                                                         // Hàm xử lý xóa đơn (tùy theo logic của bạn)
-//                                                         console.log(`Xóa đơn với ID: ${item.id}`);
-//                                                     }}
-//                                                     className="text-red-500 hover:text-red-700"
-//                                                     title="Xóa Đơn"
-//                                                 >
-//                                                     <i className="fas fa-trash-alt"></i> {/* Icon Xóa Đơn */}
-//                                                 </button>
-//                                             </div>
-
-//                                             <div>
-//                                                 {item.trangThai === "Chờ Duyệt" ? (
-//                                                     <button className="px-2 py-2 text-sm text-white bg-green-500 rounded hover:bg-green-700">
-//                                                         Duyệt
-//                                                     </button>
-//                                                 ) : (
-//                                                     <span>{item.trangThai}</span>
-//                                                 )}
-//                                             </div>
-//                                         </td>
-
-//                                     </tr>
-
-//                                     {/* Bảng con */}
-//                                     {expandedRows.includes(item.id) && (
-//                                         <tr>
-//                                             <td colSpan={6} className="px-4 py-2 border">
-//                                                 <div>
-//                                                     <p><strong>Mô Tả:</strong> {item.moTa || "Không có mô tả"}</p>
-//                                                     <p>
-//                                                         <strong>Hình Ảnh:</strong>{" "}
-//                                                         {item.hinhAnh ? (
-//                                                             <img
-//                                                                 src={item.hinhAnh}
-//                                                                 alt="Thiệt Hại"
-//                                                                 className="h-auto max-w-full mt-2 rounded-lg"
-//                                                             />
-//                                                         ) : (
-//                                                             "Không có hình ảnh"
-//                                                         )}
-//                                                     </p>
-//                                                 </div>
-//                                             </td>
-//                                         </tr>
-//                                     )}
-//                                 </>
-//                             ))}
-//                         </tbody>
-//                     </table>
-//                     <div className="flex items-center justify-between mt-4">
-//                         {/* Hiển thị trang hiện tại */}
-//                         <div>
-//                             Trang {currentPage}/{totalPages}
-//                         </div>
-
-//                         {/* Nút điều khiển phân trang */}
-//                         <div className="flex space-x-2">
-//                             <button
-//                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-//                                 disabled={currentPage === 1}
-//                                 className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-//                             >
-//                                 Trước
-//                             </button>
-//                             <button
-//                                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-//                                 disabled={currentPage === totalPages}
-//                                 className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-//                             >
-//                                 Tiếp
-//                             </button>
-//                         </div>
-//                     </div>
-
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default ThongTinBaoHong;
-
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaUserCheck } from "react-icons/fa"; // Thêm icons
+import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaHistory, FaUndo, FaUserCheck, FaSearch, FaCheckCircle } from "react-icons/fa"; // Thêm icons
 import moment from "moment";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ModalXemLogBaoTri from './ModalXemLogBaoTri';
 
 // Import các hàm API từ api.js
 import {
@@ -412,10 +16,14 @@ import {
 // Helper Components cho Badges (Ví dụ)
 const StatusBadge = ({ status }) => {
     let colorClasses = 'bg-gray-100 text-gray-800'; // Chờ Duyệt
-    if (status === 'Đang Xử Lý') {
+    if (status === 'Đã Duyệt') {
         colorClasses = 'bg-blue-100 text-blue-800';
     } else if (status === 'Hoàn Thành') {
         colorClasses = 'bg-green-100 text-green-800';
+    } else if (status === 'Đang Tiến Hành') {
+        colorClasses = 'bg-yellow-100 text-yellow-800';
+    } else if (status === 'Không Thể Hoàn Thành') {
+        colorClasses = 'bg-red-100 text-yellow-red';
     }
     return (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClasses}`}>
@@ -424,24 +32,31 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const PriorityBadge = ({ priority }) => {
-    let colorClasses = 'bg-yellow-100 text-yellow-800'; // Trung Bình
-    if (priority === 'Cao') {
-        colorClasses = 'bg-red-100 text-red-800';
-    } else if (priority === 'Thấp') {
-        colorClasses = 'bg-green-100 text-green-800';
-    }
+// --- Component Modal xem ảnh ---
+const ImageModal = ({ imageUrl, onClose }) => {
+    if (!imageUrl) return null;
     return (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClasses}`}>
-            {priority}
-        </span>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
+            onClick={onClose} // Đóng khi click nền
+        >
+            <div className="relative max-w-5xl max-h-[100vh]" onClick={e => e.stopPropagation()}> {/* Ngăn đóng khi click ảnh */}
+                <img src={imageUrl} alt="Hình ảnh báo hỏng" className="block object-contain max-w-full max-h-full rounded" />
+                <button
+                    onClick={onClose}
+                    className="absolute p-1 text-white bg-black bg-opacity-50 rounded-full top-2 right-2 hover:bg-opacity-75"
+                    aria-label="Đóng ảnh"
+                >
+                    &times; {/* Dấu X */}
+                </button>
+            </div>
+        </div>
     );
 };
 
-
 const ThongTinBaoHong = () => {
     // --- State ---
-    const [expandedRows, setExpandedRows] = useState(new Set()); // Dùng Set hiệu quả hơn
+    const [expandedRows, setExpandedRows] = useState(new Set());
     const [filter, setFilter] = useState({
         phong_id: "",
         loaithiethai: "",
@@ -450,59 +65,70 @@ const ThongTinBaoHong = () => {
         mucDoUuTien: "", // Thêm filter ưu tiên
         specificDate: "", // Thêm filter ngày cụ thể
         dateOrder: "newest",
+        searchTerm: "",
     });
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
-    const [selectedRows, setSelectedRows] = useState(new Set()); // Dùng Set
+    const [selectedRows, setSelectedRows] = useState(new Set());
     const [selectAll, setSelectAll] = useState(false);
+    const [selectedAssignee, setSelectedAssignee] = useState({}); // Lưu NV được chọn cho từng báo hỏng { baoHongId: nhanVienId }
+    const [modalImage, setModalImage] = useState(null); // State cho modal ảnh
+    const [viewingLogFor, setViewingLogFor] = useState(null); // Lưu ID báo hỏng đang xem log
+    const [phongNameForModal, setPhongNameForModal] = useState("");
+    const [reassignData, setReassignData] = useState({ baoHongId: null, nhanVienId: null, ghiChuAdmin: '' });
+    const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
 
     const queryClient = useQueryClient();
 
-    // --- React Query Fetching ---
+    // --- React Query Fetch ---
     const { data: baoHongList = [], isLoading: isLoadingBaoHong, isError: isErrorBaoHong } = useQuery({
         queryKey: ['baoHongList'],
-        queryFn: fetchBaoHongListAPI // Sử dụng hàm API đã import
+        queryFn: fetchBaoHongListAPI
     });
-
     const { data: phongList = [], isLoading: isLoadingPhong } = useQuery({
-        queryKey: ['phongListForFilter'], // Key khác để không trùng với query khác nếu có
+        queryKey: ['phongListForFilter'],
         queryFn: fetchPhongList
     });
-
     const { data: nhanVienList = [], isLoading: isLoadingNhanVien } = useQuery({
-        queryKey: ['nhanVienListForAssign'], // Key khác
-        queryFn: fetchNhanVienList // API lấy danh sách nhân viên
+        queryKey: ['nhanVienListForAssign'],
+        queryFn: fetchNhanVienList
     });
 
     // Tạo lookup maps bằng useMemo
-    const phongMap = useMemo(() => {
-        return new Map(phongList.map(p => [p.id, p.phong]));
-    }, [phongList]);
-
-    const nhanVienMap = useMemo(() => {
-        return new Map(nhanVienList.map(nv => [nv.id, nv.hoTen]));
-    }, [nhanVienList]);
+    const phongMap = useMemo(() => new Map(phongList.map(p => [p.id, p.phong])), [phongList]);
 
     // --- Filtering and Sorting Logic ---
     const filteredAndSortedBaoHongList = useMemo(() => {
         let filtered = baoHongList;
 
-        // Lọc theo các tiêu chí
+        // Lọc theo searchTerm
+        if (filter.searchTerm) {
+            const termLower = filter.searchTerm.toLowerCase();
+            filtered = filtered.filter(item =>
+                item.moTa?.toLowerCase().includes(termLower) ||
+                item.tenThietBi?.toLowerCase().includes(termLower) ||
+                phongMap.get(item.phong_id)?.toLowerCase().includes(termLower) ||
+                item.loaithiethai?.toLowerCase().includes(termLower) ||
+                item.thiethai?.toLowerCase().includes(termLower) ||
+                item.trangThai?.toLowerCase().includes(termLower)
+            );
+        }
+
+        // Lọc theo các dropdown khác
         filtered = filtered.filter((item) => {
             const ngayBaoHong = moment(item.ngayBaoHong).format("YYYY-MM-DD");
             const specificDate = filter.specificDate;
-
-            const phongMatch = filter.phong_id === "" || item.phong_id === parseInt(filter.phong_id);
-            const loaiThietHaiMatch = filter.loaithiethai === "" || item.loaithiethai === filter.loaithiethai;
-            const thietHaiMatch = filter.thiethai === "" || item.thiethai === filter.thiethai;
-            const trangThaiMatch = filter.trangThai === "" || item.trangThai === filter.trangThai;
-            const uuTienMatch = filter.mucDoUuTien === "" || item.mucDoUuTien === filter.mucDoUuTien;
-            const dateMatch = !specificDate || ngayBaoHong === specificDate; // Nếu có specificDate thì mới lọc
-
-            return phongMatch && loaiThietHaiMatch && thietHaiMatch && trangThaiMatch && uuTienMatch && dateMatch;
+            return (
+                (filter.phong_id === "" || item.phong_id === parseInt(filter.phong_id)) &&
+                (filter.loaithiethai === "" || item.loaithiethai === filter.loaithiethai) &&
+                (filter.thiethai === "" || item.thiethai === filter.thiethai) &&
+                (filter.trangThai === "" || item.trangThai === filter.trangThai) &&
+                // Bỏ lọc mucDoUuTien
+                (!specificDate || ngayBaoHong === specificDate)
+            );
         });
 
-        // Sắp xếp theo ngày
+        // Sắp xếp
         filtered.sort((a, b) => {
             const dateA = moment(a.ngayBaoHong);
             const dateB = moment(b.ngayBaoHong);
@@ -510,7 +136,8 @@ const ThongTinBaoHong = () => {
         });
 
         return filtered;
-    }, [baoHongList, filter]);
+    }, [baoHongList, filter, phongMap]); // Thêm searchTerm vào dependency
+
 
     // --- Pagination Logic ---
     const totalPages = Math.ceil(filteredAndSortedBaoHongList.length / rowsPerPage);
@@ -527,21 +154,14 @@ const ThongTinBaoHong = () => {
         setCurrentPage(1); // Reset về trang 1 khi filter
     };
 
-    const handleDateSortChange = (sortOrder) => {
-        setFilter(prev => ({ ...prev, dateOrder: sortOrder }));
-        // Không cần setCurrentPage(1) vì chỉ đổi thứ tự
-    };
-
-    const toggleRow = (id) => {
-        setExpandedRows(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
-        });
+    const handleDateSortChange = (sortOrder) => setFilter(prev => ({ ...prev, dateOrder: sortOrder }));
+    const toggleRow = (id) => setExpandedRows(prev => new Set(prev.has(id) ? [...prev].filter(x => x !== id) : [...prev, id]));
+    // Handler chọn nhân viên cho một báo hỏng cụ thể
+    const handleAssigneeChange = (baoHongId, nhanVienId) => {
+        setSelectedAssignee(prev => ({
+            ...prev,
+            [baoHongId]: parseInt(nhanVienId) || null // Lưu ID hoặc null nếu chọn "Chưa gán"
+        }));
     };
 
     // Xử lý check box (Cần điều chỉnh để hoạt động đúng với Set và phân trang)
@@ -570,22 +190,21 @@ const ThongTinBaoHong = () => {
     const toggleRowSelection = (id) => {
         setSelectedRows(prevSelected => {
             const newSelected = new Set(prevSelected);
-            if (newSelected.has(id)) {
-                newSelected.delete(id);
-            } else {
-                newSelected.add(id);
-            }
+            if (newSelected.has(id)) newSelected.delete(id);
+            else newSelected.add(id);
             return newSelected;
         });
     };
 
-    // TODO: Implement Mutation Handlers for Assign, Update Status, Delete
-
     const deleteMutation = useMutation({
         mutationFn: deleteBaoHongAPI, // Hàm API sẽ được gọi với baoHongId
-        onSuccess: () => {
-            // Làm mới lại danh sách báo hỏng sau khi xóa thành công
+        onSuccess: (data, baoHongId) => {
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+            setSelectedRows(prev => {
+                const newSelected = new Set(prev);
+                newSelected.delete(baoHongId); // Xóa khỏi danh sách chọn nếu có
+                return newSelected;
+            });
             alert('Xóa báo hỏng thành công!'); // Hoặc dùng thư viện toast/notification
         },
         onError: (error) => {
@@ -596,7 +215,6 @@ const ThongTinBaoHong = () => {
 
     const handleDelete = (baoHongId) => {
         if (window.confirm(`Bạn có chắc muốn xóa báo hỏng ID ${baoHongId}?`)) {
-            // Gọi mutate của useMutation với ID cần xóa
             deleteMutation.mutate(baoHongId);
         }
     };
@@ -607,24 +225,43 @@ const ThongTinBaoHong = () => {
             // Làm mới lại danh sách báo hỏng
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             console.log(`Cập nhật trạng thái cho ID ${variables.id} thành công.`);
-            // alert('Đã duyệt báo hỏng!'); // Có thể không cần alert
+            // Reset người chọn cho dòng đó sau khi duyệt thành công
+            setSelectedAssignee(prev => {
+                const newState = { ...prev };
+                delete newState[variables.id];
+                return newState;
+            });
+            alert('Đã duyệt/cập nhật báo hỏng!');
         },
         onError: (error, variables) => {
             console.error(`Lỗi khi cập nhật trạng thái cho ID ${variables.id}:`, error);
-            alert('Lỗi khi duyệt báo hỏng: ' + (error.response?.data?.error || error.message));
+            alert('Lỗi khi duyệt/cập nhật báo hỏng: ' + (error.response?.data?.error || error.message));
         }
     });
 
-    const handleApprove = (baoHongId) => {
-        console.log("Approving Report ID:", baoHongId);
-        // Chỉ cập nhật trạng thái thành 'Đang Xử Lý'
-        // TODO: Sau này sẽ thêm logic chọn nhân viên và gán vào updateData
+    const handleApprove = (item) => {
+        console.log("Approving Report:", item);
+        const assigneeId = selectedAssignee[item.id] !== undefined
+            ? selectedAssignee[item.id] // Lấy ID admin đã chọn (có thể là null nếu chọn "Chưa gán")
+            : item.suggested_nhanvien_id; // Nếu admin chưa chọn, lấy ID gợi ý
+
+        if (!assigneeId) {
+            alert("Vui lòng chọn nhân viên xử lý trước khi duyệt!");
+            return;
+        }
+
         const updateData = {
-            trangThai: 'Đang Xử Lý'
-            // nhanvien_id: selectedNhanVienId // Sẽ thêm sau
-            // mucDoUuTien: selectedPriority // Sẽ thêm sau
+            trangThai: 'Đã Duyệt',
+            nhanvien_id: assigneeId // Gửi ID nhân viên đã chọn/gợi ý
         };
-        updateStatusMutation.mutate({ id: baoHongId, updateData });
+        updateStatusMutation.mutate({ id: item.id, updateData });
+    };
+
+    const handleMarkComplete = (baoHongId) => {
+        if (window.confirm(`Xác nhận hoàn thành báo hỏng ID ${baoHongId}?`)) {
+            const updateData = { trangThai: 'Hoàn Thành' };
+            updateStatusMutation.mutate({ id: baoHongId, updateData });
+        }
     };
 
     // --- Render ---
@@ -634,45 +271,56 @@ const ThongTinBaoHong = () => {
         <div className="flex flex-col w-full h-screen min-h-screen overflow-auto bg-white border-r shadow-md">
             {/* Header */}
             <div className="flex flex-col bg-white shadow-md">
-                <div className="flex items-center justify-between p-4 bg-white border-b">
+                <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border-b"> {/* Cho phép wrap và thêm gap */}
                     <h2 className="text-xl font-semibold">Thông Tin Báo Hỏng</h2>
-                    {/* TODO: Thêm nút cho Hành động hàng loạt */}
+                    {/* Thanh tìm kiếm */}
+                    <div className="relative flex-grow max-w-xs">
+                        <input
+                            type="text"
+                            name="searchTerm"
+                            placeholder="Tìm mô tả, thiết bị, phòng..."
+                            value={filter.searchTerm}
+                            onChange={handleFilterChange}
+                            className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                        <FaSearch className="absolute text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
+                    </div>
+                    {/* Nút hành động hàng loạt */}
                     <div>
                         <button
                             className="px-3 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600 disabled:bg-gray-400"
-                            disabled={selectedRows.size === 0}
-                            onClick={() => console.log("TODO: Delete Selected Rows:", selectedRows)}
+                            disabled={selectedRows.size === 0 || deleteMutation.isPending}
+                            onClick={() => {
+                                if (window.confirm(`Bạn có chắc muốn xóa ${selectedRows.size} mục đã chọn?`)) {
+                                    // TODO: Gọi API xóa hàng loạt
+                                    console.log("TODO: Delete Selected Rows:", Array.from(selectedRows));
+                                    // deleteBulkMutation.mutate(Array.from(selectedRows));
+                                }
+                            }}
                         >
                             Xóa mục đã chọn ({selectedRows.size})
                         </button>
-                        {/* Thêm nút gán hàng loạt nếu cần */}
+                        {/* TODO: Thêm nút Gán hàng loạt */}
                     </div>
                 </div>
             </div>
 
             {/* Filters */}
             <div className="p-4 bg-white border-b">
-                <div className="flex flex-wrap mb-4 gap-x-4 gap-y-4">
+                <div className="flex flex-wrap mb-4 gap-x-4 gap-y-2">
                     {/* Dropdown Phòng */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Phòng</label>
-                        <select
-                            name="phong_id"
-                            value={filter.phong_id}
-                            onChange={handleFilterChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            disabled={isLoadingPhong}
-                        >
+                    <div className="w-40"> {/* Giảm width */}
+                        <label className="block text-xs font-medium text-gray-700">Phòng</label>
+                        <select name="phong_id" value={filter.phong_id} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" disabled={isLoadingPhong}>
                             <option value="">Tất cả</option>
-                            {phongList.map((phong) => (
-                                <option key={phong.id} value={phong.id}>{phong.phong}</option>
-                            ))}
+                            {phongList.map(phong => <option key={phong.id} value={phong.id}>{phong.phong}</option>)}
                         </select>
                     </div>
                     {/* Dropdown Loại Thiệt Hại */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Loại Thiệt Hại</label>
-                        <select name="loaithiethai" value={filter.loaithiethai} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div className="w-40">
+                        <label className="block text-xs font-medium text-gray-700">Loại Thiệt Hại</label>
+                        <select name="loaithiethai" value={filter.loaithiethai} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            {/* ... options ... */}
                             <option value="">Tất cả</option>
                             <option value="Kết Cấu">Kết Cấu</option>
                             <option value="Hệ Thống Điện">Hệ Thống Điện</option>
@@ -682,9 +330,10 @@ const ThongTinBaoHong = () => {
                         </select>
                     </div>
                     {/* Dropdown Mức Độ Thiệt Hại */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Mức Độ</label>
-                        <select name="thiethai" value={filter.thiethai} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div className="w-40">
+                        <label className="block text-xs font-medium text-gray-700">Mức Độ</label>
+                        <select name="thiethai" value={filter.thiethai} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            {/* ... options ... */}
                             <option value="">Tất cả</option>
                             <option value="Nhẹ">Nhẹ</option>
                             <option value="Vừa">Vừa</option>
@@ -692,68 +341,47 @@ const ThongTinBaoHong = () => {
                         </select>
                     </div>
                     {/* Dropdown Trạng Thái */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Trạng Thái</label>
-                        <select name="trangThai" value={filter.trangThai} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div className="w-40">
+                        <label className="block text-xs font-medium text-gray-700">Trạng Thái</label>
+                        <select name="trangThai" value={filter.trangThai} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            {/* ... options ... */}
                             <option value="">Tất cả</option>
                             <option value="Chờ Duyệt">Chờ Duyệt</option>
-                            <option value="Đang Xử Lý">Đang Xử Lý</option>
+                            <option value="Đã Duyệt">Đã Duyệt</option>
                             <option value="Hoàn Thành">Hoàn Thành</option>
+                            <option value="Không Thể Hoàn Thành">Không Thể Hoàn Thành</option>
                         </select>
                     </div>
-                    {/* Dropdown Ưu Tiên */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Ưu Tiên</label>
-                        <select name="mucDoUuTien" value={filter.mucDoUuTien} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">Tất cả</option>
-                            <option value="Cao">Cao</option>
-                            <option value="Trung Bình">Trung Bình</option>
-                            <option value="Thấp">Thấp</option>
-                        </select>
-                    </div>
+                    {/* BỎ LỌC ƯU TIÊN */}
                     {/* Lọc Ngày Cụ Thể */}
-                    <div className="w-44">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Ngày Báo</label>
-                        <input type="date" name="specificDate" value={filter.specificDate || ''} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    <div className="w-40">
+                        <label className="block text-xs font-medium text-gray-700">Ngày Báo</label>
+                        <input type="date" name="specificDate" value={filter.specificDate || ''} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
                     </div>
                 </div>
             </div>
 
             {/* Table */}
             <div className="flex-grow p-4 overflow-x-auto">
-                {isLoading && <p className="text-center text-gray-500">Đang tải dữ liệu báo hỏng...</p>}
-                {isErrorBaoHong && <p className="text-center text-red-500">Lỗi khi tải dữ liệu báo hỏng!</p>}
+                {isLoading && <p className="text-center text-gray-500">Đang tải...</p>}
+                {isErrorBaoHong && <p className="text-center text-red-500">Lỗi tải dữ liệu!</p>}
                 {!isLoading && !isErrorBaoHong && (
                     <>
-                        <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 300px)" }}> {/* Giới hạn chiều cao bảng */}
+                        <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 350px)" }}> {/* Điều chỉnh chiều cao */}
                             <table className="min-w-full border border-collapse border-gray-300 divide-y divide-gray-200">
-                                <thead className="sticky top-0 bg-gray-100"> {/* Header cố định */}
+                                <thead className="sticky top-0 z-10 bg-gray-100"> {/* Thêm z-index */}
                                     <tr>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">
-                                            <input
-                                                type="checkbox"
-                                                title='Chọn tất cả trang này'
-                                                checked={selectAll}
-                                                onChange={handleSelectAll}
-                                                disabled={currentRows.length === 0}
-                                            />
+                                            <input type="checkbox" title='Chọn tất cả trang này' checked={selectAll} onChange={handleSelectAll} disabled={currentRows.length === 0} />
                                         </th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">STT</th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Phòng</th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">
-                                            <div className='flex items-center'>
-                                                Ngày Báo
-                                                {/* Nút Sắp xếp */}
-                                                {filter.dateOrder === "oldest" ? (
-                                                    <button onClick={() => handleDateSortChange("newest")} className="ml-1 text-gray-600 hover:text-gray-900" title="Sắp xếp mới nhất"> <FaChevronDown /> </button>
-                                                ) : (
-                                                    <button onClick={() => handleDateSortChange("oldest")} className="ml-1 text-gray-600 hover:text-gray-900" title="Sắp xếp cũ nhất"> <FaChevronUp /> </button>
-                                                )}
-                                            </div>
+                                            <div className='flex items-center'>Ngày Báo <button onClick={() => handleDateSortChange(filter.dateOrder === 'newest' ? 'oldest' : 'newest')} className="ml-1 text-gray-600 hover:text-gray-900">{filter.dateOrder === 'newest' ? <FaChevronDown /> : <FaChevronUp />}</button></div>
                                         </th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Loại Thiệt Hại</th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Mức Độ</th>
-                                        <th className="px-3 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">Ưu Tiên</th>
+                                        {/* BỎ CỘT ƯU TIÊN */}
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">Trạng Thái</th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Người Xử Lý</th>
                                         <th className="px-3 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">Hành Động</th>
@@ -761,59 +389,133 @@ const ThongTinBaoHong = () => {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {currentRows.length === 0 && (
-                                        <tr><td colSpan="10" className="px-4 py-4 text-center text-gray-500 border">Không có dữ liệu báo hỏng phù hợp.</td></tr>
+                                        <tr><td colSpan="9" className="px-4 py-4 text-center text-gray-500 border">Không có dữ liệu.</td></tr>
                                     )}
                                     {currentRows.map((item, index) => (
                                         <React.Fragment key={item.id}>
                                             <tr className={`hover:bg-gray-50 ${expandedRows.has(item.id) ? 'bg-gray-50' : ''}`}>
                                                 <td className="px-3 py-2 text-center border whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedRows.has(item.id)}
-                                                        onChange={() => toggleRowSelection(item.id)}
-                                                    />
+                                                    <input type="checkbox" checked={selectedRows.has(item.id)} onChange={() => toggleRowSelection(item.id)} />
                                                 </td>
                                                 <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">{indexOfFirstRow + index + 1}</td>
-                                                {/* Hiển thị Tên Phòng */}
-                                                <td className="px-3 py-2 text-sm font-medium text-gray-900 border whitespace-nowrap">{phongMap.get(item.phong_id) || `ID: ${item.phong_id}`}</td>
+                                                <td className="px-3 py-2 text-sm font-medium text-gray-900 border whitespace-nowrap">{item.phong_name}</td>
                                                 <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">{moment(item.ngayBaoHong).format("DD/MM/YYYY HH:mm")}</td>
                                                 <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">{item.loaithiethai}</td>
                                                 <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">{item.thiethai}</td>
-                                                {/* Hiển thị Badge Ưu tiên */}
-                                                <td className="px-3 py-2 text-center border whitespace-nowrap"><PriorityBadge priority={item.mucDoUuTien} /></td>
-                                                {/* Hiển thị Badge Trạng thái */}
+                                                {/* BỎ CỘT ƯU TIÊN */}
                                                 <td className="px-3 py-2 text-center border whitespace-nowrap"><StatusBadge status={item.trangThai} /></td>
-                                                {/* Hiển thị Tên Người xử lý */}
-                                                <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">{nhanVienMap.get(item.nhanvien_id) || (item.trangThai !== 'Chờ Duyệt' ? 'Chưa gán' : '')}</td>
+                                                {/* Người Xử Lý / Chọn Người Xử Lý */}
+                                                <td className="px-3 py-2 text-sm text-gray-500 border whitespace-nowrap">
+                                                    {item.trangThai === 'Chờ Duyệt' ? (
+                                                        <select
+                                                            value={selectedAssignee[item.id] ?? item.suggested_nhanvien_id ?? ""}
+                                                            onChange={(e) => handleAssigneeChange(item.id, e.target.value)}
+                                                            disabled={isLoadingNhanVien || (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)}
+                                                            className={`w-full px-2 py-1 text-xs border rounded ${!item.suggested_nhanvien_id ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300'}`}
+                                                            title={item.suggested_nhanvien_name ? `Gợi ý: ${item.suggested_nhanvien_name}` : "Chọn NV hoặc để trống nếu chưa duyệt"}
+                                                        >
+                                                            <option value="">-- Chọn NV --</option>
+                                                            {item.suggested_nhanvien_id && (
+                                                                <option value={item.suggested_nhanvien_id}>{item.suggested_nhanvien_name} (Gợi ý)</option>
+                                                            )}
+                                                            {nhanVienList
+                                                                .filter(nv => nv.id !== item.suggested_nhanvien_id)
+                                                                .map(nv => <option key={nv.id} value={nv.id}>{nv.hoTen}</option>)
+                                                            }
+                                                        </select>
+                                                    ) : (
+                                                        // Hiển thị tên NV đã gán nếu trạng thái khác "Chờ Duyệt"
+                                                        item.tenNhanVienXuLy || <span className="italic text-gray-400">Chưa gán</span>
+                                                    )}
+                                                </td>
                                                 {/* Hành động */}
                                                 <td className="px-3 py-2 text-sm font-medium text-center border whitespace-nowrap">
                                                     <div className='flex items-center justify-center space-x-2'>
-                                                        {/* Nút Xem Chi Tiết */}
-                                                        <button onClick={() => toggleRow(item.id)} className="text-gray-600 hover:text-indigo-900" title={expandedRows.has(item.id) ? "Thu gọn" : "Xem chi tiết"}>
+
+                                                        {/* 1. Xem chi tiết (Luôn hiển thị) */}
+                                                        <button
+                                                            onClick={() => toggleRow(item.id)}
+                                                            className="text-gray-600 hover:text-indigo-900"
+                                                            title={expandedRows.has(item.id) ? "Thu gọn" : "Xem chi tiết"}
+                                                        >
                                                             <FaEye />
                                                         </button>
-                                                        {/* Nút Gán/Duyệt */}
-                                                        {item.trangThai === 'Chờ Duyệt' && (
-                                                            <button
-                                                                onClick={() => handleApprove(item.id)} // Đổi tên hàm xử lý
-                                                                className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                                                                title="Duyệt (Chuyển sang Đang Xử Lý)"
-                                                                disabled={updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id} // Disable khi đang cập nhật mục này
-                                                            >
-                                                                {updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? (
-                                                                    <svg className="w-4 h-4 animate-spin" /* SVG spinner */ ></svg>
-                                                                ) : (
-                                                                    <FaUserCheck />
-                                                                )}
-                                                            </button>
-                                                        )}
-                                                        {/* Nút Sửa (Có thể thêm sau nếu cần sửa thông tin báo hỏng) */}
-                                                        {/* <button onClick={() => console.log("TODO: Edit", item.id)} className="text-yellow-600 hover:text-yellow-900" title="Sửa">
-                                                             <FaWrench />
-                                                         </button> */}
-                                                        {/* Nút Xóa */}
-                                                        <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-900" title="Xóa">
+
+                                                        {/* 2. Duyệt và Gán (Enable khi 'Chờ Duyệt') */}
+                                                        <button
+                                                            onClick={() => handleApprove(item)}
+                                                            className={`
+                            ${item.trangThai === 'Chờ Duyệt' ? 'text-green-600 hover:text-green-900' : 'text-gray-400 cursor-not-allowed'}
+                            ${updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? 'opacity-50' : ''}
+                        `}
+                                                            title={item.trangThai === 'Chờ Duyệt' ? "Duyệt và Gán" : "Không thể duyệt ở trạng thái này"}
+                                                            disabled={
+                                                                item.trangThai !== 'Chờ Duyệt' ||
+                                                                (!selectedAssignee[item.id] && !item.suggested_nhanvien_id) ||
+                                                                (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)
+                                                            }
+                                                        >
+                                                            <FaUserCheck />
+                                                        </button>
+
+                                                        {/* 3. Xem Log Bảo trì (Enable khi có log) */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setViewingLogFor(item.id);
+                                                                setPhongNameForModal(item.phong_name);
+                                                            }}
+                                                            className={`
+                            ${!!item.coLogBaoTri ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}
+                        `}
+                                                            title={!!item.coLogBaoTri ? "Xem lịch sử bảo trì" : "Chưa có lịch sử bảo trì"}
+                                                            disabled={!item.coLogBaoTri} // Disable nếu không có log (coLogBaoTri là 0 hoặc false)
+                                                        >
+                                                            <FaHistory />
+                                                        </button>
+
+                                                        {/* 4. Yêu cầu làm lại / Duyệt lại (Enable khi Hoàn thành hoặc Không thể HT) */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setReassignData({
+                                                                    baoHongId: item.id,
+                                                                    nhanVienId: item.nhanvien_id || '',
+                                                                    ghiChuAdmin: item.ghiChuAdmin || ''
+                                                                });
+                                                                setIsReassignModalOpen(true);
+                                                            }}
+                                                            className={`
+                            ${(item.trangThai === 'Hoàn Thành' || item.trangThai === 'Không Thể Hoàn Thành') ? 'text-orange-500 hover:text-orange-700' : 'text-gray-400 cursor-not-allowed'}
+                        `}
+                                                            title={(item.trangThai === 'Hoàn Thành' || item.trangThai === 'Không Thể Hoàn Thành') ? "Yêu cầu làm lại / Duyệt lại" : "Không thể yêu cầu làm lại ở trạng thái này"}
+                                                            disabled={!(item.trangThai === 'Hoàn Thành' || item.trangThai === 'Không Thể Hoàn Thành')}
+                                                        >
+                                                            <FaUndo />
+                                                        </button>
+
+                                                        {/* 5. Xóa (Luôn enable hoặc disable tùy logic) */}
+                                                        <button
+                                                            onClick={() => handleDelete(item.id)}
+                                                            className={`text-red-600 hover:text-red-900 ${deleteMutation.isPending && deleteMutation.variables === item.id ? 'opacity-50' : ''}`}
+                                                            title="Xóa"
+                                                            // Có thể thêm điều kiện disabled ở đây nếu cần, ví dụ: không cho xóa khi đang xử lý
+                                                            // disabled={item.trangThai === 'Đang Tiến Hành' || (deleteMutation.isPending && deleteMutation.variables === item.id)}
+                                                            disabled={deleteMutation.isPending && deleteMutation.variables === item.id}
+                                                        >
                                                             <FaTrashAlt />
+                                                        </button>
+
+                                                        {/* 6. Đánh dấu Hoàn thành (Tạm ẩn - vì logic này thường do NV thực hiện) */}
+
+                                                        <button
+                                                            onClick={() => handleMarkComplete(item.id)}
+                                                            className={`
+                            ${item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại' ? 'text-blue-600 hover:text-blue-900' : 'text-gray-400 cursor-not-allowed'}
+                            ${updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? 'opacity-50' : ''}
+                        `}
+                                                            title={item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại' ? "Đánh dấu Hoàn thành (Admin)" : "Không thể đánh dấu hoàn thành"}
+                                                            disabled={!(item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại') || (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)}
+                                                        >
+                                                            <FaCheckCircle />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -821,18 +523,20 @@ const ThongTinBaoHong = () => {
                                             {/* Bảng con hiển thị chi tiết */}
                                             {expandedRows.has(item.id) && (
                                                 <tr className="bg-gray-50">
-                                                    <td colSpan="10" className="px-6 py-3 border">
+                                                    <td colSpan="9" className="px-6 py-3 border"> {/* Tăng colSpan */}
                                                         <div className='text-sm text-gray-700'>
-                                                            <p><strong>Mô Tả:</strong> {item.moTa || "Không có mô tả"}</p>
-                                                            {/* TODO: Hiển thị tên thiết bị nếu có */}
-                                                            {/* <p><strong>Thiết bị:</strong> {thietBiMap.get(item.thietbi_id) || 'Không xác định'}</p> */}
+                                                            {/* Hiển thị Tên Thiết Bị nếu có */}
+                                                            {item.tenThietBi && <p><strong>Thiết bị cụ thể:</strong> {item.tenThietBi} (ID: {item.thietbi_id}, MDD: {item.thongtinthietbi_id})</p>}
+                                                            <p className="mt-1"><strong>Mô Tả:</strong> {item.moTa || "Không có mô tả"}</p>
                                                             <p className="mt-2"><strong>Hình Ảnh:</strong></p>
                                                             {item.hinhAnh ? (
-                                                                <img src={item.hinhAnh} alt="Hình ảnh báo hỏng" className="object-contain mt-1 border rounded max-h-60" />
+                                                                <button onClick={() => setModalImage(item.hinhAnh)} className="mt-1 border rounded hover:opacity-80">
+                                                                    <img src={item.hinhAnh} alt="Hình ảnh báo hỏng" className="object-contain max-h-40" />
+                                                                </button>
                                                             ) : (
                                                                 <span className='italic'>Không có hình ảnh</span>
                                                             )}
-                                                            {/* TODO: Thêm phần hiển thị Log Bảo trì (từ bảng baotri) */}
+                                                            {/* TODO: Thêm Log Bảo trì */}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -844,7 +548,7 @@ const ThongTinBaoHong = () => {
                         </div>
                         {/* Pagination */}
                         <div className="flex items-center justify-between mt-4">
-                            <div>Trang {currentPage}/{totalPages} (Tổng cộng {filteredAndSortedBaoHongList.length} mục)</div>
+                            <div>Trang {currentPage}/{totalPages} (Tổng {filteredAndSortedBaoHongList.length})</div>
                             <div className="flex space-x-2">
                                 <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 text-sm text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-300">Trước</button>
                                 <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-3 py-1 text-sm text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-300">Tiếp</button>
@@ -853,8 +557,87 @@ const ThongTinBaoHong = () => {
                     </>
                 )}
             </div>
+            {/* Modal xem ảnh */}
+            <ImageModal imageUrl={modalImage} onClose={() => setModalImage(null)} />
+
+            {/* Modal Xem Log Bảo trì */}
+            {viewingLogFor && (
+                <ModalXemLogBaoTri
+                    baoHongId={viewingLogFor}
+                    phongName={phongNameForModal}
+                    onClose={() => {
+                        setViewingLogFor(null);
+                        setPhongNameForModal("");
+                    }}
+                />
+            )}
+            {/* Modal Yêu cầu làm lại / Duyệt lại */}
+            {isReassignModalOpen && reassignData.baoHongId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-50"> {/* Tăng z-index nếu cần */}
+                    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
+                        <h3 className="mb-4 text-lg font-semibold">Yêu cầu làm lại / Duyệt lại (ID: {reassignData.baoHongId})</h3>
+                        {/* Chọn lại nhân viên */}
+                        <div className="mb-4">
+                            <label className="block mb-1 text-sm font-medium">Gán lại cho nhân viên:</label>
+                            <select
+                                value={reassignData.nhanVienId || ""}
+                                onChange={(e) => setReassignData(prev => ({ ...prev, nhanVienId: e.target.value ? parseInt(e.target.value) : null }))}
+                                disabled={isLoadingNhanVien || updateStatusMutation.isPending}
+                                className={`w-full px-2 py-1 text-sm border rounded ${isLoadingNhanVien ? 'bg-gray-100' : 'border-gray-300'}`}
+                            >
+                                <option value="">-- Chọn lại nhân viên (bắt buộc) --</option> {/* Bắt buộc chọn lại */}
+                                {nhanVienList.map(nv => <option key={nv.id} value={nv.id}>{nv.hoTen}</option>)}
+                            </select>
+                        </div>
+                        {/* Ghi chú của Admin */}
+                        <div className="mb-4">
+                            <label className="block mb-1 text-sm font-medium">Ghi chú cho nhân viên (tùy chọn):</label>
+                            <textarea
+                                value={reassignData.ghiChuAdmin}
+                                onChange={(e) => setReassignData(prev => ({ ...prev, ghiChuAdmin: e.target.value }))}
+                                className="w-full p-2 border rounded-md min-h-[80px]"
+                                placeholder="Nhập lý do yêu cầu làm lại hoặc ghi chú khác..."
+                            />
+                        </div>
+                        {/* Nút hành động */}
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsReassignModalOpen(false)}
+                                disabled={updateStatusMutation.isPending}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!reassignData.nhanVienId) {
+                                        alert("Vui lòng chọn nhân viên để gán lại.");
+                                        return;
+                                    }
+                                    updateStatusMutation.mutate({
+                                        id: reassignData.baoHongId,
+                                        updateData: {
+                                            trangThai: 'Đã Duyệt', // Luôn quay về Đã Duyệt khi admin duyệt lại
+                                            nhanvien_id: reassignData.nhanVienId,
+                                            ghiChuAdmin: reassignData.ghiChuAdmin || null
+                                        }
+                                    });
+                                    setIsReassignModalOpen(false); // Đóng modal sau khi gọi mutate
+                                }}
+                                disabled={!reassignData.nhanVienId || updateStatusMutation.isPending}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                            >
+                                {updateStatusMutation.isPending ? 'Đang xử lý...' : 'Xác nhận Duyệt lại'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
+
+
 
 export default ThongTinBaoHong;

@@ -287,7 +287,7 @@ export const saveBulkLichTrucChangesAPI = async (bulkData) => {
 
 // ========= API BÁO HỎNG (Bổ sung/Sửa đổi) ================================
 
-// 1. Fetch danh sách báo hỏng (thay thế fetchThongTinBaoHongAPI cũ nếu có)
+// Fetch danh sách báo hỏng (thay thế fetchThongTinBaoHongAPI cũ nếu có)
 export const fetchBaoHongListAPI = async () => {
     try {
       const response = await api.get("/baohong"); // Endpoint lấy danh sách báo hỏng
@@ -303,10 +303,9 @@ export const fetchBaoHongListAPI = async () => {
     }
   };
   
-  // 2. Cập nhật thông tin báo hỏng (Dùng cho Gán người xử lý, Đổi trạng thái, Đổi ưu tiên...)
-  // Giả định backend có route PUT /api/baohong/:id nhận object chứa các trường cần update
+  // Cập nhật thông tin báo hỏng (Dùng cho Gán người xử lý, Đổi trạng thái, Đổi ưu tiên...)
   export const updateBaoHongAPI = async ({ id, updateData }) => {
-    // updateData là object chứa các trường cần cập nhật, vd: { nhanvien_id: 5, trangThai: 'Đang Xử Lý', mucDoUuTien: 'Cao' }
+    // updateData là object chứa các trường cần cập nhật, vd: { nhanvien_id: 5, trangThai: 'Đã Duyệt', mucDoUuTien: 'Cao' }
     if (!id || !updateData) {
         throw new Error("Missing ID or updateData for updating BaoHong");
     }
@@ -319,21 +318,16 @@ export const fetchBaoHongListAPI = async () => {
     }
   };
   
-  // 3. Xóa một báo hỏng
+  // Xóa một báo hỏng
   export const deleteBaoHongAPI = async (baoHongId) => {
     if (!baoHongId) {
         throw new Error("Missing ID for deleting BaoHong");
     }
-    try {
-      const response = await api.delete(`/baohong/${baoHongId}`);
-      return response.data; // Trả về thông báo thành công từ backend
-    } catch (error) {
-      console.error(`Error deleting BaoHong ${baoHongId}:`, error.response?.data || error.message);
-      throw error;
-    }
+    const response = await api.delete(`/baohong/${baoHongId}`);
+    return response.data;
   };
   
-  // 4. Xóa hàng loạt báo hỏng (Bulk Delete)
+  // Xóa hàng loạt báo hỏng (Bulk Delete)
   // Giả định backend có route DELETE /api/baohong/bulk nhận body { ids: [...] }
   export const deleteBulkBaohongAPI = async (baoHongIdsArray) => {
     if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0) {
@@ -352,9 +346,9 @@ export const fetchBaoHongListAPI = async () => {
     }
   };
   
-  // 5. Gán hàng loạt báo hỏng cho một nhân viên (Bulk Assign)
+  // Gán hàng loạt báo hỏng cho một nhân viên (Bulk Assign)
   // Giả định backend có route POST /api/baohong/bulk-assign nhận body { ids: [...], nhanvien_id: ... }
-  // Backend cũng nên tự động chuyển trạng thái các báo hỏng này thành 'Đang Xử Lý'
+  // Backend cũng nên tự động chuyển trạng thái các báo hỏng này thành 'Đã Duyệt'
   export const assignBulkBaohongAPI = async ({ baoHongIdsArray, nhanVienId }) => {
      if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0 || !nhanVienId) {
        throw new Error("Thiếu IDs báo hỏng hoặc ID nhân viên để gán hàng loạt.");
@@ -368,6 +362,26 @@ export const fetchBaoHongListAPI = async () => {
        throw error;
      }
   };
+
+  export const fetchAssignedBaoHongAPI = async () => {
+    // Giả sử backend có route /api/baohong/assigned/me để lấy việc của user đang login
+    // Hoặc bạn có thể lấy user.id từ context và gọi /api/baohong/assigned/:userId
+    try {
+        const response = await api.get("/baohong/assigned/me"); // *** Cần tạo API này ở backend ***
+        if (!Array.isArray(response.data)) {
+            console.error("API /assigned/me did not return an array!", response.data);
+            return [];
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching assigned BaoHong:", error.response?.data || error.message);
+        // Trả về mảng rỗng nếu lỗi (ví dụ 404 Not Found nếu chưa có việc nào)
+        if (error.response?.status === 404) {
+            return [];
+        }
+        throw error; // Ném lỗi khác để React Query xử lý
+    }
+};
   
   // === (TÙY CHỌN) API lấy tất cả Users (Nếu cần hiển thị tên người báo cáo) ===
   // export const fetchAllUsersList = async () => {
@@ -385,3 +399,48 @@ export const fetchBaoHongListAPI = async () => {
   // };
   
   // ==========================================================================
+
+  // ========= CÁC HÀM API CHO BẢO TRÌ ==========================================
+// Lấy danh sách task đang tiến hành/yêu cầu làm lại của nhân viên
+export const fetchMyTasksAPI = async () => {
+  try {
+      const { data } = await api.get("/baotri/my-tasks");
+      // Thêm kiểm tra kiểu dữ liệu trả về nếu cần
+      if (!Array.isArray(data)) {
+          console.error("API /api/baotri/my-tasks did not return an array!", data);
+          return []; // Trả về mảng rỗng nếu không đúng cấu trúc
+      }
+      return data;
+  } catch (error) {
+      console.error("Error fetching my tasks:", error.response?.data || error.message);
+      // Trả về mảng rỗng nếu lỗi 404 (không có task) hoặc lỗi khác
+      if (error.response?.status === 404) {
+          return [];
+      }
+      throw error; // Ném lỗi khác để React Query xử lý
+  }
+};
+
+// Tạo log bảo trì mới
+export const createLogBaoTriAPI = async (logData) => {
+  const { data } = await api.post('/baotri', logData);
+  return data;
+};
+
+// Lấy lịch sử log của một báo hỏng
+export const getBaoHongLogAPI = async (baoHongId) => {
+  const { data } = await api.get(`/baotri/log/${baoHongId}`);
+  return data;
+};
+
+// Upload ảnh hóa đơn
+export const uploadInvoiceImagesAPI = async (files) => {
+  const formData = new FormData();
+  // Lưu ý tên field 'hinhAnhHoaDon' phải khớp với backend multer
+  files.forEach(file => formData.append('hinhAnhHoaDon', file));
+  const { data } = await api.post('/baotri/upload-invoice', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.imageUrls; // Backend trả về { imageUrls: [...] }
+};
+// ============================================================================

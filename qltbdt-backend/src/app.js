@@ -13,6 +13,7 @@ const userRoutes = require("./routes/userRoutes");
 const nhapRoutes = require("./routes/nhapRoutes");
 const baohongRoutes = require("./routes/baohongRoutes");
 const lichTrucRoutes = require("./routes/lichtrucRoutes");
+const baotriRoutes = require("./routes/baotriRoutes");
 
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/nhap", nhapRoutes);
 app.use("/api/baohong", baohongRoutes);
 app.use("/api/lichtruc", lichTrucRoutes);
+app.use("/api/baotri", baotriRoutes);
 
 
 module.exports = app;

@@ -24,7 +24,7 @@ const LichTruc = () => {
         return (
             <div className="flex flex-col h-full bg-white border-2"> {/* Giữ h-full */}
                 <div className="flex items-center justify-between p-4 border-b ">
-                    <h2 className="text-xl font-semibold">Quản Lý Công Việc & Báo Hỏng</h2> {/* Cập nhật tiêu đề nếu muốn */}
+                    <h2 className="text-xl font-semibold">Quản Lý Công Việc</h2> {/* Cập nhật tiêu đề nếu muốn */}
                 </div>
                 {/* Tabs Admin */}
                 <div className="flex border-b shrink-0">
@@ -72,10 +72,9 @@ const LichTruc = () => {
         return (
             <div className="flex flex-col h-full bg-white border-2">
                  <div className="flex items-center justify-between p-4 border-b ">
-                    <h2 className="text-xl font-semibold">Lịch Làm Việc Của Bạn</h2>
+                    <h2 className="text-xl font-semibold">Quản Lý Công Việc</h2>
                 </div>
                     <MyScheduleView /> {/* Component mới cho nhân viên */}
-                  {/* RightPanel có thể giữ nguyên hoặc ẩn tùy layout của bạn */}
                  {/* <RightPanel /> */}
             </div>
         );

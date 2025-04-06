@@ -5,10 +5,10 @@
     
     router.get("/", phongController.getAllPhong);
     router.get("/phonglist", phongController.getListPhong);
+    router.get("/danhsach-thietbi/:phong_id", phongController.getThietBiTrongPhong);
 
     router.use(verifyToken); 
 
-    router.get("/danhsach-thietbi/:phong_id", phongController.getThietBiTrongPhong);
     router.post("/xoathietbi", phongController.removeThietBiFromPhong);
     router.get("/:id", phongController.getPhongById);
     router.post("/", phongController.addPhong);

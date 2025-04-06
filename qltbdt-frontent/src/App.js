@@ -22,8 +22,11 @@ function Layout() {
 
       {/* AppLayout */}
       <Route element={<AppLayout />}>
-        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
+        <Route element={<PrivateRoute allowedRoles={["nhanvien"]} />}>
           <Route path="/baotri" element={<BaoTri />} />
+        </Route>
+
+        <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
           <Route path="/danhmuc" element={<DanhMuc />} />
           <Route path="/lichtruc" element={<LichTruc />} />
         </Route>
@@ -40,7 +43,7 @@ function Layout() {
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<NotFound/>} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

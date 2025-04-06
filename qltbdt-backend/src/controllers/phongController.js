@@ -167,18 +167,20 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 
     try {
-        // Truy vấn danh sách thiết bị trong phòng
         const [results] = await pool.query(
-            `SELECT 
-                ptb.id,
-                ptb.phong_id,
-                ptb.thietbi_id,
-                ptb.thongtinthietbi_id,
+            `SELECT
+                ptb.id, ptb.phong_id, ptb.thietbi_id, ptb.thongtinthietbi_id,
                 tb.tenThietBi,
-                tttb.tinhTrang,
-                tttb.thoiGianBaoHanh,
-                tttb.ngayBaoHanhKetThuc,
-                tl.theLoai 
+                tttb.tinhTrang, tttb.thoiGianBaoHanh, tttb.ngayBaoHanhKetThuc,
+                tl.theLoai,
+                -- Lấy trạng thái của báo hỏng gần nhất CHƯA HOÀN THÀNH cho TTTB này
+                (SELECT bh.trangThai
+                 FROM baohong bh
+                 WHERE bh.thongtinthietbi_id = ptb.thongtinthietbi_id
+                   AND bh.trangThai NOT IN ('Hoàn Thành', 'Không Thể Hoàn Thành') -- Hoặc chỉ check NOT IN ('Hoàn Thành')
+                 ORDER BY bh.ngayBaoHong DESC
+                 LIMIT 1
+                ) AS trangThaiBaoHongHienTai
             FROM phong_thietbi ptb
             JOIN thietbi tb ON ptb.thietbi_id = tb.id
             JOIN thongtinthietbi tttb ON ptb.thongtinthietbi_id = tttb.id
