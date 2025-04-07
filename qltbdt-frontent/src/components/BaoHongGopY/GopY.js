@@ -10,7 +10,7 @@ const GopY = () => {
     const suggestionCategories = ["Cải Thiện CSVC", "Nâng Cao Quy Trình", "Tối Ưu Hóa Chi Phí", "Khác"];
     return (
         <div className="p-4 bg-white rounded-lg shadow-lg">
-            <h2 className="flex items-center border-b mb-6 text-xl font-semibold text-card-foreground">
+            <h2 className="flex items-center mb-6 text-xl font-semibold border-b text-card-foreground">
                 <MdDescription className="mr-2 text-accent" />
                 Gợi Ý Đánh Giá
             </h2>
@@ -62,7 +62,7 @@ const GopY = () => {
 
                 <button
                     type="submit"
-                    className="w-full px-4 py-2 text-white transition-colors bg-gray-900 rounded-md bg-primary hover:bg-accent disabled:opacity-50"
+                    className="w-full px-4 py-2 text-white transition-colors bg-gray-900 rounded-md hover:bg-accent disabled:opacity-50"
                 >
                     {"Gửi Góp Ý"}
                 </button>

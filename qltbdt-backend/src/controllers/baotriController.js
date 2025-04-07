@@ -20,10 +20,10 @@ exports.getMyTasks = async (req, res) => {
             [nhanvien_id]
         );
         // Tạo tên phòng đầy đủ
-         const tasksWithPhongName = tasks.map(task => ({
-             ...task,
-             phong_name: `${task.toa}${task.tang}.${task.soPhong}`
-         }));
+        const tasksWithPhongName = tasks.map(task => ({
+            ...task,
+            phong_name: `${task.toa}${task.tang}.${task.soPhong}`
+        }));
         res.json(tasksWithPhongName);
     } catch (error) {
         console.error("Error fetching my tasks:", error);
@@ -40,11 +40,23 @@ exports.createLogBaoTri = async (req, res) => {
         phong_id,           // Lấy từ thông tin báo hỏng liên quan
         hoatdong,
         ketQuaXuLy,
+        phuongAnXuLy, // Thêm mới
+        phuongAnKhacChiTiet, // Thêm mới
         suDungVatTu,
         ghiChuVatTu,
         chiPhi,
-        hinhAnhHoaDonUrls // Mảng URL ảnh hóa đơn đã upload
+        hinhAnhHoaDonUrls, // Mảng URL ảnh hóa đơn đã upload
+        hinhAnhHongHocUrls // Thêm mới (mảng URL ảnh hỏng hóc)
     } = req.body;
+
+    // Validation cơ bản (thêm phuongAnXuLy nếu bắt buộc)
+    if (!nhanvien_id || !baohong_id || !phong_id || !hoatdong || !ketQuaXuLy || !phuongAnXuLy) {
+        return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
+    }
+    // Validation cho phương án "Khác"
+    if (phuongAnXuLy === 'Khác' && (!phuongAnKhacChiTiet || phuongAnKhacChiTiet.trim() === '')) {
+        return res.status(400).json({ error: "Vui lòng nhập chi tiết cho phương án xử lý 'Khác'." });
+    }
 
     if (!nhanvien_id || !baohong_id || !phong_id || !hoatdong || !ketQuaXuLy) {
         return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
@@ -60,14 +72,23 @@ exports.createLogBaoTri = async (req, res) => {
 
         // 1. Lưu log vào bảng `baotri`
         const [logResult] = await connection.query(
-            `INSERT INTO baotri (baohong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong, ketQuaXuLy, suDungVatTu, ghiChuVatTu, chiPhi, hinhAnhHoaDonUrls, thoiGian)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            `INSERT INTO baotri (
+                baohong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong,
+                ketQuaXuLy, phuongAnXuLy, phuongAnKhacChiTiet,
+                suDungVatTu, ghiChuVatTu, chiPhi,
+                hinhAnhHoaDonUrls, hinhAnhHongHocUrls,
+                thoiGian
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
             [
-                baohong_id, nhanvien_id, thongtinthietbi_id || null, phong_id, hoatdong, ketQuaXuLy,
-                suDungVatTu === true, // Chuyển thành boolean
+                baohong_id, nhanvien_id, thongtinthietbi_id || null, phong_id, hoatdong,
+                ketQuaXuLy, phuongAnXuLy || null, // Lưu phương án xử lý
+                (phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet : null), // Chỉ lưu chi tiết nếu là 'Khác'
+                suDungVatTu === true,
                 suDungVatTu === true ? ghiChuVatTu : null,
-                chiPhi || null,
-                hinhAnhHoaDonUrls ? JSON.stringify(hinhAnhHoaDonUrls) : null // Lưu JSON array
+                (typeof chiPhi === 'number' ? chiPhi : null), // Đảm bảo chiPhi là số hoặc null
+                hinhAnhHoaDonUrls && hinhAnhHoaDonUrls.length > 0 ? JSON.stringify(hinhAnhHoaDonUrls) : null,
+                hinhAnhHongHocUrls && hinhAnhHongHocUrls.length > 0 ? JSON.stringify(hinhAnhHongHocUrls) : null // Lưu ảnh hỏng hóc
             ]
         );
 
@@ -121,26 +142,30 @@ exports.getBaoHongLog = async (req, res) => {
             [baohong_id]
         );
 
-        // --- SỬA LỖI XỬ LÝ URL ẢNH ---
+        // Xử lý URL ảnh cho cả 2 cột
         const formattedLogs = logs.map(log => {
-            let finalUrls = [];
-            // Kiểm tra xem log.hinhAnhHoaDonUrls có phải là một mảng không
-            if (Array.isArray(log.hinhAnhHoaDonUrls)) {
-                finalUrls = log.hinhAnhHoaDonUrls; // Sử dụng trực tiếp nếu đã là mảng
-            } else if (log.hinhAnhHoaDonUrls) {
-                // Log cảnh báo nếu giá trị tồn tại nhưng không phải mảng
-                 console.warn(`Giá trị hinhAnhHoaDonUrls cho log ${log.id} không phải là một mảng:`, log.hinhAnhHoaDonUrls);
-                 try {
-                     const parsed = JSON.parse(log.hinhAnhHoaDonUrls);
-                     if(Array.isArray(parsed)) finalUrls = parsed;
-                 } catch(e) {
-                     console.error("Parse lại thất bại:", e)
-                 }
-            }
-            // Nếu không phải mảng hoặc là null/undefined, finalUrls sẽ là []
+            // Hàm helper để xử lý parse URL (tránh lặp code)
+            const getUrlsFromArrayOrNull = (data) => {
+                if (Array.isArray(data)) {
+                    return data; // Đã là mảng, dùng luôn
+                }
+                if (data && typeof data === 'string' && data.trim() !== '') {
+                    try {
+                        const parsed = JSON.parse(data);
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                         console.error(`Lỗi parse JSON cho log ${log.id}:`, e, "Giá trị gốc:", data);
+                         return []; // Trả về mảng rỗng nếu lỗi parse
+                    }
+                }
+                return []; // Trả về mảng rỗng nếu null, undefined, chuỗi rỗng, hoặc không phải mảng/chuỗi hợp lệ
+            };
+
             return {
                 ...log,
-                hinhAnhHoaDonUrls: finalUrls // Luôn trả về một mảng
+                // Xử lý cả 2 cột URL ảnh
+                hinhAnhHoaDonUrls: getUrlsFromArrayOrNull(log.hinhAnhHoaDonUrls),
+                hinhAnhHongHocUrls: getUrlsFromArrayOrNull(log.hinhAnhHongHocUrls)
             };
         });
 

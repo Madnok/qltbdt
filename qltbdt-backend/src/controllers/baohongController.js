@@ -177,7 +177,7 @@ exports.getThongTinBaoHong = async (req, res) => {
 
 exports.updateBaoHong = async (req, res) => {
     const { id } = req.params;
-    const { trangThai, nhanvien_id, ghiChuXuLy, ghiChuAdmin } = req.body;
+    const { trangThai, nhanvien_id, ghiChuXuLy, ghiChuAdmin, action } = req.body;
     const requesterRole = req.user?.role; // Lấy vai trò từ middleware
     const requesterId = req.user?.id;
 
@@ -188,6 +188,11 @@ exports.updateBaoHong = async (req, res) => {
     // --- Validation ---
     if (trangThai === 'Đã Duyệt' && requesterRole === 'admin' && !nhanvien_id) {
         return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt." });
+    }
+
+    // Nếu không phải hủy lệnh thì phải có trạng thái
+    if (action !== 'cancel' && !trangThai) {
+        return res.status(400).json({ error: "Thiếu trạng thái cập nhật." });
     }
 
     const allowedStatusUpdatesByNhanVien = ['Đang Tiến Hành', 'Hoàn Thành', 'Không Thể Hoàn Thành'];
@@ -212,23 +217,72 @@ exports.updateBaoHong = async (req, res) => {
             await connection.rollback();
             return res.status(403).json({ error: "Bạn không được giao xử lý báo hỏng này." });
         }
+
+        // *** XỬ LÝ HỦY LỆNH CỦA ADMIN ***
+        if (requesterRole === 'admin' && action === 'cancel') {
+            let newStatus = '';
+            let queryCancel = '';
+            let paramsCancel = [];
+
+            if (currentBaoHong.trangThai === 'Đã Duyệt' || currentBaoHong.trangThai === 'Yêu Cầu Làm Lại') {
+                // Từ Đã Duyệt hoặc Yêu cầu làm lại > quay về Chờ Duyệt
+                newStatus = 'Chờ Duyệt';
+                queryCancel = `UPDATE baohong SET
+                                         trangThai = ?,
+                                         nhanvien_id = NULL,
+                                         thoiGianXuLy = NULL,
+                                         ghiChuAdmin = NULL,
+                                         ghiChuXuLy = NULL,
+                                         coLogBaoTri = FALSE
+                                       WHERE id = ?`;
+                paramsCancel = [newStatus, id];
+            } else if (currentBaoHong.trangThai === 'Đang Tiến Hành') {
+                // Từ Đang tiến hành > quay về Đã Duyệt
+                newStatus = 'Đã Duyệt';
+                // Giữ lại NV đã gán và ghi chú Admin (nếu có từ lúc duyệt)
+                // Reset thời gian xử lý, ghi chú xử lý của NV
+                queryCancel = `UPDATE baohong SET
+                                         trangThai = ?,
+                                         thoiGianXuLy = NULL, -- Reset thời gian xử lý/hoàn thành
+                                         ghiChuXuLy = NULL  -- Xóa ghi chú của NV nếu có
+                                         -- Giữ nguyên nhanvien_id, ghiChuAdmin, coLogBaoTri
+                                       WHERE id = ?`;
+                paramsCancel = [newStatus, id];
+            } else {
+                // Không cho hủy ở các trạng thái khác (Chờ duyệt, Hoàn thành, Không thể HT)
+                await connection.rollback();
+                return res.status(400).json({ error: `Không thể hủy lệnh khi báo hỏng đang ở trạng thái '${currentBaoHong.trangThai}'.` });
+            }
+
+            // Thực thi UPDATE hủy lệnh
+            const [cancelResult] = await connection.query(queryCancel, paramsCancel);
+            if (cancelResult.affectedRows === 0) {
+                await connection.rollback();
+                return res.status(404).json({ error: "Không tìm thấy báo hỏng để hủy lệnh." });
+            }
+
+            await connection.commit();
+            return res.status(200).json({ message: "Đã hủy lệnh và đặt lại trạng thái thành công!", id: id, newStatus: newStatus });
+        }
+        // *** KẾT THÚC XỬ LÝ HỦY LỆNH ***
+
         // *** LOGIC CHO ADMIN DUYỆT LẠI ***
         if (requesterRole === 'admin' && (currentBaoHong.trangThai === 'Hoàn Thành' || currentBaoHong.trangThai === 'Không Thể Hoàn Thành')) {
             if (trangThai === 'Yêu Cầu Làm Lại' || trangThai === 'Đã Duyệt') {
                 // Admin có thể đặt lại về "Đã Duyệt" (có thể kèm ghi chú) hoặc "Yêu Cầu Làm Lại"
                 let newStatus = 'Đã Duyệt'; // Mặc định quay về Đã Duyệt
                 if (trangThai === 'Yêu Cầu Làm Lại') {
-                     newStatus = 'Yêu Cầu Làm Lại';
+                    newStatus = 'Yêu Cầu Làm Lại';
                 }
 
                 // Nếu không gán lại NV, giữ NV cũ (nếu có)
                 const finalNhanVienId = nhanvien_id === undefined ? currentBaoHong.nhanvien_id : nhanvien_id;
 
                 // Nếu không có nhân viên nào (cả cũ và mới), báo lỗi nếu trạng thái là Đã Duyệt/Yêu cầu làm lại
-                 if (!finalNhanVienId && (newStatus === 'Đã Duyệt' || newStatus === 'Yêu Cầu Làm Lại')) {
-                     await connection.rollback();
-                     return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt lại hoặc yêu cầu làm lại." });
-                 }
+                if (!finalNhanVienId && (newStatus === 'Đã Duyệt' || newStatus === 'Yêu Cầu Làm Lại')) {
+                    await connection.rollback();
+                    return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt lại hoặc yêu cầu làm lại." });
+                }
 
 
                 let queryReopen = "UPDATE baohong SET trangThai = ?, nhanvien_id = ?, ghiChuAdmin = ?, thoiGianXuLy = NULL, coLogBaoTri = FALSE, ghiChuXuLy = NULL WHERE id = ?";
@@ -237,18 +291,18 @@ exports.updateBaoHong = async (req, res) => {
                 // Thực thi UPDATE
                 const [reopenResult] = await connection.query(queryReopen, paramsReopen);
                 if (reopenResult.affectedRows === 0) {
-                     await connection.rollback();
-                     return res.status(404).json({ error: "Không tìm thấy báo hỏng để duyệt lại." });
-                 }
+                    await connection.rollback();
+                    return res.status(404).json({ error: "Không tìm thấy báo hỏng để duyệt lại." });
+                }
 
                 await connection.commit();
                 return res.status(200).json({ message: "Đã yêu cầu làm lại / duyệt lại báo hỏng thành công!", id: id, newStatus: newStatus });
 
             } else {
-                 // Nếu admin cố đặt trạng thái khác không hợp lệ từ Hoàn thành/Ko thể HT
-                 await connection.rollback();
-                 return res.status(400).json({ error: `Không thể chuyển từ trạng thái '<span class="math-inline">\{currentBaoHong\.trangThai\}' sang '</span>{trangThai}'. Chỉ có thể yêu cầu làm lại hoặc duyệt lại.` });
-             }
+                // Nếu admin cố đặt trạng thái khác không hợp lệ từ Hoàn thành/Ko thể HT
+                await connection.rollback();
+                return res.status(400).json({ error: `Không thể chuyển từ trạng thái '<span class="math-inline">\{currentBaoHong\.trangThai\}' sang '</span>{trangThai}'. Chỉ có thể yêu cầu làm lại hoặc duyệt lại.` });
+            }
         }
         // *** KẾT THÚC LOGIC ADMIN DUYỆT LẠI ***
 
@@ -282,17 +336,20 @@ exports.updateBaoHong = async (req, res) => {
         let query = "UPDATE baohong SET trangThai = ?";
         const params = [trangThai];
 
-        if (trangThai === 'Đã Duyệt' && nhanvien_id) {
-            query += ", nhanvien_id = ?, thoiGianXuLy = NOW(), coLogBaoTri = FALSE, ghiChuXuLy = NULL, ghiChuAdmin = NULL"; // Reset log flag và ghi chú
+        if (trangThai === 'Đã Duyệt' && requesterRole === 'admin' && nhanvien_id !== undefined) {
+            // DUYỆT MỚI: Lấy ghiChuAdmin từ req.body
+            query += ", nhanvien_id = ?, thoiGianXuLy = NOW(), coLogBaoTri = FALSE, ghiChuXuLy = NULL, ghiChuAdmin = ?"; // Thay NULL bằng ?
             params.push(nhanvien_id);
+            params.push(ghiChuAdmin || null); // Thêm ghiChuAdmin vào params, dùng null nếu rỗng/không có
         } else if (trangThai === 'Không Thể Hoàn Thành') {
-            query += ", thoiGianXuLy = NOW(), ghiChuXuLy = ?"; // Cập nhật thời gian và ghi chú
-            params.push(ghiChuXuLy || null);
+            // NHÂN VIÊN báo cáo không thể hoàn thành
+            query += ", thoiGianXuLy = NOW(), ghiChuXuLy = ?";
+            params.push(ghiChuXuLy || null); // Lấy ghiChuXuLy từ req.body
         } else if (trangThai === 'Hoàn Thành') {
-            query += ", thoiGianXuLy = NOW()"; // Cập nhật thời gian hoàn thành
-            query += ", ghiChuXuLy = NULL";
+            // NHÂN VIÊN đánh dấu hoàn thành
+            query += ", thoiGianXuLy = NOW()";
         } else if (trangThai === 'Đang Tiến Hành') {
-            // Có thể cập nhật thời gian bắt đầu xử lý thực tế nếu cần
+            // NHÂN VIÊN bắt đầu xử lý
         }
 
         query += " WHERE id = ?";
@@ -302,9 +359,9 @@ exports.updateBaoHong = async (req, res) => {
         const [result] = await connection.query(query, params);
 
         if (result.affectedRows === 0 && !(requesterRole === 'admin' && (currentBaoHong.trangThai === 'Hoàn Thành' || currentBaoHong.trangThai === 'Không Thể Hoàn Thành'))) { // Kiểm tra nếu không phải trường hợp admin duyệt lại
-             await connection.rollback();
-             return res.status(404).json({ error: "Không tìm thấy báo hỏng để cập nhật." });
-         }
+            await connection.rollback();
+            return res.status(404).json({ error: "Không tìm thấy báo hỏng để cập nhật." });
+        }
 
         await connection.commit();
         res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, newStatus: trangThai });
@@ -376,7 +433,7 @@ exports.deleteBaoHong = async (req, res) => {
         const [result] = await connection.query("DELETE FROM baohong WHERE id = ?", [id]);
 
         if (result.affectedRows === 0) {
-            await connection.rollback(); 
+            await connection.rollback();
             return res.status(404).json({ error: "Không tìm thấy báo hỏng để xóa." });
         }
 
@@ -387,7 +444,7 @@ exports.deleteBaoHong = async (req, res) => {
         await connection.rollback();
         console.error("Lỗi khi xóa báo hỏng:", error);
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-             return res.status(400).json({ error: "Không thể xóa báo hỏng này vì còn dữ liệu liên quan (ví dụ: trong bảng baohong_lichtruc)." });
+            return res.status(400).json({ error: "Không thể xóa báo hỏng này vì còn dữ liệu liên quan (ví dụ: trong bảng baohong_lichtruc)." });
         }
         res.status(500).json({ error: "Lỗi máy chủ khi xóa báo hỏng." });
     } finally {

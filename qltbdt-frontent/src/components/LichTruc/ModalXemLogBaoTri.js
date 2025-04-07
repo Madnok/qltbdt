@@ -5,7 +5,7 @@ import moment from 'moment';
 import {
     FaTimesCircle, FaUserTie, FaClock, FaWrench, FaCheckCircle,
     FaBan, FaShippingFast, FaExclamationCircle,
-    FaImage, FaPaperclip
+    FaImage, FaPaperclip, FaCamera, FaRoute, FaInfoCircle
 } from 'react-icons/fa';
 
 const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {
@@ -37,7 +37,7 @@ const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {
                     </button>
                 </div>
 
-                {/* Body Modal (Scrollable) */}
+                {/* Body Modal */}
                 <div className="flex-grow p-4 overflow-y-auto">
                     {isLoading && <p className="text-center text-gray-500">Đang tải lịch sử...</p>}
                     {isError && <p className="text-center text-red-500">Lỗi khi tải lịch sử: {error.message}</p>}
@@ -58,7 +58,44 @@ const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {
                                         <p className="pl-4 text-sm text-gray-700 whitespace-pre-wrap">{log.hoatdong || <span className="italic">Không có mô tả</span>}</p>
                                     </div>
 
-                                    {/* Dòng 3: Kết quả */}
+                                    {/* Dòng 3: Ảnh xác nhận hỏng hóc === */}
+                                    <div className="mb-3">
+                                        <p className="flex items-center mb-1 text-sm font-medium text-gray-800"><FaCamera className="mr-1.5 text-gray-500" /> Ảnh xác nhận hỏng hóc:</p>
+                                        <div className="pl-4">
+                                            {log.hinhAnhHongHocUrls && log.hinhAnhHongHocUrls.length > 0 ? (
+                                                <div className="flex flex-wrap gap-3">
+                                                    {log.hinhAnhHongHocUrls.map((url, idx) => (
+                                                        <a key={idx} 
+                                                        href={url}                                                         
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center px-2 py-1 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+                                                        title={`Xem file ${idx + 1}`}
+                                                        >
+                                                            {/\.(jpe?g|png|gif)$/i.test(url) ? <FaImage className="mr-1" /> : <FaPaperclip className="mr-1" />}
+                                                            Ảnh {idx + 1}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm italic text-gray-500">Không có</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Dòng 4: Phương án xử lý */}
+                                    <div className="mb-3">
+                                        <p className="flex items-center text-sm font-medium text-gray-800 mb-0.5"><FaRoute className="mr-1.5 text-gray-500" /> Phương án xử lý:</p>
+                                        <p className="pl-4 text-sm text-gray-700">{log.phuongAnXuLy || <span className="italic">Chưa chọn</span>}</p>
+                                        {/* Hiển thị chi tiết nếu là 'Khác' */}
+                                        {log.phuongAnXuLy === 'Khác' && log.phuongAnKhacChiTiet && (
+                                            <p className="flex items-start pl-8 mt-1 text-xs text-gray-600">
+                                                <FaInfoCircle className="mr-1 mt-0.5 flex-shrink-0" /> Chi tiết: {log.phuongAnKhacChiTiet}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Dòng 5: Kết quả */}
                                     <div className="mb-3">
                                         <p className="text-sm font-medium text-gray-800 mb-0.5">Kết quả:</p>
                                         <p className="flex items-center pl-4 text-sm">
@@ -67,7 +104,7 @@ const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {
                                         </p>
                                     </div>
 
-                                    {/* Dòng 4: Thông tin Vật tư (Luôn hiển thị mục này) */}
+                                    {/* Dòng 6: Thông tin Vật tư (Luôn hiển thị mục này) */}
                                     <div className="p-3 mt-3 text-sm border border-dashed rounded bg-gray-50">
                                         <p className="mb-1 font-medium text-gray-800">Thông tin Vật tư/Dịch vụ:</p>
                                         {log.suDungVatTu ? (
@@ -89,7 +126,7 @@ const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {
                                         )}
                                     </div>
 
-                                    {/* Dòng 5: Hình ảnh Hóa đơn/Chứng từ (Luôn hiển thị mục này) */}
+                                    {/* Dòng 7: Hình ảnh Hóa đơn/Chứng từ (Luôn hiển thị mục này) */}
                                     <div className="mt-3">
                                         <p className="mb-1 text-sm font-medium text-gray-800">Hóa đơn/Chứng từ:</p>
                                         <div className="pl-4">

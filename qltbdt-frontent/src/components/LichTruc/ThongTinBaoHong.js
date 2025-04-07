@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaHistory, FaUndo, FaUserCheck, FaSearch, FaCheckCircle } from "react-icons/fa"; // Thêm icons
+import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaHistory, FaUndo, FaUserCheck, FaSearch, FaBan } from "react-icons/fa"; // Thêm icons
 import moment from "moment";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModalXemLogBaoTri from './ModalXemLogBaoTri';
@@ -77,6 +77,8 @@ const ThongTinBaoHong = () => {
     const [phongNameForModal, setPhongNameForModal] = useState("");
     const [reassignData, setReassignData] = useState({ baoHongId: null, nhanVienId: null, ghiChuAdmin: '' });
     const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+    const [approveData, setApproveData] = useState({ baoHongId: null, nhanVienId: null, phongName: '', ghiChuAdmin: '' });
+    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
 
     const queryClient = useQueryClient();
 
@@ -97,7 +99,7 @@ const ThongTinBaoHong = () => {
     // Tạo lookup maps bằng useMemo
     const phongMap = useMemo(() => new Map(phongList.map(p => [p.id, p.phong])), [phongList]);
 
-    // --- Filtering and Sorting Logic ---
+    // --- Sắp Xếp và lọc Logic ---
     const filteredAndSortedBaoHongList = useMemo(() => {
         let filtered = baoHongList;
 
@@ -139,7 +141,7 @@ const ThongTinBaoHong = () => {
     }, [baoHongList, filter, phongMap]); // Thêm searchTerm vào dependency
 
 
-    // --- Pagination Logic ---
+    // --- phân tang Logic ---
     const totalPages = Math.ceil(filteredAndSortedBaoHongList.length / rowsPerPage);
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -240,27 +242,29 @@ const ThongTinBaoHong = () => {
     });
 
     const handleApprove = (item) => {
-        console.log("Approving Report:", item);
-        const assigneeId = selectedAssignee[item.id] !== undefined
-            ? selectedAssignee[item.id] // Lấy ID admin đã chọn (có thể là null nếu chọn "Chưa gán")
-            : item.suggested_nhanvien_id; // Nếu admin chưa chọn, lấy ID gợi ý
+        // Lấy ID nhân viên đã chọn trong select hoặc ID gợi ý
+        const nhanVienIdToApprove = selectedAssignee[item.id] || item.suggested_nhanvien_id;
 
-        if (!assigneeId) {
-            alert("Vui lòng chọn nhân viên xử lý trước khi duyệt!");
+        if (!nhanVienIdToApprove) {
+            alert("Vui lòng chọn nhân viên xử lý hoặc đảm bảo có nhân viên được gợi ý.");
             return;
         }
 
-        const updateData = {
-            trangThai: 'Đã Duyệt',
-            nhanvien_id: assigneeId // Gửi ID nhân viên đã chọn/gợi ý
-        };
-        updateStatusMutation.mutate({ id: item.id, updateData });
+        setApproveData({
+            baoHongId: item.id,
+            nhanVienId: parseInt(nhanVienIdToApprove), // Đảm bảo là số nguyên
+            phongName: item.phong_name,
+            ghiChuAdmin: '', // Reset ghi chú cũ nếu có
+        });
+        setIsApproveModalOpen(true); // Mở modal xác nhận duyệt
     };
 
-    const handleMarkComplete = (baoHongId) => {
-        if (window.confirm(`Xác nhận hoàn thành báo hỏng ID ${baoHongId}?`)) {
-            const updateData = { trangThai: 'Hoàn Thành' };
-            updateStatusMutation.mutate({ id: baoHongId, updateData });
+    const handleCancel = (baoHongId, currentStatus) => {
+        if (window.confirm(`Bạn có chắc muốn hủy lệnh cho báo hỏng ID "${baoHongId}" (đang ở trạng thái "${currentStatus}"')?`)) {
+            updateStatusMutation.mutate({
+                id: baoHongId,
+                updateData: { action: 'cancel' } // Gửi tín hiệu hủy lệnh
+            });
         }
     };
 
@@ -441,7 +445,22 @@ const ThongTinBaoHong = () => {
                                                             <FaEye />
                                                         </button>
 
-                                                        {/* 2. Duyệt và Gán (Enable khi 'Chờ Duyệt') */}
+                                                        {/* 2. Xem Log Bảo trì (Enable khi có log) */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setViewingLogFor(item.id);
+                                                                setPhongNameForModal(item.phong_name);
+                                                            }}
+                                                            className={`
+                            ${!!item.coLogBaoTri ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}
+                        `}
+                                                            title={!!item.coLogBaoTri ? "Xem lịch sử bảo trì" : "Chưa có lịch sử bảo trì"}
+                                                            disabled={!item.coLogBaoTri} // Disable nếu không có log (coLogBaoTri là 0 hoặc false)
+                                                        >
+                                                            <FaHistory />
+                                                        </button>
+
+                                                        {/* 3. Duyệt và Gán (Enable khi 'Chờ Duyệt') */}
                                                         <button
                                                             onClick={() => handleApprove(item)}
                                                             className={`
@@ -458,20 +477,6 @@ const ThongTinBaoHong = () => {
                                                             <FaUserCheck />
                                                         </button>
 
-                                                        {/* 3. Xem Log Bảo trì (Enable khi có log) */}
-                                                        <button
-                                                            onClick={() => {
-                                                                setViewingLogFor(item.id);
-                                                                setPhongNameForModal(item.phong_name);
-                                                            }}
-                                                            className={`
-                            ${!!item.coLogBaoTri ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}
-                        `}
-                                                            title={!!item.coLogBaoTri ? "Xem lịch sử bảo trì" : "Chưa có lịch sử bảo trì"}
-                                                            disabled={!item.coLogBaoTri} // Disable nếu không có log (coLogBaoTri là 0 hoặc false)
-                                                        >
-                                                            <FaHistory />
-                                                        </button>
 
                                                         {/* 4. Yêu cầu làm lại / Duyệt lại (Enable khi Hoàn thành hoặc Không thể HT) */}
                                                         <button
@@ -492,30 +497,41 @@ const ThongTinBaoHong = () => {
                                                             <FaUndo />
                                                         </button>
 
-                                                        {/* 5. Xóa (Luôn enable hoặc disable tùy logic) */}
+
+                                                        {/* 5. Nút Hủy Lệnh (Hiển thị khi Đã duyệt, Đang tiến hành, Yêu cầu làm lại) */}
                                                         <button
-                                                            onClick={() => handleDelete(item.id)}
-                                                            className={`text-red-600 hover:text-red-900 ${deleteMutation.isPending && deleteMutation.variables === item.id ? 'opacity-50' : ''}`}
-                                                            title="Xóa"
-                                                            // Có thể thêm điều kiện disabled ở đây nếu cần, ví dụ: không cho xóa khi đang xử lý
-                                                            // disabled={item.trangThai === 'Đang Tiến Hành' || (deleteMutation.isPending && deleteMutation.variables === item.id)}
-                                                            disabled={deleteMutation.isPending && deleteMutation.variables === item.id}
+                                                            onClick={() => handleCancel(item.id, item.trangThai)}
+                                                            className={`
+                 ${(item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại')
+                                                                    ? 'text-yellow-600 hover:text-yellow-800'
+                                                                    : 'text-gray-400 cursor-not-allowed'
+                                                                }
+                 ${updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? 'opacity-50' : ''}
+             `}
+                                                            title={
+                                                                (item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại')
+                                                                    ? "Hủy lệnh và đặt lại trạng thái"
+                                                                    : `Không thể hủy lệnh ở trạng thái '${item.trangThai}'`
+                                                            }
+                                                            disabled={
+                                                                !(item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại') ||
+                                                                (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)
+                                                            }
                                                         >
-                                                            <FaTrashAlt />
+                                                            <FaBan />
                                                         </button>
 
-                                                        {/* 6. Đánh dấu Hoàn thành (Tạm ẩn - vì logic này thường do NV thực hiện) */}
-
+                                                        {/* 6. Xóa */}
                                                         <button
-                                                            onClick={() => handleMarkComplete(item.id)}
-                                                            className={`
-                            ${item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại' ? 'text-blue-600 hover:text-blue-900' : 'text-gray-400 cursor-not-allowed'}
-                            ${updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? 'opacity-50' : ''}
-                        `}
-                                                            title={item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại' ? "Đánh dấu Hoàn thành (Admin)" : "Không thể đánh dấu hoàn thành"}
-                                                            disabled={!(item.trangThai === 'Đã Duyệt' || item.trangThai === 'Đang Tiến Hành' || item.trangThai === 'Yêu Cầu Làm Lại') || (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)}
+                                                            onClick={() => handleDelete(item.id)}
+                                                            className={`${item.trangThai === 'Đang Tiến Hành' || (deleteMutation.isPending && deleteMutation.variables === item.id)
+                                                                ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                                                : 'text-red-600 hover:text-red-900'
+                                                                }`}
+                                                            title={item.trangThai === 'Đang Tiến Hành' || (deleteMutation.isPending && deleteMutation.variables === item.id) ? "Không thể xóa ở trạng thái này" : "Xóa"}
+                                                            disabled={item.trangThai === 'Đang Tiến Hành' || (deleteMutation.isPending && deleteMutation.variables === item.id)}
                                                         >
-                                                            <FaCheckCircle />
+                                                            <FaTrashAlt />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -571,6 +587,7 @@ const ThongTinBaoHong = () => {
                     }}
                 />
             )}
+
             {/* Modal Yêu cầu làm lại / Duyệt lại */}
             {isReassignModalOpen && reassignData.baoHongId && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-50"> {/* Tăng z-index nếu cần */}
@@ -634,6 +651,61 @@ const ThongTinBaoHong = () => {
                 </div>
             )}
 
+            {/* === Modal Xác nhận Duyệt và Gán === */}
+            {isApproveModalOpen && approveData.baoHongId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-50">
+                    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
+                        <h3 className="mb-4 text-lg font-semibold">Xác nhận Duyệt và Gán</h3>
+                        <p className="mb-2 text-sm">Duyệt báo hỏng ID <span className='font-bold'>{approveData.baoHongId}</span> ({approveData.phongName}) cho nhân viên:</p>
+                        {/* Hiển thị tên nhân viên được chọn */}
+                        <p className='pl-4 mb-4 font-medium text-blue-700'>
+                            {nhanVienList.find(nv => nv.id === approveData.nhanVienId)?.hoTen || 'Không tìm thấy tên'}
+                        </p>
+
+                        {/* Ghi chú của Admin (Tùy chọn) */}
+                        <div className="mb-4">
+                            <label htmlFor="adminNoteApprove" className="block mb-1 text-sm font-medium">Ghi chú cho nhân viên (tùy chọn):</label>
+                            <textarea
+                                id="adminNoteApprove"
+                                value={approveData.ghiChuAdmin}
+                                onChange={(e) => setApproveData(prev => ({ ...prev, ghiChuAdmin: e.target.value }))}
+                                className="w-full p-2 border rounded-md min-h-[80px]"
+                                placeholder="Nhập yêu cầu cụ thể hoặc lưu ý cho nhân viên..."
+                            />
+                        </div>
+
+                        {/* Nút hành động */}
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setIsApproveModalOpen(false)}
+                                disabled={updateStatusMutation.isPending}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={() => {
+                                    updateStatusMutation.mutate({
+                                        id: approveData.baoHongId,
+                                        updateData: {
+                                            trangThai: 'Đã Duyệt',
+                                            nhanvien_id: approveData.nhanVienId,
+                                            ghiChuAdmin: approveData.ghiChuAdmin.trim() || null // Gửi null nếu ghi chú rỗng
+                                        }
+                                    });
+                                    setIsApproveModalOpen(false); // Đóng modal sau khi gọi mutate
+                                }}
+                                disabled={updateStatusMutation.isPending}
+                                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400"
+                            >
+                                {updateStatusMutation.isPending ? 'Đang xử lý...' : 'Xác nhận Duyệt'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* === Kết thúc Modal === */}
         </div>
     );
 };
