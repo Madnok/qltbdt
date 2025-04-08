@@ -31,7 +31,7 @@ const BaoHong = () => {
         damageLevel: "",
     });
 
-    const damageTypes = ["Kết Cấu", "Hệ Thống Điện", "Hệ Thống Nước", "Các Loại Thiết Bị", "Khác"];
+    const damageTypes = ["Hạ Tầng", "Các Loại Thiết Bị", "Khác"];
 
     const [errors] = useState({});
 

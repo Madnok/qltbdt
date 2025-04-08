@@ -326,9 +326,7 @@ const ThongTinBaoHong = () => {
                         <select name="loaithiethai" value={filter.loaithiethai} onChange={handleFilterChange} className="w-full px-2 py-1 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                             {/* ... options ... */}
                             <option value="">Tất cả</option>
-                            <option value="Kết Cấu">Kết Cấu</option>
-                            <option value="Hệ Thống Điện">Hệ Thống Điện</option>
-                            <option value="Hệ Thống Nước">Hệ Thống Nước</option>
+                            <option value="Hạ Tầng">Hạ Tầng</option>
                             <option value="Các Loại Thiết Bị">Các Loại Thiết Bị</option>
                             <option value="Khác">Khác</option>
                         </select>

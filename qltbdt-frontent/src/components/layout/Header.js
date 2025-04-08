@@ -1,17 +1,42 @@
 import { useAuth } from "../../context/AuthProvider";
-import { useState, useEffect, useRef } from "react"; // Thêm useEffect và useRef
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import PropTypes from 'prop-types';
+
 Header.propTypes = {
   toggleSidebar: PropTypes.func, // toggleSidebar là một hàm và không bắt buộc
+  scrollToBaoHong: PropTypes.func,
+  scrollToGopY: PropTypes.func,
+  scrollToGioiThieu: PropTypes.func,
 };
 
-function Header({ toggleSidebar }) {
+function Header({ toggleSidebar, scrollToBaoHong, scrollToGopY, scrollToGioiThieu }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const notificationCount = 12; // TODO: Lấy từ API sau
+  const notificationCount = 8; // TODO: Lấy từ API sau
   const dropdownRef = useRef(null); // Ref cho khu vực dropdown
+
+  const isBaoHongGopYPage = location.pathname === '/';
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isBaoHongGopYPage) {
+        setIsScrolled(window.scrollY > 10);
+      } else {
+        setIsScrolled(true);
+      }
+    };
+
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.pathname, isBaoHongGopYPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -29,72 +54,96 @@ function Header({ toggleSidebar }) {
   }, [dropdownRef]);
 
   const handleTitleClick = () => {
-    navigate(user ? "/nguoidung" : "/login");
+    if (isBaoHongGopYPage && typeof scrollToGioiThieu === 'function') {
+      scrollToGioiThieu(); // Cuộn về đầu trang nếu đang ở trang đó
+      setIsUserMenuOpen(false);
+    } else {
+      navigate(user ? "/nguoidung" : "/"); // Điều hướng nếu ở trang khác
+      setIsUserMenuOpen(false);
+    }
   };
 
-  // Hàm điều hướng đến trang Báo hỏng/Góp ý
-  const navigateToBaoHongGopY = () => {
-    navigate("/"); // Đảm bảo route này đúng
-    setIsUserMenuOpen(false); // Đóng dropdown
+  // Xử lý click nút Báo Hỏng (trong dropdown hoặc khi chưa đăng nhập)
+  const handleBaoHongClick = () => {
+    if (isBaoHongGopYPage && typeof scrollToBaoHong === 'function') {
+      scrollToBaoHong(); // Cuộn đến section báo hỏng
+      setIsUserMenuOpen(false);
+    } else {
+      navigate("/"); // Chuyển về trang chủ nếu đang ở trang khác
+      // Có thể lưu trạng thái để tự cuộn sau khi chuyển trang (phức tạp hơn)
+      setIsUserMenuOpen(false);
+    }
   };
+
+  // Xử lý click nút Góp Ý (trong dropdown hoặc khi chưa đăng nhập)
+  const handleGopYClick = () => {
+    if (isBaoHongGopYPage && typeof scrollToGopY === 'function') {
+      scrollToGopY(); // Cuộn đến section góp ý
+      setIsUserMenuOpen(false);
+    } else {
+      navigate("/"); // Chuyển về trang chủ
+      setIsUserMenuOpen(false);
+    }
+  };
+
+  // Xác định class CSS cho header dựa trên trạng thái
+  const headerBaseClasses = "flex items-center justify-between w-full py-3 transition-colors duration-300 ease-in-out"; // Thêm position: fixed, z-index, transition
+  const headerBgClass = (isBaoHongGopYPage && !isScrolled)
+    ? 'bg-gray-900 bg-opacity-30 text-white shadow-none fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-in-out'
+    : 'bg-gray-900 bg-opacity-100'
+
+  const headerPaddingClass = "px-4 md:px-4";
 
   return (
-    <header className="flex items-center justify-between w-full px-4 py-3 text-gray-200 bg-gray-900 shadow-md md:px-2">
-      <div className="flex items-center space-x-4">
-        {/* Nút Toggle Sidebar - Chỉ hiển thị khi đã đăng nhập VÀ có hàm toggleSidebar được truyền vào */}
+    // flex items-center justify-between w-full py-3 text-gray-200 bg-gray-900 shadow-md md:px-2
+    <header className={`${headerBaseClasses} ${headerBgClass} ${headerPaddingClass}`}>
+
+      {/* Phần Bên Trái: Chỉ còn nút Menu (nếu user tồn tại và có hàm toggle) */}
+      <div className="flex items-center justify-start md:w-48">
         {user && typeof toggleSidebar === 'function' && (
           <button
             onClick={toggleSidebar}
-            className="p-2 text-gray-300 transition-colors duration-200 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:bg-gray-700"
+            // Thêm class text-white khi nền trong suốt
+            className={`rounded-md transition-colors duration-200 focus:outline-none focus:bg-gray-700 ${(isBaoHongGopYPage && !isScrolled) ? 'text-white hover:bg-white/20' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
             aria-label="Toggle sidebar"
           >
             <i className="text-xl fas fa-bars"></i>
           </button>
         )}
-
-        {/* Tiêu đề/Logo - Luôn hiển thị, có thể click */}
-        <h1
-          className="text-xl font-semibold tracking-tight text-white cursor-pointer"
-          onClick={handleTitleClick}
-        >
-          QUẢN LÝ CSVC
-        </h1>
+        {/* Nếu không có nút menu, vẫn giữ div để cân bằng */}
+        {(!user || typeof toggleSidebar !== 'function') && <div className="w-10 h-10"></div>}
       </div>
 
-      {/* === Phần Ở Giữa === */}
-      <div className="flex-grow mx-4 md:mx-8 lg:mx-16">
-        <div className="relative w-full max-w-lg mx-auto">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-            <i className="text-gray-500 fas fa-search"></i>
-          </span>
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            className="w-full py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 bg-gray-100 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent"
-          />
-        </div>
+      <div className="flex-grow text-center">
+        {!isBaoHongGopYPage && (
+          <h1
+            className={`text-xl font-bold tracking-wider cursor-pointer md:text-2xl transition-colors duration-300 hidden ${(isScrolled) ? 'text-white' : 'text-white'}`}
+            onClick={handleTitleClick}
+          >
+            IUHelp Facility Management
+          </h1>
+        )}
       </div>
 
-      {/* === Phần Bên Phải: Thông báo, Avatar/Login === */}
-      <div className="flex items-center space-x-4" ref={dropdownRef}>
-
-        {/* Ngăn cách */}
-        <div className="hidden w-px h-6 md:block"></div>
+      {/* Phần Bên Phải: Thông báo, Avatar/Login - Đặt chiều rộng cố định */}
+      <div className="flex items-center justify-end w-auto min-w-[64px] space-x-2 md:space-x-4" ref={dropdownRef}>
 
         {/* Avatar + Dropdown + badge tbao (Nếu đã đăng nhập) HOẶC Nút Đăng nhập (Nếu chưa) */}
         {user ? (
           // --- Phần hiển thị khi ĐÃ ĐĂNG NHẬP ---
           <>
+            {/* Nút thông báo */}
             <button className="relative p-2 text-gray-400 transition-colors duration-200 rounded-full hover:bg-gray-700 hover:text-gray-100 focus:outline-none focus:bg-gray-700">
-              <span className="sr-only">View notifications</span> {/* Cho screen reader */}
+              <span className="sr-only">View notifications</span>
               <i className="text-lg fas fa-bell"></i>
-              {/* Badge thông báo */}
               {notificationCount > 0 && (
                 <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-600 rounded-full">
                   {notificationCount > 9 ? "!" : notificationCount}
                 </span>
               )}
             </button>
+
+            {/* Dropdown User */}
             <div className="relative">
               <button
                 id="user-menu-button"
@@ -116,19 +165,17 @@ function Header({ toggleSidebar }) {
                   </div>
                 )}
                 {/* Tên người dùng */}
-                <span className="hidden text-sm font-medium text-white lg:block">
-                  {user.hoTen || user.username}
-                </span>
-                {/* Icon Dropdown */}
+                <span className="hidden text-sm font-medium text-white lg:block">{user.hoTen || user.username}</span>
                 <i className={`hidden lg:block text-gray-400 fas fa-chevron-down text-xs transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""}`}></i>
               </button>
 
               {/* Dropdown menu */}
               <div
-                className={`absolute right-0 z-10 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition ease-out duration-100 ${isUserMenuOpen ? 'transform opacity-100 scale-100' : 'transform opacity-0 scale-95 pointer-events-none'}`}
+                className={`absolute right-0 z-20 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition ease-out duration-100 ${isUserMenuOpen ? 'transform opacity-100 scale-100' : 'transform opacity-0 scale-95 pointer-events-none'}`}
                 role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button"
               >
                 <div className="py-1" role="none">
+                  {/* Nút Tài khoản */}
                   <button
                     onClick={() => { navigate("/nguoidung"); setIsUserMenuOpen(false); }}
                     className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
@@ -136,15 +183,17 @@ function Header({ toggleSidebar }) {
                   >
                     <i className="w-5 mr-3 text-gray-500 fas fa-user-circle"></i> Tài khoản
                   </button>
+                  {/* Nút Báo Hỏng */}
                   <button
-                    onClick={navigateToBaoHongGopY}
+                    onClick={handleBaoHongClick}
                     className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                     role="menuitem"
                   >
                     <i className="w-5 mr-3 text-red-500 fas fa-exclamation-triangle"></i> Báo Hỏng
                   </button>
+                  {/* Nút Góp Ý */}
                   <button
-                    onClick={navigateToBaoHongGopY}
+                    onClick={handleGopYClick}
                     className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                     role="menuitem"
                   >
@@ -167,13 +216,13 @@ function Header({ toggleSidebar }) {
           // --- Phần hiển thị khi CHƯA ĐĂNG NHẬP ---
           <div className="flex items-center space-x-2">
             <button
-              onClick={navigateToBaoHongGopY}
+              onClick={handleBaoHongClick}
               className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors duration-200 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:bg-gray-700"
             >
               Báo Hỏng
             </button>
             <button
-              onClick={navigateToBaoHongGopY}
+              onClick={handleGopYClick}
               className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors duration-200 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:bg-gray-700"
             >
               Góp ý

@@ -11,7 +11,8 @@ exports.getMyTasks = async (req, res) => {
             `SELECT
                 bh.id, bh.phong_id, p.toa, p.tang, p.soPhong,
                 bh.thietbi_id, tb.tenThietBi, bh.thongtinthietbi_id,
-                bh.moTa, bh.loaithiethai, bh.thiethai, bh.ngayBaoHong, bh.trangThai, bh.ghiChuAdmin
+                bh.moTa, bh.loaithiethai, bh.thiethai, bh.ngayBaoHong, 
+                bh.trangThai, bh.ghiChuAdmin, bh.coLogBaoTri
              FROM baohong bh
              JOIN phong p ON bh.phong_id = p.id
              LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id

@@ -9,7 +9,8 @@ import {
     updateBaoHongAPI
 } from '../../api';
 import moment from 'moment';
-import { FaEye, FaCheckCircle, FaTimesCircle, FaWrench, FaMapMarkerAlt, FaTools, FaCalendarAlt, FaFilter, FaSearch, FaChevronLeft, FaChevronRight, FaUserClock } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import { FaEye, FaCheckCircle, FaTimesCircle, FaPlayCircle, FaMapMarkerAlt, FaTools, FaCalendarAlt, FaFilter, FaSearch, FaChevronLeft, FaChevronRight, FaUserClock } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // --- Components & Definitions (Giữ nguyên) ---
@@ -87,15 +88,24 @@ const DanhSachBaoHongNhanVien = ({ baoHongItems = [] }) => { // Thêm default va
 
     // --- Mutation để cập nhật trạng thái ---
     const updateTaskMutation = useMutation({
-        mutationFn: updateBaoHongAPI, // Dùng hàm API đã tạo
-        onSuccess: () => {
-            // Làm mới lại danh sách báo hỏng sau khi cập nhật thành công
+        mutationFn: updateBaoHongAPI,
+        onSuccess: (data, variables) => {
+            toast.success(data.message || `Cập nhật trạng thái công việc ID ${variables.id} thành công!`);
+
+            // Luôn làm mới danh sách công việc ở trang này ('assignedBaoHong')
             queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-            alert('Cập nhật trạng thái công việc thành công!');
+
+            // 2. Nếu trạng thái mới là 'Đang Tiến Hành', cũng làm mới trang Bảo trì
+            if (variables?.updateData?.trangThai === 'Đang Tiến Hành') {
+                console.log("Invalidating baotriMyTasks query after starting task...");
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+            }
+            // 3. Làm mới danh sách chung của Admin
+            queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
         },
-        onError: (error) => {
-            console.error("Lỗi cập nhật trạng thái:", error);
-            alert('Lỗi cập nhật: ' + (error.response?.data?.error || error.message));
+        onError: (error, variables) => {
+            console.error(`Lỗi cập nhật trạng thái cho ID ${variables?.id}:`, error);
+            toast.error(`Lỗi cập nhật: ${error.response?.data?.error || error.message}`);
         }
     });
 
@@ -234,7 +244,7 @@ const DanhSachBaoHongNhanVien = ({ baoHongItems = [] }) => { // Thêm default va
                                     title="Bắt đầu xử lý"
                                     disabled={updateTaskMutation.isPending && updateTaskMutation.variables?.id === item.id}
                                 >
-                                    <FaWrench className="w-4 h-4" />
+                                    <FaPlayCircle className="w-4 h-4" />
                                 </button>
                             )}
                             {/* Nút Hoàn thành */}
@@ -242,13 +252,8 @@ const DanhSachBaoHongNhanVien = ({ baoHongItems = [] }) => { // Thêm default va
                                 <button
                                     onClick={() => handleComplete(item.id)}
                                     // Logic disable mới
-                                    disabled={
-                                        !item.coLogBaoTri ||
-                                        // Giả sử cần kiểm tra log cuối cùng hoặc trạng thái TTTB
-                                        // (Cần fetch thêm dữ liệu log cuối hoặc trạng thái tttb nếu cần kiểm tra chặt chẽ ở đây)
-                                        // Ví dụ đơn giản: chỉ cho hoàn thành nếu coLogBaoTri là true
-                                        (!item.coLogBaoTri || (updateTaskMutation.isPending && updateTaskMutation.variables?.id === item.id))
-                                    }
+                                    // disabled logic kiểm tra coLogBaoTri nếu dữ liệu có sẵn
+                                    disabled={updateTaskMutation.isPending && updateTaskMutation.variables?.id === item.id}
                                     className={`p-1 text-green-600 rounded hover:text-green-900 focus:outline-none focus:ring-1 focus:ring-green-500 ${(!item.coLogBaoTri) ? 'opacity-50 cursor-not-allowed' : 'disabled:opacity-50'
                                         }`}
                                     title={!item.coLogBaoTri ? "Cần ghi nhận hoạt động trước khi hoàn thành" : "Đánh dấu hoàn thành"}

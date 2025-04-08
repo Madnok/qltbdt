@@ -61,33 +61,34 @@ const Login = () => {
 
   return (
     <div
-      className="flex items-center justify-center h-screen bg-cover bg-center"
+      className="flex items-center justify-center h-screen bg-center bg-cover"
       style={{ backgroundImage: "url('/iuh1.png')" }}
     >
-      <div className="flex w-full max-w-4xl bg-white bg-opacity-60 rounded-lg shadow-lg">
+      <div className="flex w-full max-w-4xl bg-white rounded-lg shadow-lg bg-opacity-60">
         <div className="w-1/2 h-full p-10">
-          <h1 className="text-3xl font-bold text-center text-black">Trang Quản Lý Thiết Bị Cơ Sở Vật Chất</h1>
-          <div className="text-center my-9">
-            <p className="mb-8 text-base text-black">
-              Tài khoản chưa được kích hoạt? Vẫn có thể báo hỏng và góp ý ở đây.
-            </p>
-            <button
-              className="w-full p-3 text-white transition opacity-90 duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
-              onClick={() => navigate("/")}
-            >
-              Góp Ý - Báo Hỏng
-            </button>
-            <p className="mt-4 text-center text-gray-600">
-              <span className="text-blue-500 cursor-pointer">Quên Mật Khẩu ?</span>
+          <div className="flex flex-col space-y-2">
+          <div>
+              <h1 className="text-4xl font-extrabold text-center text-black">IUHelp</h1>
+              <h2 className="text-3xl font-extrabold text-center text-black">Facility Management</h2>
+            </div>
+            <div className="flex items-center justify-center">
+              <img
+                src="./img/logoiuh.png"
+                alt="Logo"
+                className="w-[256px] h-[128px] object-contain"
+              />
+            </div>
+            <p className="mb-8 text-lg text-center text-black">
+              Chưa có tài khoản? <span className="font-semibold text-blue-600 cursor-pointer hover:text-blue-900" onClick={() => navigate("/")}>Góp Ý - Báo Hỏng </span> ở đây.
             </p>
           </div>
         </div>
-        <div className="w-1/2 p-10 bg-opacity-60 rounded-lg shadow-md">
+        <div className="w-1/2 p-10 rounded-lg shadow-md bg-opacity-60">
           <h2 className="mb-6 text-3xl font-bold text-center text-black">Đăng Nhập</h2>
           {error && <p className="text-center text-red-500">{error}</p>}
-          <input type="text" placeholder="Tên đăng nhập" className="w-full p-3 mb-4 border  rounded-lg" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input type="text" placeholder="Tên đăng nhập" className="w-full p-3 mb-4 border rounded-lg" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input type="password" placeholder="Mật khẩu" className="w-full p-3 mb-4 border rounded-lg" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button className="w-full p-3 text-white bg-gray-800 opacity-90 rounded-lg hover:bg-black" onClick={handleLogin}>Đăng Nhập</button>
+          <button className="w-full p-3 text-white bg-gray-800 rounded-lg opacity-90 hover:bg-black" onClick={handleLogin}>Đăng Nhập</button>
           <p className="mt-4 text-center text-gray-600">
             Chưa có tài khoản? <span className="text-blue-500 cursor-pointer" onClick={() => setShowRegister(true)}>Đăng Ký Ngay.</span>
           </p>

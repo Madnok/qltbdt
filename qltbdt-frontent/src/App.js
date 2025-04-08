@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import NhapXuat from "./pages/NhapXuat";
 import DanhMuc from "./pages/DanhMuc";
@@ -9,7 +9,6 @@ import LichTruc from "./pages/LichTruc";
 import PrivateRoute from "./utils/PrivateRoutes";
 import BaoHongGoiY from "./pages/BaoHongGoiY";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "../src/context/AuthProvider";
 import AppLayout from "../src/components/layout/AppLayout";
 import ThongTinBaoHong from "../src/components/LichTruc/ThongTinBaoHong";
 
@@ -51,11 +50,7 @@ function Layout() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Layout />
-      </AuthProvider>
-    </Router>
+    <Layout />
   );
 }
 
