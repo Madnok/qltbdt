@@ -1,45 +1,35 @@
-import axios from "axios";
 import { paginateData } from "../../utils/helpers";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getTinhTrangLabel } from "../../utils/constants";
+import { useQuery } from '@tanstack/react-query';
+import { getAllPhieuNhapAPI } from '../../api';
+import Pagination from '../layout/Pagination';
 
-const BangNhap = ({ setSelectedRecord, refreshData }) => {
+const ITEMS_PER_PAGE_NHAP = 15;
+
+const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId, onAddPhieuNhap }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const [data, setData] = useState([]);
-    const [soLuongTB, setSoLuongTB] = useState({}); // Lưu số lượng thiết bị
 
-    const { currentItems, totalPages, indexOfFirstItem } = paginateData(data, currentPage);
+    const { data: allPhieuNhap = [], isLoading, error } = useQuery({
+        queryKey: ['phieuNhapList', refreshData],
+        queryFn: getAllPhieuNhapAPI,
+    });
 
+    const { currentItems, totalPages, indexOfFirstItem } = paginateData(
+        allPhieuNhap,
+        currentPage,
+        ITEMS_PER_PAGE_NHAP
+    );
     const selectRecord = (record) => {
-        setSelectedRecord(record);
+        setSelectedRecord(record); // Truyền cả record hoặc chỉ record.id tùy vào ChiTietNhap
     };
 
-    // Hàm lấy danh sách phiếu nhập
-    const fetchData = () => {
-        axios.get("http://localhost:5000/api/nhap/",{ withCredentials: true })
-            .then(response => {
-                setData(response.data);
-                response.data.forEach(record => fetchSoLuongThietBi(record.id));
-            })
-            .catch(error => console.error("Lỗi tải dữ liệu:", error));
+    // Hàm xử lý chuyển trang (truyền vào component Pagination)
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
-
-    // Hàm lấy số lượng thiết bị trong phiếu nhập
-    const fetchSoLuongThietBi = (phieuNhapId) => {
-        axios.get(`http://localhost:5000/api/nhap/${phieuNhapId}/thongtinthietbi`,{ withCredentials: true })
-            .then(response => {
-                setSoLuongTB(prevState => ({
-                    ...prevState,
-                    [phieuNhapId]: response.data.length // Đếm số lượng thiết bị
-                }));
-            })
-            .catch(error => console.error(`Lỗi tải thiết bị của PN ${phieuNhapId}:`, error));
-    };
-
-    useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line
-    }, [refreshData]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -51,64 +41,61 @@ const BangNhap = ({ setSelectedRecord, refreshData }) => {
         return `${day}-${month}-${year} ${hours}:${minutes}`;
     };
 
-    const goToPage = (pageNumber) => {
-        if (pageNumber >= 1 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-        }
-    };
+    if (isLoading) return <div className="flex items-center justify-center h-12">Đang Tải...</div>; // Hiển thị loading khi đang fetch
+    if (error) return <p className="text-red-500">Lỗi tải danh sách phiếu nhập: {error.message}</p>;
 
     return (
-        <div className="w-full overflow-auto">
-            <div className="max-h-full overflow-x-auto overflow-y-auto">
-                <table className="w-full border min-w-[600px]">
-                    <thead>
-                        <tr className="bg-gray-200">
-                            <th className="px-4 py-2 border-b">STT</th>
-                            <th className="px-4 py-2 border-b">IDPN</th>
-                            <th className="px-4 py-2 border-b">Ngày tạo</th>
-                            <th className="px-4 py-2 border-b">Người tạo</th>
-                            <th className="px-4 py-2 border-b">Trường hợp</th>
-                            <th className="px-4 py-2 text-sm border-b">Tổng Số Loại TB</th>
+        <div className="p-2 bg-white">
+            <div className="flex items-center justify-between mt-4 mb-2">
+                <h2 className="text-xl font-semibold">Danh sách Phiếu Nhập</h2>
+                <button
+                    onClick={onAddPhieuNhap}
+                    className="px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                    Tạo Phiếu Nhập
+                </button>
+            </div>
+            <div className="overflow-x-auto border border-gray-200 rounded-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">STT</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">IDPN</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Ngày tạo</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Người tạo</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Trường hợp</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {currentItems.map((record, index) => (
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {currentItems.map((record, index) =>
                             <tr
-                                key={record.id} className="text-center cursor-pointer hover:bg-gray-100"
+                                key={record.id}
+                                className={`text-sm hover:bg-gray-50 cursor-pointer ${selectedRowId === record.id ? 'bg-indigo-50' : ''}`}
                                 onClick={() => selectRecord(record)}
                             >
-                                <td className="p-2 border">{indexOfFirstItem + index + 1}</td>
-                                <td className="p-2 border">GN{record.id}</td>
-                                <td className="p-2 border">{formatDate(record.ngayTao)}</td>
-                                <td className="p-2 border">{record.nguoiTao}</td>
-                                <td className="p-2 border">{getTinhTrangLabel(record.truongHopNhap)}</td>
-                                <td className="p-2 border">
-                                    {soLuongTB[record.id] !== undefined ? soLuongTB[record.id] : "Đang tải..."}
-                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap">{indexOfFirstItem + index + 1}</td>
+                                <td className="px-4 py-2 font-medium text-green-600 whitespace-nowrap">PN{record.id}</td>
+                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{formatDate(record.ngayTao)}</td>
+                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{record.nguoiTao}</td>
+                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{getTinhTrangLabel(record.truongHopNhap)}</td>
                             </tr>
-                        ))}
+                        )}
+                        {allPhieuNhap.length === 0 && (
+                            <tr><td colSpan="5" className="py-4 text-sm text-center text-gray-500">Chưa có phiếu nhập nào.</td></tr>
+                        )}
                     </tbody>
                 </table>
-
-                {/* Phân trang */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center my-4 space-x-2">
-                        {currentPage > 1 && (
-                            <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-                                onClick={() => goToPage(currentPage - 1)}>← Trước</button>
-                        )}
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button key={i} className={`px-4 py-2 border rounded 
-                            ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                                onClick={() => goToPage(i + 1)}>{i + 1}</button>
-                        ))}
-                        {currentPage < totalPages && (
-                            <button className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-                                onClick={() => goToPage(currentPage + 1)}>Sau →</button>
-                        )}
-                    </div>
-                )}
             </div>
+            {/* Phân trang */}
+            {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
         </div>
     );
 };

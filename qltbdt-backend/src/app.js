@@ -14,7 +14,7 @@ const nhapRoutes = require("./routes/nhapRoutes");
 const baohongRoutes = require("./routes/baohongRoutes");
 const lichTrucRoutes = require("./routes/lichtrucRoutes");
 const baotriRoutes = require("./routes/baotriRoutes");
-
+const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
 
 const app = express();
 
@@ -38,6 +38,7 @@ app.use("/api/nhap", nhapRoutes);
 app.use("/api/baohong", baohongRoutes);
 app.use("/api/lichtruc", lichTrucRoutes);
 app.use("/api/baotri", baotriRoutes);
+app.use("/api/phieuxuat", phieuxuatRoutes);
 
 
 module.exports = app;

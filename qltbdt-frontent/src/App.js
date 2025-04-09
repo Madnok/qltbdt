@@ -11,6 +11,7 @@ import BaoHongGoiY from "./pages/BaoHongGoiY";
 import NotFound from "./pages/NotFound";
 import AppLayout from "../src/components/layout/AppLayout";
 import ThongTinBaoHong from "../src/components/LichTruc/ThongTinBaoHong";
+import QuanLyTaiSan from './pages/QuanLyTaiSan';
 
 function Layout() {
   return (
@@ -28,6 +29,7 @@ function Layout() {
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
           <Route path="/danhmuc" element={<DanhMuc />} />
           <Route path="/lichtruc" element={<LichTruc />} />
+          <Route path="/quanlytaisan" element={<QuanLyTaiSan />} />
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}>

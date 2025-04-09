@@ -104,10 +104,11 @@ exports.deletePhong = async (req, res) => {
 // Lấy danh sách phòng (Dropdown)
 exports.getListPhong = async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT id, toa, tang, soPhong FROM phong");
+        const [rows] = await pool.query("SELECT * FROM phong");
         const phongList = rows.map(p => ({
             id: p.id,
-            phong: `${p.toa}${p.tang}.${p.soPhong}`
+            phong: `${p.toa}${p.tang}.${p.soPhong}`,
+            chucNang: p.chucNang
         }));
         res.json(phongList);
     } catch (error) {

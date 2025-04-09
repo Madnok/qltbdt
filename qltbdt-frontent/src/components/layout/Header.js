@@ -99,7 +99,7 @@ function Header({ toggleSidebar, scrollToBaoHong, scrollToGopY, scrollToGioiThie
     <header className={`${headerBaseClasses} ${headerBgClass} ${headerPaddingClass}`}>
 
       {/* Phần Bên Trái: Chỉ còn nút Menu (nếu user tồn tại và có hàm toggle) */}
-      <div className="flex items-center justify-start md:w-48">
+      <div className="flex items-center justify-start md:w-60">
         {user && typeof toggleSidebar === 'function' && (
           <button
             onClick={toggleSidebar}
@@ -117,7 +117,8 @@ function Header({ toggleSidebar, scrollToBaoHong, scrollToGopY, scrollToGioiThie
       <div className="flex-grow text-center">
         {!isBaoHongGopYPage && (
           <h1
-            className={`text-xl font-bold tracking-wider cursor-pointer md:text-2xl transition-colors duration-300 hidden ${(isScrolled) ? 'text-white' : 'text-white'}`}
+            className={`text-xl font-bold tracking-wider cursor-pointer md:text-2xl transition-colors duration-300 ${!isBaoHongGopYPage ? (isScrolled ? 'text-white' : 'text-white') : 'hidden'
+              }`}
             onClick={handleTitleClick}
           >
             IUHelp Facility Management

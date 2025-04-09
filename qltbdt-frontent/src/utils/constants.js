@@ -52,6 +52,20 @@ export const getTinhTrangLabel = (tinhTrang) => {
             return "Mua Mới";
         case "taiTro":
             return "Tài Trợ";
+        case "cho_thanh_ly":
+            return "Chờ Thanh Lý";
+        case "da_thanh_ly":
+            return "Đã Thanh Lý";
+        case "dang_bao_hanh":
+            return "Đang Bảo Hành";
+        case "mat_mat":
+            return "Mất Mát";
+        case "xuat_tra":
+            return "Xuất Trả";
+        case "dieu_chuyen":
+            return "Điều Chuyển";
+        case "thanh_ly":
+            return "Thanh Lý";
         case "nguoidung":
             return "Người Dùng"
         case "nhanvien":
