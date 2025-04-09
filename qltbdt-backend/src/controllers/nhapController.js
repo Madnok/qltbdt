@@ -29,8 +29,8 @@ exports.getPhieuNhapById = async (req, res) => {
         const [thietBiRows] = await db.query("SELECT * FROM thongtinthietbi WHERE phieunhap_id = ?", [id]);
 
         try {
-             let parsedData = []; // Khởi tạo mảng rỗng
-             if (phieuNhap.danhSachChungTu) {
+            let parsedData = []; // Khởi tạo mảng rỗng
+            if (phieuNhap.danhSachChungTu) {
                 // Nếu kiểu đã là object/array (do driver tự parse từ kiểu JSON của DB), không cần parse nữa
                 if (typeof phieuNhap.danhSachChungTu === 'object') {
                     parsedData = phieuNhap.danhSachChungTu;
@@ -38,16 +38,16 @@ exports.getPhieuNhapById = async (req, res) => {
                     // Nếu là string, thì mới parse
                     parsedData = JSON.parse(phieuNhap.danhSachChungTu);
                 }
-             }
+            }
             // Đảm bảo kết quả cuối cùng là mảng
             if (!Array.isArray(parsedData)) {
-                 parsedData = [];
-             }
-             phieuNhap.danhSachChungTu = parsedData; // Gán kết quả cuối cùng
+                parsedData = [];
+            }
+            phieuNhap.danhSachChungTu = parsedData; // Gán kết quả cuối cùng
 
         } catch (e) {
-             console.error(`JSON Parse Error for ID ${id}:`, e); // Log lỗi nếu parse thất bại
-             phieuNhap.danhSachChungTu = []; // Gán mảng rỗng nếu lỗi
+            console.error(`JSON Parse Error for ID ${id}:`, e); // Log lỗi nếu parse thất bại
+            phieuNhap.danhSachChungTu = []; // Gán mảng rỗng nếu lỗi
         }
         res.json({
             phieuNhap: phieuNhap,
@@ -305,58 +305,42 @@ exports.uploadChungTuNhap = async (req, res) => {
     const { id } = req.params;
     const files = req.files;
 
-    console.log('Received files (using diskStorage):', files); // Log kiểm tra file.path
 
     if (!files || files.length === 0) {
         return res.status(400).json({ error: 'Không có file nào được chọn.' });
     }
 
+
     try {
-        const [phieuCheck] = await db.query("SELECT danhSachChungTu FROM phieunhap WHERE id = ?", [id]); // Sửa db thành db nếu đúng
+        const [phieuCheck] = await db.query("SELECT danhSachChungTu FROM phieunhap WHERE id = ?", [id]);
         if (phieuCheck.length === 0) {
             return res.status(404).json({ error: 'Phiếu nhập không tồn tại.' });
         }
 
-        const uploadPromises = files.map(file => {
-            console.log(`Processing file from path: ${file.path}, size: ${file.size}`);
-            return new Promise((resolve, reject) => {
-                // Upload từ đường dẫn file tạm
-                cloudinary.uploader.upload(file.path, { // <-- Dùng file.path
-                    resource_type: "auto",
-                    folder: "chungtu_nhap",
-                     // Dùng path.parse để lấy tên gốc không có extension
-                    public_id: `pn_${id}_${Date.now()}_${path.parse(file.originalname).name}`
-                }, (error, result) => {
-                    // Luôn xóa file tạm sau khi xử lý xong
-                    fs.unlink(file.path, (unlinkErr) => {
-                        if (unlinkErr) console.error("Error deleting temp file:", file.path, unlinkErr);
-                    });
 
-                    if (error) {
-                        console.error('Cloudinary Upload Error:', error);
-                        return reject(new Error(`Lỗi upload ${file.originalname} lên Cloudinary.`));
-                    }
-                    resolve(result.secure_url);
-                });
-            });
-        });
+        const uploadedUrls = files.map(file => file.path);
 
-        const uploadedUrls = await Promise.all(uploadPromises);
 
-        //  Phần lấy existingUrls và cập nhật CSDL...
-         let existingUrls = [];
-         try {
-             existingUrls = phieuCheck[0].danhSachChungTu ? JSON.parse(phieuCheck[0].danhSachChungTu) : [];
-             if (!Array.isArray(existingUrls)) existingUrls = [];
-         } catch (parseError) {
-             console.error("Lỗi parse JSON danhSachChungTu cũ:", parseError);
-             existingUrls = [];
-         }
-         const newUrlList = [...existingUrls, ...uploadedUrls];
-         await db.query( 
-             "UPDATE phieunhap SET danhSachChungTu = ? WHERE id = ?",
-             [JSON.stringify(newUrlList), id]
-         );
+        let existingUrls = [];
+        if (phieuCheck[0].danhSachChungTu) {
+            try {
+                if (typeof phieuCheck[0].danhSachChungTu === 'string') {
+                    existingUrls = JSON.parse(phieuCheck[0].danhSachChungTu);
+                } else if (Array.isArray(phieuCheck[0].danhSachChungTu)) {
+                    existingUrls = phieuCheck[0].danhSachChungTu;
+                } else {
+                    existingUrls = [];
+                }
+            } catch (parseError) {
+                console.error("Lỗi parse JSON danhSachChungTu cũ:", parseError);
+                existingUrls = [];
+            }
+        }
+        const newUrlList = [...existingUrls, ...uploadedUrls];
+        await db.query(
+            "UPDATE phieunhap SET danhSachChungTu = ? WHERE id = ?",
+            [JSON.stringify(newUrlList), id]
+        );
 
 
         res.status(200).json({
@@ -364,18 +348,9 @@ exports.uploadChungTuNhap = async (req, res) => {
             danhSachChungTu: newUrlList
         });
 
+
     } catch (error) {
         console.error("Lỗi upload chứng từ phiếu nhập:", error);
-         // Xóa file tạm nếu có lỗi xảy ra trước khi kịp xóa trong callback cloudinary
-         if (files && files.length > 0) {
-             files.forEach(file => {
-                 if (file.path && fs.existsSync(file.path)) {
-                     fs.unlink(file.path, (unlinkErr) => {
-                        if (unlinkErr) console.error("Error deleting temp file after error:", file.path, unlinkErr);
-                     });
-                 }
-             });
-         }
         res.status(500).json({ error: error.message || 'Lỗi máy chủ khi upload chứng từ.' });
     }
 };

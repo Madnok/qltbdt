@@ -158,85 +158,61 @@ exports.createPhieuXuat = async (req, res) => {
     }
 };
 
-// Hàm upload chứng từ cho Phiếu Xuất (Dùng diskStorage)
+// Hàm upload chứng từ cho Phiếu Xuất 
 exports.uploadChungTuXuat = async (req, res) => {
-    const { id } = req.params; // ID Phiếu xuất
-    const files = req.files; // Lấy file từ middleware multer
+    const { id } = req.params; 
+    const files = req.files; 
 
-    console.log('Received files for Export Slip (diskStorage):', files); // Log kiểm tra
 
     if (!files || files.length === 0) {
         return res.status(400).json({ error: 'Không có file nào được chọn.' });
     }
 
+
     try {
         // Kiểm tra xem phiếu xuất có tồn tại không
         const [phieuCheck] = await pool.query("SELECT danhSachChungTu FROM phieuxuat WHERE id = ?", [id]);
         if (phieuCheck.length === 0) {
-             // Xóa file tạm nếu phiếu không tồn tại
-             files.forEach(file => {
-                if (file.path && fs.existsSync(file.path)) {
-                    fs.unlink(file.path, (err) => { if (err) console.error("Lỗi xóa file tạm:", err);});
-                }
-             });
             return res.status(404).json({ error: 'Phiếu xuất không tồn tại.' });
         }
 
-        const uploadPromises = files.map(file => {
-            console.log(`Processing file for Export Slip from path: ${file.path}, size: ${file.size}`);
-            return new Promise((resolve, reject) => {
-                // Upload từ đường dẫn file tạm
-                cloudinary.uploader.upload(file.path, { // <-- Dùng file.path
-                    resource_type: "auto",
-                    folder: "chungtu_xuat", // Thư mục riêng cho phiếu xuất
-                    public_id: `px_${id}_${Date.now()}_${path.parse(file.originalname).name}` // Prefix px_
-                }, (error, result) => {
-                    // Luôn xóa file tạm
-                    fs.unlink(file.path, (unlinkErr) => {
-                        if (unlinkErr) console.error("Lỗi xóa file tạm:", file.path, unlinkErr);
-                    });
 
-                    if (error) {
-                        console.error('Cloudinary Upload Error:', error);
-                        return reject(new Error(`Lỗi upload ${file.originalname} lên Cloudinary.`));
-                    }
-                    resolve(result.secure_url);
-                });
-            });
-        });
+        const uploadedUrls = files.map(file => file.path); 
 
-        const uploadedUrls = await Promise.all(uploadPromises);
 
-        // Lấy danh sách URL cũ và cập nhật CSDL cho bảng phieuxuat
-        let existingUrls = [];
-        try {
-            existingUrls = phieuCheck[0].danhSachChungTu ? JSON.parse(phieuCheck[0].danhSachChungTu) : [];
-            if (!Array.isArray(existingUrls)) existingUrls = [];
-        } catch (parseError) {
-            console.error("Lỗi parse JSON danhSachChungTu cũ (phiếu xuất):", parseError);
-            existingUrls = [];
-        }
-        const newUrlList = [...existingUrls, ...uploadedUrls];
-        await pool.query(
-            "UPDATE phieuxuat SET danhSachChungTu = ? WHERE id = ?", // <-- Cập nhật bảng phieuxuat
-            [JSON.stringify(newUrlList), id]
-        );
+         // Lấy danh sách URL cũ và cập nhật CSDL cho bảng phieuxuat
+         let existingUrls = [];
+         if (phieuCheck[0].danhSachChungTu) {
+             try {
+                 // Thử parse nếu là chuỗi
+                 if (typeof phieuCheck[0].danhSachChungTu === 'string') {
+                     existingUrls = JSON.parse(phieuCheck[0].danhSachChungTu);
+                 } else if (Array.isArray(phieuCheck[0].danhSachChungTu)) {
+                     // Nếu đã là mảng, gán trực tiếp
+                     existingUrls = phieuCheck[0].danhSachChungTu;
+                 } else {
+                     existingUrls = [];
+                 }
+             } catch (parseError) {
+                 console.error("Lỗi parse JSON danhSachChungTu cũ (phiếu xuất):", parseError);
+                 existingUrls = [];
+             }
+         }
+         const newUrlList = [...existingUrls, ...uploadedUrls];
+         await pool.query(
+             "UPDATE phieuxuat SET danhSachChungTu = ? WHERE id = ?",
+             [JSON.stringify(newUrlList), id]
+         );
+ 
 
-        res.status(200).json({
-            message: `Đã upload thành công ${uploadedUrls.length} chứng từ.`,
-            danhSachChungTu: newUrlList
-        });
+         res.status(200).json({
+             message: `Đã upload thành công ${uploadedUrls.length} chứng từ.`,
+             danhSachChungTu: newUrlList
+         });
+
 
     } catch (error) {
         console.error("Lỗi upload chứng từ phiếu xuất:", error);
-         // Xóa file tạm nếu có lỗi xảy ra
-         if (files && files.length > 0) {
-             files.forEach(file => {
-                 if (file.path && fs.existsSync(file.path)) {
-                     fs.unlink(file.path, (unlinkErr) => { if (unlinkErr) console.error("Lỗi xóa file tạm sau lỗi:", file.path, unlinkErr); });
-                 }
-             });
-         }
         res.status(500).json({ error: error.message || 'Lỗi máy chủ khi upload chứng từ.' });
     }
 };
