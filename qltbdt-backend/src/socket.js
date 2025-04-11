@@ -1,47 +1,87 @@
 const userSockets = new Map(); // Lưu trữ socket của người dùng: Map<userId, socketId>
+const { verify } = require('jsonwebtoken');
+const { Server } = require("socket.io");
 
-function initializeSocket(io) {
-    io.on('connection', (socket) => {
-        console.log('Người dùng đã kết nối:', socket.id);
+let ioInstance = null;
 
-        // Lắng nghe sự kiện khi user đăng ký ID của họ
-        socket.on('register_user', (userId) => {
-            if (userId) {
-                console.log(`User ${userId} đăng ký với socket ${socket.id}`);
-                userSockets.set(userId.toString(), socket.id);
-                 socket.emit('user_registered', { userId, socketId: socket.id });
-            }
-        });
-
-        socket.on('disconnect', () => {
-            console.log('User ngắt kết nối:', socket.id);
-            // Xóa user khỏi Map khi họ disconnect
-            for (let [userId, socketId] of userSockets.entries()) {
-                if (socketId === socket.id) {
-                    userSockets.delete(userId);
-                    console.log(`User ${userId} chưa đăng ký socket.`);
-                    break;
-                }
-            }
-        });
-    });
-}
-
-// Hàm để gửi sự kiện tới một user cụ thể
-function emitToUser(io, userId, eventName, data) {
-     const targetUserId = userId?.toString(); // Đảm bảo là string
-     if (!targetUserId) {
-         console.warn("Đã cố gắng phát ra tín hiệu tới userId nhưng giá trị là null hoặc undefined.");
-         return;
-     }
-    const socketId = userSockets.get(targetUserId);
-    if (socketId) {
-        console.log(`Phát tín hiệu ${eventName} đến người dùng ${userId} (socket ${socketId})`);
-        io.to(socketId).emit(eventName, data);
-    } else {
-        console.log(`User ${userId} không tìm thấy hoặc không kết nối.`);
+// Middleware xác thực Socket.IO
+const authenticateSocket = (socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.headers?.cookie?.split('token=')[1]?.split(';')[0];
+    if (!token) {
+        console.error('Lỗi xác thực: No token');
+        return next(new Error('Lỗi xác thực: No token'));
     }
+    try {
+        const decoded = verify(token, process.env.JWT_SECRET);
+        socket.user = decoded; // Gắn { id, role } vào socket
+        next();
+    } catch (err) {
+        console.error('Socket lỗi xác thực: Invalid token.', err.message);
+        next(new Error('Lỗi xác thực: Invalid token'));
+    }
+};
+
+// Hàm khởi tạo và cấu hình Socket.IO
+function initializeSocket(server) { // Nhận httpServer
+    if (ioInstance) {
+        console.warn("Socket.IO already initialized.");
+        return ioInstance;
+    }
+
+    ioInstance = new Server(server, {
+        cors: {
+            origin: process.env.FRONTEND_URL || "http://localhost:3000", // Lấy từ env hoặc mặc định
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+
+    // Áp dụng middleware xác thực
+    ioInstance.use(authenticateSocket);
+
+    // Xử lý kết nối - chỉ cần một io.on('connection')
+    ioInstance.on('connection', (socket) => {
+        const userId = socket.user?.id;
+        if (!userId) {
+            console.error('Từ chối kết nối socket: No user ID found after auth.', socket.id);
+            socket.disconnect(true);
+            return;
+        }
+
+        // Tự động cho user tham gia room riêng của họ
+        const userRoom = String(userId);
+        socket.join(userRoom);
+
+        // Xử lý khi ngắt kết nối
+        socket.on('disconnect', (reason) => {
+            console.log(`User ${userId} ngắt kết nối khỏi ${userRoom}. Socket: ${socket.id}. Lý do: ${reason}`);
+        });
+
+    });
+
+    console.log("Socket.IO đã được khởi tạo.");
+    return ioInstance;
 }
 
+// Hàm gửi sự kiện tới room của user cụ thể
+function emitToUser(userId, eventName, data) {
+    if (!ioInstance) {
+        console.error("không thể phát: Socket.IO instance not initialized.");
+        return;
+    }
+    const targetUserId = userId?.toString();
+    if (!targetUserId) {
+        console.warn("Đã cố gắng gửi tới người dùng nhưng userId không hợp lệ.");
+        return;
+    }
+    console.log(`Emit event [${eventName}] đến room: ${targetUserId}`);
+    // Gửi tới room có tên là userId
+    ioInstance.to(targetUserId).emit(eventName, data);
+}
 
-module.exports = { initializeSocket, emitToUser };
+// Export hàm khởi tạo và hàm emit
+module.exports = {
+    initializeSocket,
+    emitToUser,
+    getIoInstance: () => ioInstance // Cách an toàn để lấy io instance từ module khác
+};

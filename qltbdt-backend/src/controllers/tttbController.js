@@ -335,6 +335,142 @@ exports.createThemThietBiVaoPhong = async (req, res) => {
 };
 // ===============================================================================================================//
 // Lấy danh sách TẤT CẢ tài sản chi tiết (cho trang Quản lý Tài sản)
+// exports.getAllTaiSanChiTiet = async (req, res) => {
+//     try {
+//         // Lấy tham số filter và pagination từ query string
+//         const { trangThai, phongId, theLoaiId, thietBiId /*, sortBy, order */ } = req.query;
+//         const page = parseInt(req.query.page) || 1; // Trang hiện tại, mặc định là 1
+//         const limit = parseInt(req.query.limit) || 14; // Số dòng/trang, mặc định là 14
+//         const offset = (page - 1) * limit; // Tính offset cho SQL
+
+//         // --- Xây dựng phần WHERE cho cả query chính và query count ---
+//         let whereClauses = [];
+//         const params = [];
+
+//         if (trangThai) {
+//             whereClauses += " AND ttb.tinhTrang = ?";
+//             params.push(trangThai);
+//         }
+//         if (phongId === 'kho') {
+//             whereClauses += " AND ttb.phong_id IS NULL";
+//         } else if (phongId) {
+//             whereClauses += " AND ttb.phong_id = ?";
+//             params.push(parseInt(phongId));
+//         }
+//         if (theLoaiId) {
+//             // Cần JOIN với thietbi (tb) để lọc theo theLoaiId
+//             whereClauses += " AND tb.theloai_id = ?";
+//             params.push(parseInt(theLoaiId));
+//         }
+//         if (thietBiId) {
+//             whereClauses += " AND ttb.thietbi_id = ?";
+//             params.push(parseInt(thietBiId));
+//         }
+
+//         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+        
+//         // --- Kết thúc xây dựng WHERE ---
+
+
+//         // --- Query để đếm tổng số dòng ---
+//         const countQuery = `
+//             SELECT COUNT(ttb.id) AS total
+//             FROM thongtinthietbi ttb
+//             LEFT JOIN thietbi tb ON ttb.thietbi_id = tb.id ${whereString}
+//         `;
+
+//         const [countResult] = await pool.query(countQuery, params);
+//         const totalItems = countResult[0].total;
+//         const totalPages = Math.ceil(totalItems / limit);
+//         // --- Kết thúc query count ---
+
+//         // --- Query chính để lấy dữ liệu trang hiện tại ---
+//         const dataQuery = `
+//             SELECT
+//                 ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.nguoiDuocCap, ttb.ngayBaoHanhKetThuc,
+//                 ttb.thietbi_id, ttb.phieunhap_id, ttb.ngayMua, ttb.giaTriBanDau,
+//                 tb.tenThietBi AS tenLoaiThietBi, tb.theloai_id, tb.tonKho,
+//                 tl.theLoai AS tenTheLoai,
+//                 p.toa, p.tang, p.soPhong,
+//                 pn.ngayTao AS ngayNhapKho, pn.truongHopNhap,
+//                 u.hoTen AS tenNguoiCap,
+//                 TIMESTAMPDIFF(DAY, CURDATE(), ttb.ngayBaoHanhKetThuc) AS ngayBaoHanhConLaiRaw,
+//                 TIMESTAMPDIFF(MONTH, COALESCE(ttb.ngayMua, pn.ngayTao), CURDATE()) AS tuoiThoThang
+//             FROM thongtinthietbi ttb
+//             LEFT JOIN thietbi tb ON ttb.thietbi_id = tb.id
+//             LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+//             LEFT JOIN phong p ON ttb.phong_id = p.id
+//             LEFT JOIN phieunhap pn ON ttb.phieunhap_id = pn.id
+//             LEFT JOIN users u ON ttb.nguoiDuocCap = u.id
+//             ${whereString}
+//             ORDER BY ttb.id DESC
+//             LIMIT ? OFFSET ?
+//         `;
+
+//         const paramsWithPagination = [...params, limit, offset];
+//         const [rows] = await pool.query(dataQuery, paramsWithPagination);
+
+//         // --- Kết thúc query chính ---
+
+//         // -- Thêm điều kiện lọc
+//         if (trangThai) {
+//             query += " AND ttb.tinhTrang = ?";
+//             params.push(trangThai);
+//         }
+//         if (phongId === 'kho') { // Lọc thiết bị "trong kho" (chưa phân bổ)
+//             query += " AND ttb.phong_id IS NULL";
+//         } else if (phongId) {
+//             query += " AND ttb.phong_id = ?";
+//             params.push(parseInt(phongId));
+//         }
+//         if (theLoaiId) {
+//             query += " AND tb.theloai_id = ?";
+//             params.push(parseInt(theLoaiId));
+//         }
+//         if (thietBiId) {
+//             query += " AND ttb.thietbi_id = ?";
+//             params.push(parseInt(thietBiId));
+//         }
+
+//         // Thêm sắp xếp (Ví dụ: Mặc định theo ID giảm dần)
+//         query += " ORDER BY ttb.id DESC";
+//         // if (sortBy) {
+//         //    const orderDirection = order === 'asc' ? 'ASC' : 'DESC';
+//         //    // Cần kiểm tra sortBy có phải là cột hợp lệ không để tránh SQL Injection
+//         //    const validSortColumns = ['id', 'ngayNhapKho', 'ngayBaoHanhKetThuc', 'tenLoaiThietBi'];
+//         //    if (validSortColumns.includes(sortBy)) {
+//         //        query += ` ORDER BY ${sortBy} ${orderDirection}`;
+//         //    } else {
+//         //        query += " ORDER BY ttb.id DESC"; // Mặc định
+//         //    }
+//         // } else {
+//         //    query += " ORDER BY ttb.id DESC"; // Mặc định
+//         // }
+
+//         // Xử lý thêm tên phòng đầy đủ
+//         const finalData = rows.map(item => ({
+//             ...item,
+//             phong_name: item.toa ? `${item.toa}${item.tang}.${item.soPhong}` : 'Trong Kho'
+//         }));
+
+//         // --- Trả về response với dữ liệu và thông tin phân trang ---
+//         res.json({
+//             data: finalData, // Dữ liệu của trang hiện tại
+//             pagination: {
+//                 currentPage: page,
+//                 limit: limit,
+//                 totalItems: totalItems,
+//                 totalPages: totalPages
+//             }
+//         });
+//         // --- Kết thúc trả về response ---
+
+//     } catch (error) {
+//         console.error("Lỗi khi lấy danh sách tài sản chi tiết:", error);
+//         res.status(500).json({ error: "Lỗi máy chủ khi lấy danh sách tài sản." });
+//     }
+// };
+// Lấy danh sách TẤT CẢ tài sản chi tiết (cho trang Quản lý Tài sản)
 exports.getAllTaiSanChiTiet = async (req, res) => {
     try {
         // Lấy tham số filter và pagination từ query string

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaTimesCircle, FaPaperclip } from 'react-icons/fa';
 import { createLogBaoTriAPI, uploadInvoiceImagesAPI as uploadImagesAPI } from '../../api';
+import { toast } from 'react-toastify';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
     const [hoatdong, setHoatdong] = useState('');
@@ -23,45 +25,58 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
     const createLogMutation = useMutation({
         mutationFn: createLogBaoTriAPI,
         onSuccess: () => {
-            alert('Ghi nhận hoạt động thành công!');
+            toast.success('Ghi nhận hoạt động thành công!');
             queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] }); // Làm mới danh sách task
             queryClient.invalidateQueries({ queryKey: ['baohongLog', baoHongInfo.id] }); // Làm mới log của báo hỏng này
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] }); // Làm mới danh sách báo hỏng chung
             // Có thể cần invalidate chi tiết thiết bị nếu trạng thái thay đổi
             if (baoHongInfo.thongtinthietbi_id) {
                 queryClient.invalidateQueries({ queryKey: ['thongTinThietBi', baoHongInfo.thongtinthietbi_id] });
+                queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
             }
             onClose(); // Đóng form
         },
         onError: (err) => {
             setError(`Lỗi: ${err.response?.data?.error || err.message}`);
+            setUploading(false);
+        },
+        onSettled: () => {
         }
     });
 
     // --- Hàm xử lý upload file  dùng chung ---
     const handleFileChange = (e, setFilesFunc, setPreviewsFunc, maxFiles = 5) => {
         const files = Array.from(e.target.files);
-        if (files.length > maxFiles) {
-            alert(`Chỉ được tải lên tối đa ${maxFiles} ảnh.`);
-            e.target.value = null; // Reset input
+        if ((files.length + setFilesFunc(prev => prev.length)) > maxFiles) {
+            toast.error(`Chỉ được tải lên tối đa ${maxFiles} ảnh.`);
+            e.target.value = null;
             return;
         }
         const newFiles = [];
+        const newPreviews = [];
         files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert(`File "${file.name}" quá lớn (tối đa 10MB).`);
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error(`File "${file.name}" quá lớn (tối đa 10MB).`);
                 return;
             }
             newFiles.push(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                // Cập nhật preview một cách an toàn
-                setPreviewsFunc(prev => [...prev, { name: file.name, url: reader.result }]);
+                // Thêm vào mảng preview mới
+                newPreviews.push({ name: file.name, url: reader.result });
+                // Cập nhật state preview một lần sau khi đọc xong tất cả file mới
+                if (newPreviews.length === files.length - (files.length - newFiles.length)) { // Đảm bảo tất cả file hợp lệ đã đọc xong
+                    setPreviewsFunc(prev => [...prev, ...newPreviews]);
+                }
+            };
+            reader.onerror = () => {
+                toast.error(`Lỗi đọc file ${file.name}`);
             };
             reader.readAsDataURL(file);
         });
         setFilesFunc(prev => [...prev, ...newFiles]);
         setError('');
+        e.target.value = null;
     };
 
     const removePreview = (fileName, setFilesFunc, setPreviewsFunc) => {
@@ -86,6 +101,10 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
             setError('Khi sử dụng vật tư, vui lòng nhập chi tiết và tải lên ảnh hóa đơn.');
             return;
         }
+        if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã sửa chữa xong') {
+            setError('Vui lòng chọn "Đã gửi bảo hành".');
+            return;
+        }
 
         setUploading(true); // Bắt đầu trạng thái upload/lưu
         let uploadedInvoiceUrls = [];
@@ -104,15 +123,15 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
             // Gọi mutation để lưu log
             createLogMutation.mutate({
                 baohong_id: baoHongInfo.id,
-                thongtinthietbi_id: baoHongInfo.thongtinthietbi_id,
+                thongtinthietbi_id: baoHongInfo.thongtinthietbi_id || null,
                 phong_id: baoHongInfo.phong_id,
                 hoatdong,
                 ketQuaXuLy,
                 phuongAnXuLy: phuongAnXuLy,
-                phuongAnKhacChiTiet: phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet : null,
+                phuongAnKhacChiTiet: phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet.trim() : null,
                 suDungVatTu,
-                ghiChuVatTu: suDungVatTu ? ghiChuVatTu : null,
-                chiPhi: chiPhi ? parseInt(chiPhi) : null,
+                ghiChuVatTu: suDungVatTu ? ghiChuVatTu.trim() : null,
+                chiPhi: suDungVatTu && chiPhi ? parseInt(chiPhi) : null,
                 hinhAnhHoaDonUrls: uploadedInvoiceUrls,
                 hinhAnhHongHocUrls: uploadedDamageUrls,
             });
@@ -120,22 +139,39 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
         } catch (uploadErr) {
             console.error("Lỗi upload ảnh:", uploadErr);
             setError(`Lỗi upload ảnh: ${uploadErr.response?.data?.error || uploadErr.message}`);
-        } finally {
-            // Chỉ setUploading(false) nếu không có lỗi từ mutation hoặc sau khi xử lý lỗi mutation
-            if (!createLogMutation.isPending && !createLogMutation.isError) {
-                setUploading(false);
-            } else if (createLogMutation.isError) {
-                setUploading(false);
-            }
         }
     };
 
-    // Lấy trạng thái thiết bị để quyết định option nào được hiển thị
-    // const isDeviceFaulty = baoHongInfo.thongtinthietbi_id != null; // Ví dụ, logic có thể phức tạp hơn
-    // // const isDeviceUnderWarranty = isDeviceFaulty && baoHongInfo.thoiGianBaoHanh !== null && baoHongInfo.thoiGianBaoHanh <= new Date(); // Cần logic kiểm tra ngày bảo hành thực tế
+    // --- Lọc options cho Kết quả xử lý ---
+    const availableKetQuaOptions = useMemo(() => {
+        const options = [
+            { value: "Đã sửa chữa xong", label: "Đã sửa chữa xong" },
+            { value: "Đã gửi bảo hành", label: "Đã gửi bảo hành" },
+            { value: "Đề xuất thanh lý", label: "Đề xuất thanh lý" },
+            { value: "Không tìm thấy lỗi / Không cần xử lý", label: "Không tìm thấy lỗi / Không cần xử lý" },
+            { value: "Chuyển cho bộ phận khác", label: "Chuyển cho bộ phận khác" }
+        ];
+
+        if (phuongAnXuLy === 'Bảo hành') {
+            // Nếu là Bảo hành, chỉ cho chọn "Đã gửi bảo hành" hoặc "Không tìm thấy lỗi"
+            return options.filter(opt => opt.value === 'Đã gửi bảo hành' || opt.value === 'Không tìm thấy lỗi / Không cần xử lý');
+        } else if (phuongAnXuLy === 'Tự Sửa Chữa') {
+             // Nếu Tự sửa, ẩn "Đã gửi bảo hành" và "Chuyển bộ phận khác"
+             return options.filter(opt => opt.value !== 'Đã gửi bảo hành' && opt.value !== 'Chuyển cho bộ phận khác');
+        } else if (phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') {
+            // Nếu Bàn giao, chỉ cho chọn "Chuyển cho bộ phận khác" hoặc "Không tìm thấy lỗi"
+            return options.filter(opt => opt.value === 'Chuyển cho bộ phận khác'/* || opt.value === 'Không tìm thấy lỗi / Không cần xử lý' */);
+        } else if (phuongAnXuLy === 'Khác') {
+            // Nếu Khác, có thể cho chọn nhiều loại kết quả hơn?
+            return options.filter(opt => opt.value !== 'Đã gửi bảo hành' && opt.value !== 'Chuyển cho bộ phận khác');
+        }
+
+        // Mặc định trả về gần như đủ (trừ gửi BH và chuyển BP nếu chưa chọn phương án)
+        return options.filter(opt => opt.value !== 'Đã gửi bảo hành' && opt.value !== 'Chuyển cho bộ phận khác');
+    }, [phuongAnXuLy]); // Tính toán lại khi phương án thay đổi
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-50">
             <div className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between pb-3 mb-4 border-b">
                     <h2 className="text-xl font-semibold">Ghi nhận Hoạt động Bảo trì</h2>
@@ -183,17 +219,11 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
 
                     {/* Phương án xử lý */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Phương án xử lý <span className="text-red-500">*</span></label> {/* Thêm * nếu bắt buộc */}
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Phương án xử lý <span className="text-red-500">*</span></label>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                             {['Bảo hành', 'Tự Sửa Chữa', 'Bàn Giao Cho Bộ Phận Khác', 'Khác'].map(option => (
                                 <label key={option} className="flex items-center text-sm">
-                                    <input
-                                        type="radio" name="phuongAnXuLy" value={option}
-                                        checked={phuongAnXuLy === option}
-                                        onChange={(e) => setPhuongAnXuLy(e.target.value)}
-                                        className="mr-1.5"
-                                        required
-                                    /> {option}
+                                    <input type="radio" name="phuongAnXuLy" value={option} checked={phuongAnXuLy === option} onChange={(e) => { setPhuongAnXuLy(e.target.value); setKetQuaXuLy(''); /* Reset kết quả khi đổi PA */ }} className="mr-1.5" required /> {option}
                                 </label>
                             ))}
                         </div>
@@ -201,11 +231,7 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
                         {phuongAnXuLy === 'Khác' && (
                             <div className='mt-2'>
                                 <label htmlFor="phuongAnKhacChiTiet" className="block mb-1 text-xs font-medium text-gray-600">Chi tiết phương án khác: <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text" id="phuongAnKhacChiTiet" value={phuongAnKhacChiTiet}
-                                    onChange={(e) => setPhuongAnKhacChiTiet(e.target.value)}
-                                    className="w-full p-2 text-sm border rounded-md" required
-                                />
+                                <input type="text" id="phuongAnKhacChiTiet" value={phuongAnKhacChiTiet} onChange={(e) => setPhuongAnKhacChiTiet(e.target.value)} className="w-full p-2 text-sm border rounded-md" required />
                             </div>
                         )}
                     </div>
@@ -213,15 +239,11 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
                     {/* Kết quả xử lý */}
                     <div>
                         <label className="block mb-1 text-sm font-medium text-gray-700">Kết quả xử lý <span className="text-red-500">*</span></label>
-                        <select value={ketQuaXuLy} onChange={(e) => setKetQuaXuLy(e.target.value)} className="w-full p-2 border rounded-md" required>
+                        <select value={ketQuaXuLy} onChange={(e) => setKetQuaXuLy(e.target.value)} className="w-full p-2 bg-white border rounded-md" required disabled={!phuongAnXuLy} /* Disable nếu chưa chọn phương án */ >
                             <option value="">-- Chọn kết quả --</option>
-                            <option value="Đã sửa chữa xong">Đã sửa chữa xong</option>
-                            {/* Điều kiện hiển thị option Bảo hành / Thanh lý dựa vào phuongAnXuLy */}
-                            {phuongAnXuLy === 'Bảo hành' && <option value="Đã gửi bảo hành">Đã gửi bảo hành</option>}
-                            {/* Chỉ hiện khi có thiết bị và hết BH (hoặc logic khác) */}
-                            {/* Có thể thêm option "Đề xuất thanh lý" nếu phuongAnXuLy là 'Tự Sửa Chữa' nhưng không được */}
-                            <option value="Không tìm thấy lỗi / Không cần xử lý">Không tìm thấy lỗi / Không cần xử lý</option>
-                            {phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác' && <option value="Chuyển cho bộ phận khác">Chuyển cho bộ phận khác</option>}
+                            {availableKetQuaOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -251,7 +273,7 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
                             </div>
                             <div>
                                 <label htmlFor="chiPhi" className="block mb-1 text-sm font-medium text-gray-700">Chi phí (Nếu có)</label>
-                                <input type="number" id="chiPhi" value={chiPhi} onChange={(e) => setChiPhi(e.target.value)} className="w-full p-2 border rounded-md" min="0" step="1000" />
+                                <input type="number" id="chiPhi" value={chiPhi} onChange={(e) => setChiPhi(e.target.value)} className="w-full p-2 border rounded-md" min="0" step="5000" />
                             </div>
 
                             {/* Upload Hóa đơn */}
@@ -265,18 +287,12 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
                                 />
                                 {/* Xem trước ảnh */}
                                 <div className="flex flex-wrap gap-2 mt-2">
-                                    {invoicePreviews.map((preview, index) => (
-                                        <div key={index} className="relative">
-                                            {preview.url.startsWith('data:image') ? (
-                                                <img src={preview.url} alt={`Preview ${preview.name}`} className="object-cover w-20 h-20 border rounded" />
-                                            ) : (
-                                                <div className="flex items-center justify-center w-20 h-20 text-xs text-center text-gray-500 border rounded bg-gray-50">
-                                                    <FaPaperclip className="mb-1 mr-1" /> {preview.name}
-                                                </div>
-                                            )}
-                                            <button type="button" onClick={() => removePreview(preview.name)} className="absolute top-0 right-0 p-0.5 text-white bg-red-500 rounded-full text-xs">X</button>
-                                        </div>
-                                    ))}
+                                {invoicePreviews.map((preview, index) => (
+                                         <div key={index} className="relative">
+                                             {preview.url.startsWith('data:image') ? ( <img src={preview.url} alt={preview.name} className="object-cover w-20 h-20 border rounded" /> ) : ( <div className="flex items-center justify-center w-20 h-20 text-xs text-center text-gray-500 border rounded bg-gray-50"><FaPaperclip className="mb-1 mr-1" /> {preview.name}</div> )}
+                                             <button type="button" onClick={() => removePreview(preview.name, setInvoiceFiles, setInvoicePreviews)} className="absolute top-0 right-0 p-0.5 text-white bg-red-500 rounded-full text-xs leading-none">X</button>
+                                         </div>
+                                     ))}
                                 </div>
                             </div>
                         </>
@@ -286,7 +302,8 @@ const FormLogBaoTri = ({ baoHongInfo, onClose }) => {
                     <div className="flex justify-end gap-3 pt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
                         <button type="submit" disabled={uploading || createLogMutation.isPending} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50">
-                            {uploading ? 'Đang xử lý...' : (createLogMutation.isPending ? 'Đang lưu...' : 'Lưu hoạt động')}
+                        {(uploading || createLogMutation.isPending) && <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />}
+                        {uploading ? 'Đang xử lý...' : (createLogMutation.isPending ? 'Đang lưu...' : 'Lưu hoạt động')}
                         </button>
                     </div>
                 </form>

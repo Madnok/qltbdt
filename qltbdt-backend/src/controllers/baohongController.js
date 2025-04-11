@@ -1,7 +1,6 @@
 
 const pool = require("../config/db");
 const { emitToUser } = require('../socket');
-const io = require('socket.io')(); // Tạo instance giả để lấy io từ app context sau này
 const moment = require("moment");
 
 const validateForeignKeys = async (thietbi_id, thongtinthietbi_id, phong_id) => {
@@ -39,60 +38,75 @@ exports.postGuiBaoHong = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const insertPromises = [];
+        const insertResults = [];
 
         if (devices.length === 0) {
-            // Báo hỏng chung cho phòng (không liên quan thiết bị cụ thể)
-            // Kiểm tra trùng lặp cho phòng và loại/mô tả tương tự? (Phức tạp hơn, tạm bỏ qua)
-            insertPromises.push(connection.query(`
-                INSERT INTO baohong
-                (phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
+            // Báo hỏng chung cho phòng
+            const [result] = await connection.query(`
+                INSERT INTO baohong (phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
                 VALUES (?, ?, ?, ?, ?, ?, NOW())
-            `, [phong_id, user_id || null, thiethai, moTa, hinhAnh || null, loaithiethai]));
+            `, [phong_id, user_id || null, thiethai, moTa, hinhAnh || null, loaithiethai]);
+            insertResults.push(result); // Lưu kết quả
         } else {
-            // Báo hỏng cho từng thiết bị cụ thể
+            // Báo hỏng cho từng thiết bị
             for (const device of devices) {
                 const { thietbi_id, thongtinthietbi_id } = device;
-                if (!thongtinthietbi_id) continue; // Bỏ qua nếu không có ID TTTB
+                if (!thongtinthietbi_id) continue;
 
-                // *** KIỂM TRA BÁO HỎNG TRÙNG LẶP ***
+                // Kiểm tra trùng lặp
                 const [existingPending] = await connection.query(
-                    `SELECT id FROM baohong
-                     WHERE thongtinthietbi_id = ? AND trangThai NOT IN ('Hoàn Thành', 'Không Thể Hoàn Thành')`, // Bỏ qua trạng thái 'Không Thể Hoàn Thành' nếu muốn cho báo lại
+                    `SELECT id FROM baohong WHERE thongtinthietbi_id = ? AND trangThai NOT IN ('Hoàn Thành', 'Không Thể Hoàn Thành')`,
                     [thongtinthietbi_id]
                 );
                 if (existingPending.length > 0) {
-                    // Nếu đã có báo hỏng chưa xong cho TTTB này, báo lỗi và rollback
                     throw new Error(`Thiết bị (MDD: ${thongtinthietbi_id}) đã được báo hỏng và đang chờ xử lý.`);
                 }
-                // ***********************************
 
-                insertPromises.push(connection.query(`
-                    INSERT INTO baohong
-                    (thietbi_id, thongtinthietbi_id, phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
+                const [result] = await connection.query(`
+                    INSERT INTO baohong (thietbi_id, thongtinthietbi_id, phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                `, [
-                    thietbi_id || null, thongtinthietbi_id, phong_id, user_id || null,
-                    thiethai, moTa, hinhAnh || null, loaithiethai
-                ]));
+                `, [thietbi_id || null, thongtinthietbi_id, phong_id, user_id || null, thiethai, moTa, hinhAnh || null, loaithiethai]);
+                insertResults.push(result); // Lưu kết quả
             }
         }
-
-        if (insertPromises.length === 0 && devices.length > 0) {
-            // Trường hợp gửi devices nhưng không có thongtinthietbi_id hợp lệ nào
+        if (insertResults.length === 0 && devices.length > 0) {
             throw new Error("Không có thông tin thiết bị hợp lệ để báo hỏng.");
         }
 
-        await Promise.all(insertPromises);
         await connection.commit();
+
+        try {
+            const firstInsertedId = insertResults[0]?.insertId;
+            if (firstInsertedId) {
+                const [newBaoHong] = await pool.query(`
+                            SELECT bh.*, p.toa, p.tang, p.soPhong, tb.tenThietBi, u_report.hoTen as nguoiBaoCao
+                            FROM baohong bh
+                            JOIN phong p ON bh.phong_id = p.id
+                            LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id
+                            LEFT JOIN users u_report ON bh.user_id = u_report.id
+                            WHERE bh.id = ?`,
+                    [firstInsertedId]
+                );
+
+                if (newBaoHong.length > 0) {
+                    const eventData = {
+                        ...newBaoHong[0],
+                        phong_name: `${newBaoHong[0].toa}${newBaoHong[0].tang}.${newBaoHong[0].soPhong}`
+                    };
+                    emitToUser(1, 'new_baohong', eventData);
+                }
+            }
+        } catch (socketError) {
+            console.error("Lỗi khi gửi socket event sau khi tạo báo hỏng:", socketError);
+        }
+
         res.status(201).json({ message: "Gửi báo hỏng thành công!" });
 
     } catch (error) {
         await connection.rollback();
         console.error("Lỗi khi lưu báo hỏng:", error);
-        // Trả về lỗi cụ thể nếu là lỗi validation trùng lặp
         if (error.message.includes("đã được báo hỏng")) {
-            res.status(409).json({ error: error.message }); // 409 Conflict
+            res.status(409).json({ error: error.message });
         } else {
             res.status(500).json({ error: "Không thể lưu báo hỏng." });
         }
@@ -180,21 +194,15 @@ exports.getThongTinBaoHong = async (req, res) => {
 exports.updateBaoHong = async (req, res) => {
     const { id } = req.params;
     const { trangThai, nhanvien_id, ghiChuXuLy, ghiChuAdmin, action } = req.body;
-    const requesterRole = req.user?.role; // Lấy vai trò từ middleware
+    const requesterRole = req.user?.role;
     const requesterId = req.user?.id;
-    const io = req.app.get('socketio');
+    // Không cần lấy io từ req.app nữa
 
-    // --- Khai báo biến một lần ở đầu ---
-    let finalNhanVienId = null; // ID nhân viên cuối cùng sẽ được gán/giữ lại
-    let statusAfterUpdate = '';   // Trạng thái cuối cùng sau khi update thành công
+    let finalNhanVienId = null;
+    let statusAfterUpdate = '';
 
-
-    // --- Validation ---
+    // --- Validation (Giữ nguyên) ---
     if (trangThai === 'Đã Duyệt' && requesterRole === 'admin' && !nhanvien_id) {
-        return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt." });
-    }
-
-    if (action !== 'cancel' && trangThai === 'Đã Duyệt' && requesterRole === 'admin' && !nhanvien_id) {
         return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt." });
     }
 
@@ -207,7 +215,7 @@ exports.updateBaoHong = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // --- Kiểm tra điều kiện trước khi cập nhật ---
+        // --- Kiểm tra trước khi cập nhật (Giữ nguyên) ---
         const [currentBaoHongRows] = await connection.query("SELECT trangThai, nhanvien_id, coLogBaoTri, thongtinthietbi_id FROM baohong WHERE id = ?", [id]);
         if (currentBaoHongRows.length === 0) {
             await connection.rollback();
@@ -215,8 +223,6 @@ exports.updateBaoHong = async (req, res) => {
         }
         const currentBaoHong = currentBaoHongRows[0];
         const currentNhanVienId = currentBaoHong.nhanvien_id;
-
-        // Kiểm tra quyền của nhân viên
         if (requesterRole === 'nhanvien' && currentBaoHong.nhanvien_id !== requesterId) {
             await connection.rollback();
             return res.status(403).json({ error: "Bạn không được giao xử lý báo hỏng này." });
@@ -224,43 +230,29 @@ exports.updateBaoHong = async (req, res) => {
 
         // *** XỬ LÝ HỦY LỆNH CỦA ADMIN  TRỞ VỀ CHỜ DUYỆT***
         if (requesterRole === 'admin' && action === 'cancel') {
-            // Kiểm tra xem trạng thái hiện tại có cho phép hủy không
             const allowedCancelStates = ['Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại'];
             if (!allowedCancelStates.includes(currentBaoHong.trangThai)) {
                 await connection.rollback();
                 return res.status(400).json({ error: `Không thể hủy lệnh khi báo hỏng đang ở trạng thái '${currentBaoHong.trangThai}'.` });
             }
-
-            statusAfterUpdate = 'Chờ Duyệt';// Luôn đặt lại về Chờ Duyệt
-            // Câu lệnh UPDATE để reset về trạng thái Chờ Duyệt
-            const queryCancel = `UPDATE baohong SET
-                                     trangThai = ?,
-                                     nhanvien_id = NULL,
-                                     thoiGianXuLy = NULL,
-                                     ghiChuAdmin = NULL,
-                                     ghiChuXuLy = NULL,
-                                     coLogBaoTri = FALSE
-                                   WHERE id = ?`;
+            statusAfterUpdate = 'Chờ Duyệt';
+            const queryCancel = `UPDATE baohong SET trangThai = ?, nhanvien_id = NULL, thoiGianXuLy = NULL, ghiChuAdmin = NULL, ghiChuXuLy = NULL, coLogBaoTri = FALSE WHERE id = ?`;
             const paramsCancel = [statusAfterUpdate, id];
-
-            // Thực thi UPDATE hủy lệnh
             const [cancelResult] = await connection.query(queryCancel, paramsCancel);
             if (cancelResult.affectedRows === 0) {
                 await connection.rollback();
                 return res.status(404).json({ error: "Không tìm thấy báo hỏng để hủy lệnh." });
             }
-
             await connection.commit();
 
-            // Gửi thông báo hủy cho nhân viên (nếu có)
-            if (currentNhanVienId && io) {
+            // Gửi thông báo hủy cho nhân viên
+            if (currentNhanVienId) { // Gửi socket nếu có NV cũ
                 console.log(`Attempting to emit task_cancelled for user ${currentNhanVienId}, task ${id}`);
-                emitToUser(io, currentNhanVienId, 'task_cancelled', {
+                emitToUser(currentNhanVienId, 'task_cancelled', {
                     baoHongId: parseInt(id),
-                    statusAfterUpdate: statusAfterUpdate // Trạng thái mới là Chờ Duyệt
+                    statusAfterUpdate: statusAfterUpdate
                 });
             }
-
             return res.status(200).json({ message: "Đã hủy lệnh và đặt lại trạng thái về 'Chờ Duyệt' thành công!", id: id, statusAfterUpdate: statusAfterUpdate });
         }
         // *** KẾT THÚC XỬ LÝ HỦY LỆNH ***
@@ -270,7 +262,7 @@ exports.updateBaoHong = async (req, res) => {
             if (trangThai === 'Yêu Cầu Làm Lại' || trangThai === 'Đã Duyệt') {
                 // Admin có thể đặt lại về "Đã Duyệt" (có thể kèm ghi chú) hoặc "Yêu Cầu Làm Lại"
                 statusAfterUpdate = (trangThai === 'Yêu Cầu Làm Lại' ? 'Yêu Cầu Làm Lại' : 'Đã Duyệt'); // Gán trạng thái mới
-                 finalNhanVienId = nhanvien_id === undefined ? currentNhanVienId : nhanvien_id; // Xác định NV mới/cũ
+                finalNhanVienId = nhanvien_id === undefined ? currentNhanVienId : nhanvien_id; // Xác định NV mới/cũ
 
                 // Nếu không có nhân viên nào (cả cũ và mới), báo lỗi nếu trạng thái là Đã Duyệt/Yêu cầu làm lại
                 if (!finalNhanVienId && (statusAfterUpdate === 'Đã Duyệt' || statusAfterUpdate === 'Yêu Cầu Làm Lại')) {
@@ -291,21 +283,18 @@ exports.updateBaoHong = async (req, res) => {
 
                 await connection.commit();
 
-                if (finalNhanVienId && io) {
-                    // Lấy thông tin chi tiết báo hỏng để gửi kèm
+                if (finalNhanVienId) { // Gửi socket nếu có NV được gán
                     const [reassignedTask] = await pool.query("SELECT bh.*, p.toa, p.tang, p.soPhong FROM baohong bh JOIN phong p ON bh.phong_id = p.id WHERE bh.id = ?", [id]);
                     if (reassignedTask.length > 0) {
-                        emitToUser(io, finalNhanVienId, 'new_task', {
+                        const taskData = {
                             ...reassignedTask[0],
                             phong_name: `${reassignedTask[0].toa}${reassignedTask[0].tang}.${reassignedTask[0].soPhong}`
-                        });
+                        };
+                        // Dùng emitToUser
+                        emitToUser(finalNhanVienId, statusAfterUpdate === 'Yêu Cầu Làm Lại' ? 'task_reassigned' : 'new_task', taskData);
                     }
                 }
                 return res.status(200).json({ message: "Đã yêu cầu làm lại / duyệt lại...", id: id, statusAfterUpdate: statusAfterUpdate });
-            } else {
-                // Nếu admin cố đặt trạng thái khác không hợp lệ từ Hoàn thành/Ko thể HT
-                await connection.rollback();
-                return res.status(400).json({ error: `Không thể chuyển từ trạng thái '<span class="math-inline">\{currentBaoHong\.trangThai\}' sang '</span>{trangThai}'. Chỉ có thể yêu cầu làm lại hoặc duyệt lại.` });
             }
         }
         // *** KẾT THÚC LOGIC ADMIN DUYỆT LẠI ***
@@ -338,21 +327,23 @@ exports.updateBaoHong = async (req, res) => {
 
         // --- UPDATE TRẠNG THÁI THÔNG THƯỜNG ---
         statusAfterUpdate = trangThai;
+        finalNhanVienId = currentNhanVienId;
         let query = "UPDATE baohong SET trangThai = ?";
         const params = [statusAfterUpdate];
 
         if (statusAfterUpdate === 'Đã Duyệt' && requesterRole === 'admin') {
+            finalNhanVienId = nhanvien_id;
             query += ", nhanvien_id = ?, thoiGianXuLy = NOW(), coLogBaoTri = FALSE, ghiChuXuLy = NULL, ghiChuAdmin = ?";
             params.push(finalNhanVienId);
             params.push(ghiChuAdmin || null);
-       } else if (statusAfterUpdate === 'Không Thể Hoàn Thành') {
+        } else if (statusAfterUpdate === 'Không Thể Hoàn Thành') {
             query += ", thoiGianXuLy = NOW(), ghiChuXuLy = ?";
             params.push(ghiChuXuLy || null);
-       } else if (statusAfterUpdate === 'Hoàn Thành') {
+        } else if (statusAfterUpdate === 'Hoàn Thành') {
             query += ", thoiGianXuLy = NOW()";
-       } else if (statusAfterUpdate === 'Đang Tiến Hành') {
+        } else if (statusAfterUpdate === 'Đang Tiến Hành') {
             finalNhanVienId = currentNhanVienId;
-       }
+        }
 
         query += " WHERE id = ?";
         params.push(id);
@@ -366,18 +357,18 @@ exports.updateBaoHong = async (req, res) => {
         }
 
         await connection.commit();
-        // *** Emit sự kiện 'new_task' khi duyệt mới thành công ***
-        if (statusAfterUpdate === 'Đã Duyệt' && requesterRole === 'admin' && finalNhanVienId && io) {
-            // Lấy thông tin chi tiết báo hỏng để gửi kèm
+
+        if (statusAfterUpdate === 'Đã Duyệt' && requesterRole === 'admin' && finalNhanVienId) {
             const [newTask] = await pool.query("SELECT bh.*, p.toa, p.tang, p.soPhong FROM baohong bh JOIN phong p ON bh.phong_id = p.id WHERE bh.id = ?", [id]);
             if (newTask.length > 0) {
-                emitToUser(io, finalNhanVienId, 'new_task', {
+                const taskData = {
                     ...newTask[0],
                     phong_name: `${newTask[0].toa}${newTask[0].tang}.${newTask[0].soPhong}`
-                });
+                };
+                emitToUser(finalNhanVienId, 'new_task', taskData);
             }
-        }
-        res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, statusAfterUpdate: trangThai });
+       }
+       res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, statusAfterUpdate: statusAfterUpdate });
 
     } catch (error) {
         await connection.rollback();
@@ -396,30 +387,39 @@ exports.uploadBaoHongImage = (req, res) => {
     res.json({ imageUrl: req.file.path });
 };
 
+exports.uploadBaoHongImage = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'Không có file nào được tải lên.' });
+    }
+    res.json({ imageUrl: req.file.path });
+};
+
+// Controller lấy báo hỏng được gán
 exports.getAssignedBaoHong = async (req, res) => {
-    const nhanvien_id = req.user?.id; // Lấy ID nhân viên từ middleware verifyToken
+    const nhanvien_id = req.user?.id;
 
     if (!nhanvien_id) {
         return res.status(401).json({ error: "Không thể xác định nhân viên." });
     }
     try {
-        const [assignedRows] = await pool.query(`
+        // <<< SỬA SQL: Bỏ comment lỗi >>>
+        const sqlQuery = `
             SELECT
-                bh.*, -- Lấy tất cả cột từ baohong
+                bh.*,
                 p.toa, p.tang, p.soPhong,
                 tb.tenThietBi
             FROM baohong bh
             JOIN phong p ON bh.phong_id = p.id
             LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id
             WHERE bh.nhanvien_id = ?
-              AND bh.trangThai IN ('Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại') -- Thêm Yêu Cầu Làm Lại
-            ORDER BY FIELD(bh.trangThai, 'Yêu Cầu Làm Lại', 'Đã Duyệt', 'Đang Tiến Hành'), bh.ngayBaoHong ASC -- Ưu tiên Yêu Cầu Làm Lại
-        `, [nhanvien_id]);
+              AND bh.trangThai IN ('Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại')
+            ORDER BY FIELD(bh.trangThai, 'Yêu Cầu Làm Lại', 'Đã Duyệt', 'Đang Tiến Hành'), bh.ngayBaoHong ASC
+        `;
+        const [assignedRows] = await pool.query(sqlQuery, [nhanvien_id]);
 
-        // Thêm tên phòng vào kết quả
         const assignedData = assignedRows.map(item => ({
             ...item,
-            phong_name: `${item.toa}${item.tang}.${item.soPhong}`
+            phong_name: `${item.toa}${item.tang}.${item.soPhong}` // Bỏ khoảng trắng thừa cuối
         }));
 
         res.status(200).json(assignedData);

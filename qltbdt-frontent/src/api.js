@@ -1,23 +1,20 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const api = axios.create({
   baseURL: 'http://localhost:5000/api',
   withCredentials: true,
 });
 
-/* Thêm interceptor nếu muốn xử lý lỗi tập trung
+// Interceptor để xử lý lỗi tập trung (tùy chọn)
 api.interceptors.response.use(
   response => response,
   error => {
-    console.error('API call error:', error.response?.data || error.message);
-    // Ví dụ: Xử lý lỗi 401 thì tự động logout
-    // if (error.response?.status === 401) {
-    //   // Gọi hàm logout hoặc điều hướng về trang login
-    // }
+    console.error('API Error:', error);
+    toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     return Promise.reject(error);
   }
 );
-*/
 
 // ========= CÁC HÀM API CHO đăng nhập =========================================== //
 export const register = (data) =>
@@ -36,6 +33,30 @@ export const login = async (data) => {
 export const logout = () =>
   api.post('/auth/logout', {});
 
+export const forgotPasswordAPI = async (email) => {
+  try {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi gửi yêu cầu quên mật khẩu:", error);
+    throw error;
+  }
+};
+
+export const resetPasswordAPI = async (token, newPassword) => {
+  try {
+    // Backend route là /reset-password, gửi token và newPassword
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi đặt lại mật khẩu:", error);
+    throw error;
+  }
+};
+
+// ============================================================================================ //
+
+// ========= CÁC HÀM API CHO USERS ======================================================= //
 export const getUserFromApi = async () => {
   try {
     const res = await api.get('/auth/me');
@@ -45,6 +66,99 @@ export const getUserFromApi = async () => {
     return null;
   }
 };
+
+export const fetchAllUsersList = async () => {
+  try {
+    const response = await api.get("/user");
+    if (!Array.isArray(response.data)) {
+      console.error("API /api/users did not return an array!", response.data);
+      return [];
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all users list:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getUsersPaginated = (page = 1, limit = 10, search = '') => {
+  const params = new URLSearchParams();
+  params.append('page', page);
+  params.append('limit', limit);
+  if (search) {
+    params.append('search', search);
+  }
+  return api.get(`/user?${params.toString()}`);
+};
+
+
+export const createUser = async (userData) => {
+  try {
+    const response = await api.post('/user', userData);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi tạo người dùng:", error);
+    throw error;
+  }
+};
+
+// Hàm updateUser nhận cả sDT
+export const updateUser = async (id, userData) => {
+  try {
+    const updateData = {
+      hoTen: userData.hoTen,
+      email: userData.email,
+      ngaySinh: userData.ngaySinh || null,
+      gioiTinh: userData.gioiTinh,
+      sDT: userData.sDT || null
+    };
+    const response = await api.put(`/user/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi cập nhật người dùng ${id}:`, error);
+    throw error;
+  }
+};
+
+// Hàm đổi mật khẩu (placeholder - cần API backend)
+export const updatePassword = async (passwordData) => {
+  // passwordData = { currentPassword, newPassword, confirmPassword }
+  try {
+    // Thay bằng endpoint thực tế khi có, ví dụ: PATCH /user/update-password
+    const response = await api.patch('/user/update-my-password', passwordData);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi đổi mật khẩu:`, error);
+    throw error;
+  }
+};
+
+export const deleteUser = async (id) => {
+  try {
+    const response = await api.delete(`/user/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi xóa người dùng ${id}:`, error);
+    throw error;
+  }
+};
+
+export const uploadAvatar = async (userId, formData) => {
+  try {
+    const response = await api.post(`/user/uploadAvatar/${userId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi upload avatar cho user ${userId}:`, error);
+    throw error;
+  }
+};
+
+export const updateUserStatus = (userId, newStatus) => {
+  return api.patch(`/user/${userId}/status`, { status: newStatus });
+};
+// ============================================================================================ //
 
 export const getThietBi = () =>
   api.get('/thietbi');
@@ -423,32 +537,56 @@ export const fetchMyTasksAPI = async () => {
 
 // Tạo log bảo trì mới
 export const createLogBaoTriAPI = async (logData) => {
-  const { data } = await api.post('/baotri', logData);
-  return data;
+  try {
+    const response = await api.post('/baotri', logData);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi tạo log bảo trì:", error);
+    throw error;
+  }
 };
 
 // Lấy lịch sử log của một báo hỏng
 export const getBaoHongLogAPI = async (baoHongId) => {
-  const { data } = await api.get(`/baotri/log/${baoHongId}`);
-  return data;
+  if (!baoHongId) return [];
+  try {
+    const response = await api.get(`/baotri/log/${baoHongId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi lấy log cho báo hỏng ${baoHongId}:`, error);
+    if (error.response?.status === 404) {
+      return [];
+    }
+    throw error;
+  }
 };
 
 // Upload ảnh hóa đơn
 export const uploadInvoiceImagesAPI = async (files) => {
   const formData = new FormData();
-  // Lưu ý tên field 'hinhAnhHoaDon' phải khớp với backend multer
   files.forEach(file => formData.append('hinhAnhHoaDon', file));
-  const { data } = await api.post('/baotri/upload-invoice', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return data.imageUrls; // Backend trả về { imageUrls: [...] }
+  try {
+    const { data } = await api.post('/baotri/upload-invoice', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.imageUrls; // Backend trả về { imageUrls: [...] }
+  } catch (error) {
+    console.error("Lỗi upload ảnh bảo trì:", error);
+    throw error;
+  }
 };
+
 // ============================================================================
 
 // API cho Quản lý Tài sản
-export const getAllTaiSanAPI = (params = {}) => {
-  // params có thể là { trangThai: '...', phongId: '...' }
-  return api.get('/tttb/taisan', { params });
+export const getAllTaiSanAPI = async (params = { page: 1, limit: 10 }) => {
+  try {
+    const response = await api.get('/tttb/taisan', { params });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi lấy danh sách tài sản:", error);
+    throw error;
+  }
 };
 
 export const updateTinhTrangTaiSanAPI = (id, data) => {

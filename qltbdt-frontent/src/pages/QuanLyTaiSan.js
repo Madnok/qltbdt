@@ -106,9 +106,11 @@ const QuanLyTaiSan = () => {
     return (
         <div className="flex flex-1 bg-white">
             {/* Phần bên trái (Danh sách và bộ lọc) */}
-            <div className={`transition-all duration-300 ${showRightPanel ? "w-3/5" : "w-full"}`}>
+            <div className={`transition-all duration-300 border ${showRightPanel ? "w-3/5" : "w-full"}`}>
+                <div className="flex items-center justify-between p-4 border">
+                    <h2 className="text-2xl font-bold text-gray-800">Quản Lý Tài Sản</h2>
+                </div>
                 <div className="flex flex-col h-[450] p-4">
-                    <h1 className="mb-4 text-2xl font-bold">Quản Lý Tài Sản</h1>
                     <BoLocTaiSan onFilterChange={handleFilterChange} />
 
                     {/* Thêm khu vực Sắp xếp và Thông tin phân trang */}

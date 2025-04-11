@@ -1,33 +1,39 @@
+import React, { useState } from 'react';
 import LeftPanel from "../components/layout/LeftPanel";
-import RightPanel from "../components/layout/RightPanel";
 import AdminRoute from "../components/NguoiDung/AdminRoute";
 import UserRoute from "../components/NguoiDung/UserRoute";
-import UserInfo from "../components/NguoiDung/UsersInfo";
 import { useRightPanel } from "../utils/helpers";
 import { useAuth } from "../context/AuthProvider";
+import Popup from '../components/layout/Popup';
+import FormTaoTaiKhoan from '../components/forms/FormTaoTaiKhoan';
 
 const NguoiDung = () => {
-    const { activeRightPanel, handleCloseRightPanel, handleOpenRightPanel } = useRightPanel();
+    const { activeRightPanel, handleOpenRightPanel } = useRightPanel();
     const { user } = useAuth();
+    const [isCreateUserPopupOpen, setIsCreateUserPopupOpen] = useState(false);
 
-    const leftPanelComponent = user?.role === "admin" 
-    ? <AdminRoute /> 
-    : <UserRoute onOpenRightPanel={handleOpenRightPanel}/>;
+    const handleCloseCreateUserPopup = () => { 
+        setIsCreateUserPopupOpen(false);
+    };
+
+    const leftPanelComponent = user?.role === "admin"
+        ? <AdminRoute onOpenCreateUserPopup={setIsCreateUserPopupOpen}/>
+        : <UserRoute onOpenRightPanel={handleOpenRightPanel} />;
 
     return (
-        <div className="flex flex-1 bg-gray-100">
+        <div className="flex flex-1 bg-gray-100 border">
             {/* Left Panel */}
             <div className={`transition-all duration-300 ${activeRightPanel ? "w-3/5" : "w-full"}`}>
                 <LeftPanel activeComponent={leftPanelComponent} />
             </div>
 
-            {/* Right Panel */}
-            {activeRightPanel && (
-                <div className="w-2/5 transition-all duration-300">
-                    <RightPanel 
-                        activeComponent={<UserInfo onClose={handleCloseRightPanel} />} 
-                    />
-                </div>
+            {/* Popup Tạo Tài Khoản */}
+            {isCreateUserPopupOpen && (
+                 <Popup
+                 title="Tạo Tài Khoản Người Dùng"
+                 onClose={handleCloseCreateUserPopup} // Truyền đúng hàm
+                 children={<FormTaoTaiKhoan onClose={handleCloseCreateUserPopup} />}
+             />
             )}
         </div>
     );

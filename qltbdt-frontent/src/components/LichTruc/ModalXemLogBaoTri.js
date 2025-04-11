@@ -5,7 +5,7 @@ import moment from 'moment';
 import {
     FaTimesCircle, FaUserTie, FaClock, FaWrench, FaCheckCircle,
     FaBan, FaShippingFast, FaExclamationCircle,
-    FaImage, FaPaperclip, FaCamera, FaRoute, FaInfoCircle
+    FaImage, FaPaperclip, FaCamera, FaRoute, FaInfoCircle, 
 } from 'react-icons/fa';
 
 const ModalXemLogBaoTri = ({ baoHongId, phongName, onClose }) => {

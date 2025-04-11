@@ -15,9 +15,12 @@ const loginLimiter = rateLimit({
 router.post("/register", authController.register);
 router.post("/login", loginLimiter, authController.login);
 router.post("/logout", authController.logout);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
 
-router.get("/me", verifyToken, (req, res) => {
-    res.json({ user: req.user });
-});
+// router.get("/me", verifyToken, (req, res) => {
+//     res.json({ user: req.user });
+// });
+router.get('/me', verifyToken, authController.getMe);
 
 module.exports = router;

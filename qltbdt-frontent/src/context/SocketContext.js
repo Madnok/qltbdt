@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from '../context/AuthProvider';
-import { toast } from 'react-toastify'; // Import toast
-import { useQueryClient } from '@tanstack/react-query'; // Import queryClient
+import { toast } from 'react-toastify';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SocketContext = createContext(null);
 
@@ -10,84 +10,94 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
-    const { user } = useAuth(); // Lấy thông tin user từ AuthProvider
-    const queryClient = useQueryClient(); // Lấy queryClient
+    const { user, logout } = useAuth();
+    const queryClient = useQueryClient(); // Bỏ nếu không dùng
 
-    const connectSocket = useCallback(() => {
-        // Chỉ kết nối nếu có user và chưa có socket
-         if (user?.id && !socket) {
-            console.log("Đang kết nối đến socket cho user:", user.id);
-            const newSocket = io('http://localhost:5000', { // Địa chỉ backend
+    useEffect(() => {
+        let newSocket = null; // Khai báo biến tạm
+
+        // Chỉ kết nối nếu user đã đăng nhập (có user.id)
+        if (user?.id) {
+            console.log("[SocketContext] Attempting socket connection for user:", user.id);
+            // Lấy URL backend từ biến môi trường hoặc mặc định
+            const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+
+            // Kết nối Socket.IO - quan trọng là withCredentials để gửi cookie token
+            newSocket = io(SOCKET_URL, {
                 withCredentials: true,
-                 // query: { userId: user.id }
             });
 
             newSocket.on('connect', () => {
-                console.log('Đã kết nối socket:', newSocket.id);
-                 // Đăng ký userId với server sau khi kết nối thành công
-                 newSocket.emit('register_user', user.id);
+                console.log('✅ [SocketContext] Connected:', newSocket.id);
             });
 
-            newSocket.on('user_registered', (data) => {
-                 console.log('User đã được kiểm tra:', data);
-             });
+            newSocket.on('disconnect', (reason) => {
+                console.log('❌ [SocketContext] Disconnected:', reason);
+                // setSocket(null);
+            });
 
-            // Lắng nghe sự kiện task mới hoặc được gán lại
+            newSocket.on('connect_error', (error) => {
+                toast.error("Lỗi kết nối máy chủ thông báo.");
+                setSocket(null); // Reset socket state khi có lỗi kết nối
+            });
+
+            newSocket.on('status_changed', (data) => {
+                if (data?.newStatus === 'off') {
+                    toast.error(data?.message || 'Tài khoản của bạn đã bị khóa!', {
+                        duration: 6000, // Hiển thị lâu hơn chút
+                        icon: '🔒',
+                    });
+                    setTimeout(() => {
+                        logout();
+                    }, 1500);
+                }
+            });
+
             newSocket.on('new_task', (taskData) => {
                 console.log('Có công việc mới:', taskData);
-                toast.info(`🔔 Có công việc mới/cập nhật: ${taskData.moTa} ở phòng ${taskData.phong_name}`);
-                // Invalidate các query liên quan để cập nhật UI
+                toast.info(`🔔 Có công việc mới: ${taskData.moTa}`);
                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
                 queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
-                // Có thể thêm invalidate cho query lấy thông báo nếu có
             });
 
-             // Lắng nghe sự kiện task bị hủy
-             newSocket.on('task_cancelled', (data) => {
+            newSocket.on('task_cancelled', (data) => {
                 console.log('Hủy công việc:', data);
-                toast.warn(`⚠️ Công việc ID ${data.baoHongId} đã bị quản trị viên hủy/thu hồi.`);
-                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] }); // Trang LichNhanVien
-                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });   // Trang BaoTri
-                // Có thể cần invalidate thêm nếu task bị hủy có ảnh hưởng đến các query khác
+                toast.warn(`⚠️ Công việc ID ${data.baoHongId} đã bị hủy.`);
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
             });
 
-            newSocket.on('disconnect', () => {
-                console.log('Ngắt kết nối socket');
-                // Có thể thử kết nối lại ở đây nếu muốn
-                setSocket(null); // Reset socket state
-            });
+            setSocket(newSocket); // Lưu socket instance vào state
 
-            newSocket.on('connect_error', (err) => {
-                console.error('Lỗi kết nối socket:', err.message);
-                 // Có thể hiển thị thông báo lỗi cho người dùng
-                 setSocket(null);
-            });
-
-            setSocket(newSocket);
-         } else if (!user?.id && socket) {
-             // Nếu user đăng xuất, ngắt kết nối socket
-              console.log("Ngắt kết nối đến socket vì user logout.");
-              socket.disconnect();
-              setSocket(null);
-         }
-    }, [user, socket, queryClient]); // Thêm queryClient vào dependency
-
-    useEffect(() => {
-         connectSocket(); // Kết nối khi user thay đổi
-
-         // Cleanup khi component unmount hoặc user thay đổi
-        return () => {
+        } else {
             if (socket) {
-                console.log("Ngắt kết nối và cleanup.");
                 socket.disconnect();
                 setSocket(null);
             }
-        };
-    }, [connectSocket, socket]); // Chỉ phụ thuộc vào connectSocket và socket
+        }
 
+        // --- Hàm cleanup của useEffect ---
+        return () => {
+            if (newSocket) {
+               console.log("[SocketContext] Cleaning up socket connection.");
+               newSocket.off('connect');
+               newSocket.off('disconnect');
+               newSocket.off('connect_error');
+               newSocket.off('status_changed');
+               newSocket.off('new_task'); 
+               newSocket.off('task_cancelled');
+               newSocket.disconnect();
+           }
+       };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, logout]);
+
+    // Memoize object chứa socket để tối ưu
+    const contextValue = useMemo(() => ({ socket }), [socket]);
 
     return (
-        <SocketContext.Provider value={socket}>
+        // Cung cấp socket instance cho các component con
+        <SocketContext.Provider value={contextValue}>
             {children}
         </SocketContext.Provider>
     );

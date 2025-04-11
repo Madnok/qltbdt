@@ -7,13 +7,15 @@ const {upload} = require("../middleware/upload");
 router.use(verifyToken);
 
 //route cho user admin  và user thuòng
+router.patch('/:id/status', requireRole(['admin']), userController.updateUserStatus);
+router.patch('/update-my-password', userController.updatePassword);
 router.get("/", requireRole(['admin']),userController.getAllUsers);
 router.get("/:id", userController.getUserById);
 router.post("/", requireRole(['admin']), userController.createUser);
 router.put("/:id", userController.updateUser);
 router.delete("/:id", requireRole(['admin']),userController.deleteUser);
 router.post("/uploadAvatar/:id", upload.single("avatar"), userController.uploadAvatar);
-router.put("/status/:id", requireRole(['admin']),userController.toggleUserStatus);
+
 
 
 

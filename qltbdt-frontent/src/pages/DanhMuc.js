@@ -56,7 +56,7 @@ const DanhMuc = () => {
 
     // Xác định component nào hiển thị trên Left Panel
     const leftPanelComponent = selectedCategory ? componentsMap[selectedCategory] : (
-        <div className="flex-1 space-y-4 bg-white">
+        <div className="flex-1 px-4 pt-4 space-y-4 bg-white">
             {categories.map((category) => (
                 <div key={category.name}
                     className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-100"
@@ -71,11 +71,11 @@ const DanhMuc = () => {
         </div>
     );
     return (
-        <div className="flex flex-1 overflow-auto bg-gray-100">
+        <div className="flex flex-1 overflow-auto bg-gray-100 border">
             {/* Left Panel */}
             <div className={`transition-all duration-300 ${activeRightPanel ? "w-3/5" : "w-full"}`}>
-                <div className={`bg-white p-4 shadow-md flex justify-between items-center`}>
-                    <h2 className="text-xl font-semibold">
+                <div className={`bg-white p-4 border-b flex justify-between items-center`}>
+                    <h2 className="text-2xl font-bold text-gray-800">
                         <span
                             className="text-black cursor-pointer hover:underline"
                             onClick={() => {
@@ -83,7 +83,7 @@ const DanhMuc = () => {
                                 setSelectedCategory(null);
                             }}
                         >
-                            Danh Mục
+                           Quản Lý Danh Mục
                         </span>
                         {selectedCategory && ` > ${categoryLabels[selectedCategory] || selectedCategory}`}
                     </h2>
@@ -123,7 +123,7 @@ const DanhMuc = () => {
 
                     </div>
                 </div>
-                <LeftPanel activeComponent={leftPanelComponent} />
+                <LeftPanel activeComponent={leftPanelComponent}/>
             </div>
 
             {/* Hiển thị Form Phiếu Nhập Nếu Là Danh Mục Thông Tin THiết Bị*/}

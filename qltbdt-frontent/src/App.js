@@ -12,13 +12,16 @@ import NotFound from "./pages/NotFound";
 import AppLayout from "../src/components/layout/AppLayout";
 import ThongTinBaoHong from "../src/components/LichTruc/ThongTinBaoHong";
 import QuanLyTaiSan from './pages/QuanLyTaiSan';
+import ResetPasswordPage from './pages/ResetMatKhau';
+import ForgotPasswordPage from './pages/QuenMatKhau';
 
 function Layout() {
   return (
     <Routes>
       <Route path="/" element={<BaoHongGoiY />} />
-
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
       {/* AppLayout */}
       <Route element={<AppLayout />}>
