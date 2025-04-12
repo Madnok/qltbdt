@@ -200,36 +200,47 @@ const BaoTri = () => {
                 {isLoadingWarranty && <div className="text-center"><ArrowPathIcon className="inline-block w-5 h-5 mr-2 animate-spin" /> Đang tải...</div>}
                 {isErrorWarranty && <div className="text-center text-red-500">Lỗi tải danh sách thiết bị bảo hành: {errorWarranty.message}</div>}
                 {!isLoadingWarranty && !isErrorWarranty && (
-                    warrantyDevices.length === 0 ? (
-                        <p className="text-center text-gray-500">Hiện không có thiết bị nào đang trong trạng thái bảo hành.</p>
-                    ) : (
-                        <div className="overflow-x-auto bg-white rounded-lg shadow">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Mã Định Danh</th>
-                                        <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Tên Loại Thiết Bị</th>
-                                        <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Vị trí</th>
-                                        <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Ngày hết hạn BH</th>
-                                        <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Người được cấp</th>
-                                        {/* Thêm các cột khác nếu cần */}
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {warrantyDevices.map((device) => (
-                                        <tr key={device.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-3 font-mono text-sm text-gray-700 whitespace-nowrap">{device.id}</td>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{device.tenLoaiThietBi || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.phong_name || 'Trong kho'}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-                                                {device.ngayBaoHanhKetThuc ? moment(device.ngayBaoHanhKetThuc).format('DD/MM/YYYY') : 'N/A'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.tenNguoiCap || 'N/A'}</td>
+                    // **** BỔ SUNG KIỂM TRA Array.isArray ****
+                    Array.isArray(warrantyDevices) ? (
+                        // Nếu là Array, kiểm tra tiếp xem có rỗng không
+                        warrantyDevices.length === 0 ? (
+                            <p className="text-center text-gray-500">Hiện không có thiết bị nào đang trong trạng thái bảo hành.</p>
+                        ) : (
+                            // Nếu là Array và không rỗng, render bảng
+                            <div className="overflow-x-auto bg-white rounded-lg shadow">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Mã Định Danh</th>
+                                            <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Tên Loại Thiết Bị</th>
+                                            <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Vị trí</th>
+                                            <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Ngày hết hạn BH</th>
+                                            <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Người được cấp</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {/* Lúc này gọi .map đã an toàn */}
+                                        {warrantyDevices.map((device) => (
+                                            <tr key={device.id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3 font-mono text-sm text-gray-700 whitespace-nowrap">{device.id}</td>
+                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{device.tenLoaiThietBi || 'N/A'}</td>
+                                                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.phong_name || 'Trong kho'}</td>
+                                                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                                    {device.ngayBaoHanhKetThuc ? moment(device.ngayBaoHanhKetThuc).format('DD/MM/YYYY') : 'N/A'}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.tenNguoiCap || 'N/A'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )
+                    ) : (
+                        // Trường hợp warrantyDevices KHÔNG phải là Array (có thể là null, undefined, string, object khác...)
+                        // Hiển thị thông báo lỗi thay vì crash
+                        <p className="text-center text-red-500">Lỗi: Dữ liệu thiết bị bảo hành không hợp lệ.</p>
+                        // Optional: Log ra console để debug
+                        // {console.error("Dữ liệu warrantyDevices không phải array:", warrantyDevices)}
                     )
                 )}
             </div>

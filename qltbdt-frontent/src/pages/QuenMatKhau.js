@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
         setIsLoading(true);
         setMessage('');
         try {
+            // eslint-disable-next-line
             const data = await forgotPasswordAPI(email);
             setMessage("Nếu email bạn cung cấp tồn tại trong hệ thống, một liên kết đặt lại mật khẩu đã được gửi.");
             toast.success("Yêu cầu đã được gửi.");

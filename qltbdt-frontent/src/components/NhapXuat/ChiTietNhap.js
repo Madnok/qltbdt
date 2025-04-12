@@ -185,7 +185,7 @@ const ChiTietNhap = ({ phieuNhapId, onClose }) => {
                                             <tr className="bg-gray-50">
                                                 <td colSpan="5" className="px-3 py-2 border-t">
                                                     <div className="pl-6">
-                                                        <p className="mb-1 text-xs font-medium text-gray-600">Mã định danh chi tiết:</p>
+                                                        <p className="mb-1 text-xs font-medium text-gray-600">Mã định danh:</p>
                                                         <ul className="list-disc list-inside space-y-0.5 text-xs text-gray-500">
                                                             {tb.chiTiet.map((detail) => (
                                                                 <li key={detail.id}>ID: {detail.id}</li>

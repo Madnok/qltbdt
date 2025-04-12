@@ -4,7 +4,7 @@ import { useSocket } from '../../context/SocketContext';
 import { Navigate, Outlet } from "react-router-dom";
 import Header from "../layout/Header";
 import Sidebar from "../layout/Sidebar";
-import Footer from "../layout/Footer";
+// import Footer from "../layout/Footer";
 import { useSidebar } from "../../utils/helpers";
 import { toast } from 'react-toastify';
 
@@ -53,13 +53,13 @@ const AppLayout = () => {
   return (
     <div className="flex flex-col h-screen">
       <Header toggleSidebar={toggleSidebar} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden pt-[68px]">
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <main className="flex-1 p-2 overflow-y-auto bg-gray-100">
+        <main className="flex-1 p-2 overflow-y-auto bg-gray-100 h-[1080]">
           <Outlet />
         </main>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

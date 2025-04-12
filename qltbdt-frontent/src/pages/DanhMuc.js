@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"; // hàm dùng tránh render lại không cần thiết
+import { useMemo, useState } from "react"; 
 import { useRefresh, useRightPanel } from "../utils/helpers";
 import { categories, addForms, categoryLabels } from "../utils/constants";
 import Phong from "../components/DanhMuc/Phong";
@@ -7,7 +7,6 @@ import ThietBi from "../components/DanhMuc/ThietBi";
 import ViPham from "../components/DanhMuc/ViPham";
 import ThongTinThietBi from "../components/DanhMuc/ThongTinThietBi"
 import ChiTietThietBi from "../components/DanhMuc/ChiTiet/ChiTietThietBi";
-import ChiTietPhong from "../components/DanhMuc/ChiTiet/ChiTietPhong";
 import ChiTietTheLoai from "../components/DanhMuc/ChiTiet/ChiTietTheLoai";
 import FormTheLoai from "../components/forms/FormTheLoai";
 import FormThietBi from "../components/forms/FormThietBi";
@@ -25,7 +24,7 @@ const DanhMuc = () => {
 
     // Object ánh xạ key danh mục đến component
     const componentsMap = {
-        Phong: <Phong setSelectedRecord={(record) => handleOpenRightPanel("ChiTietPhong", record)} refresh={refresh} />,
+        Phong: <Phong refresh={refresh} />,
         TheLoai: <TheLoai setSelectedRecord={(record) => handleOpenRightPanel("ChiTietTheLoai", record)} refresh={refresh} />,
         ThietBi: <ThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietThietBi", record)} refresh={refresh} />,
         ThongTinThietBi: <ThongTinThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietTTTB", record)} refresh={refresh} />,
@@ -35,8 +34,6 @@ const DanhMuc = () => {
     // Xác định component nào hiển thị trên Right Panel
     const rightPanelComponent = useMemo(() => {
         switch (activeRightPanel) {
-            case "ChiTietPhong":
-                return <ChiTietPhong record={selectedRecord} onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
             case "FormPhong":
                 return <FormPhong onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
             case "ChiTietTheLoai":

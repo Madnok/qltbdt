@@ -9,11 +9,10 @@
 
     router.use(verifyToken); 
 
-    router.post("/xoathietbi", phongController.removeThietBiFromPhong);
+    router.post("/xoathietbi", verifyToken, phongController.thuHoiTaiSanKhoiPhong);
     router.get("/:id", phongController.getPhongById);
     router.post("/", phongController.addPhong);
     router.put("/:id", phongController.updatePhong);
     router.delete("/:id", phongController.deletePhong);
-    router.post("/add-thietbi", phongController.addThietBiToPhong);
 
     module.exports = router;

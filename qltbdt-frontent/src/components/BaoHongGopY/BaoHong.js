@@ -1,8 +1,9 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toaTheoCoSo } from "../../utils/constants";
 import { FaUpload, FaChevronUp, FaChevronDown, FaTimesCircle } from "react-icons/fa";
 import { MdWarning } from "react-icons/md";
+import { toast } from "react-toastify";
 import eventBus from "../../utils/eventBus";
 
 const BaoHong = () => {
@@ -45,6 +46,11 @@ const BaoHong = () => {
                 const phongDetails = phongDetailsRes.data;
                 const phongList = phongListRes.data;
 
+                if (!Array.isArray(phongDetails) || !Array.isArray(phongList)) {
+                    console.error("Dữ liệu phòng trả về không phải là mảng:", phongDetailsRes.data, phongListRes.data);
+                    return;
+                }
+
                 // Gộp dữ liệu dựa trên ID
                 const merged = phongList.map((phong) => {
                     const detail = phongDetails.find((d) => d.id === phong.id) || {};
@@ -67,54 +73,72 @@ const BaoHong = () => {
         const { name, value } = e.target;
         let updatedFormData = { ...formData, [name]: value };
 
-        // Reset dữ liệu phụ thuộc
-        if (name === "coSo") {
-            updatedFormData.toa = "";
-            updatedFormData.tang = "";
-            updatedFormData.soPhong = "";
-        } else if (name === "toa") {
-            updatedFormData.tang = "";
-            updatedFormData.soPhong = "";
-        } else if (name === "tang") {
-            updatedFormData.soPhong = "";
-        }
-
-        // Tìm thông tin phòng khi tất cả trường đã được chọn
-        if (name === "soPhong") {
-            const selectedRoom = mergedData.find(
-                (item) =>
-                    item.coSo === updatedFormData.coSo &&
-                    item.toa === updatedFormData.toa &&
-                    item.tang === parseInt(updatedFormData.tang) &&
-                    item.soPhong === parseInt(value)
-            );
-            setLabel(selectedRoom ? `Của ${selectedRoom.chucNang}: ${selectedRoom.phong}` : "");
-            updatedFormData.idPhong = selectedRoom?.id || null;
-
-            // **Reset trạng thái loại thiệt hại**
-            setDamageForm((prevDamageForm) => ({
-                ...prevDamageForm,
-                damageType: "", // Reset loại thiệt hại
-            }));
-        }
+        if (name === "coSo") updatedFormData = { ...updatedFormData, toa: "", tang: "", soPhong: "", idPhong: null, };
+        else if (name === "toa") updatedFormData = { ...updatedFormData, tang: "", soPhong: "", idPhong: null, };
+        else if (name === "tang") updatedFormData = { ...updatedFormData, soPhong: "", idPhong: null, };
 
         setFormData(updatedFormData);
+
+        if (name === "soPhong" && value) {
+            const { coSo, toa, tang } = updatedFormData;
+            const selectedRoom = mergedData.find(item =>
+                item.coSo === coSo &&
+                item.toa === toa &&
+                item.tang === parseInt(tang) &&
+                item.soPhong === parseInt(value)
+            );
+
+            if (selectedRoom) {
+                console.log("Selected Room:", selectedRoom);
+                setLabel(`Phòng ${selectedRoom.phong} (${selectedRoom.chucNang})`);
+                setFormData(prev => ({ ...prev, idPhong: selectedRoom.id }));
+                if (damageForm.damageType === "Các Loại Thiết Bị") {
+                    fetchDevicesForRoom(selectedRoom.id);
+                }
+            } else {
+                setLabel("");
+                setFormData(prev => ({ ...prev, idPhong: null }));
+                setThietBiList([]);
+            }
+            setDamageForm(prev => ({ ...prev, damageType: "" }));
+        } else if (name !== "soPhong") {
+            setLabel("");
+            setFormData(prev => ({ ...prev, idPhong: null }));
+            setThietBiList([]);
+            setDamageForm(prev => ({ ...prev, damageType: "" }));
+        }
     };
+
+    const fetchDevicesForRoom = (roomId) => {
+        if (!roomId) {
+            setThietBiList([]);
+            return;
+        }
+        console.log(`Workspaceing devices for room ID: ${roomId}`);
+        axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${roomId}`)
+            .then((response) => {
+                console.log("API response for devices:", response.data);
+                const devices = Array.isArray(response.data) ? response.data : [];
+                setThietBiList(devices);
+            })
+            .catch((error) => {
+                console.error("Lỗi khi gọi API danh sách thiết bị:", error);
+                setThietBiList([]);
+                toast.error("Lỗi tải danh sách thiết bị!");
+            });
+    }
 
     const handleDamageTypeChange = (e) => {
         const selectedType = e.target.value;
-
         setDamageForm((prevForm) => ({ ...prevForm, damageType: selectedType }));
 
         if (selectedType === "Các Loại Thiết Bị" && formData.idPhong) {
-            axios.get(`http://localhost:5000/api/phong/danhsach-thietbi/${formData.idPhong}`)
-                .then((response) => setThietBiList(response.data))
-                .catch((error) => console.error("Lỗi khi gọi API danh sách thiết bị:", error));
+            fetchDevicesForRoom(formData.idPhong);
         } else {
             setThietBiList([]);
-            setSelectedDevices([]);
         }
     };
+
     // xử lý hình ảnh
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -154,8 +178,14 @@ const BaoHong = () => {
     const handleSubmitBaoHong = async (e) => {
         e.preventDefault();
 
+        // Kiểm tra dữ liệu cơ bản
         if (!formData.idPhong || !damageForm.damageType || !damageForm.description || !damageForm.damageLevel) {
-            alert("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+            toast.warn("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+            return;
+        }
+        // Kiểm tra nếu là báo hỏng thiết bị thì phải chọn ít nhất 1 thiết bị
+        if (damageForm.damageType === "Các Loại Thiết Bị" && selectedDevices.length === 0) {
+            toast.warn("Vui lòng chọn ít nhất một thiết bị để báo hỏng.");
             return;
         }
 
@@ -181,7 +211,7 @@ const BaoHong = () => {
             }
         }
         const requestData = {
-            devices: selectedDevices,
+            devices: damageForm.damageType === "Các Loại Thiết Bị" ? selectedDevices : [],
             phong_id: formData.idPhong,
             user_id: null,
             thiethai: damageForm.damageLevel,
@@ -193,43 +223,51 @@ const BaoHong = () => {
 
         try {
             await axios.post("http://localhost:5000/api/baohong/guibaohong", requestData);
-            alert("Gửi phiếu Báo Hỏng thành công!");
+            toast.success("Gửi phiếu Báo Hỏng thành công!");
 
-            // Reset form
-            setDamageForm({ damageType: damageForm.damageType, description: "", damageLevel: damageForm.damageLevel }); // Keep type/level? Reset as needed
-            setImageFile(null); // Reset image file
-            setImagePreview(null); // Reset image preview
+            setDamageForm(prev => ({ ...prev, description: "" }));
+            setImageFile(null);
+            setImagePreview(null);
             const fileInput = document.getElementById('damage-image-upload');
-            if (fileInput) fileInput.value = ''; // Reset file input
-
+            if (fileInput) fileInput.value = '';
             setSelectedDevices([]);
-            eventBus.emit('baoHongSubmitted');
+
+            if (damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong) {
+                fetchDevicesForRoom(formData.idPhong);
+            }
+
+            eventBus.emit('baoHongSubmitted'); // Thông báo cho các component khác
+
         } catch (error) {
             console.error("Lỗi khi gửi báo hỏng:", error);
-            alert("Không thể gửi báo hỏng. Vui lòng thử lại.");
+            toast.error(`Không thể gửi báo hỏng: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setIsUploading(false);
         }
     };
 
     // Xử lý toggle hiển thị chi tiết
-    const toggleRow = (theLoai) => {
-        if (expandedRows.includes(theLoai)) {
-            setExpandedRows(expandedRows.filter((row) => row !== theLoai));
+    const toggleRow = (tenTheLoai) => {
+        if (expandedRows.includes(tenTheLoai)) {
+            setExpandedRows(expandedRows.filter((row) => row !== tenTheLoai));
         } else {
-            setExpandedRows([...expandedRows, theLoai]);
+            setExpandedRows([...expandedRows, tenTheLoai]);
         }
     };
 
-    // Xứ lý hiển thị bảng báo hỏng
-    const groupedThietBiList = Array.isArray(thietBiList) ? thietBiList.reduce((groups, thietBi) => {
-        const group = groups.find(g => g.theLoai === thietBi.theLoai);
-        if (group) {
-            group.devices.push(thietBi);
-            group.total += 1;
-        } else {
-            groups.push({ theLoai: thietBi.theLoai, devices: [thietBi], total: 1 });
-        }
-        return groups;
-    }, []) : [];
+    // Xử lý hiển thị bảng báo hỏng
+    const groupedThietBiList = useMemo(() => {
+        return Array.isArray(thietBiList) ? thietBiList.reduce((groups, thietBi) => {
+            const group = groups.find(g => g.tenTheLoai === thietBi.tenTheLoai);
+            if (group) {
+                group.devices.push(thietBi);
+                group.total += 1;
+            } else {
+                groups.push({ tenTheLoai: thietBi.tenTheLoai, devices: [thietBi], total: 1 });
+            }
+            return groups;
+        }, []) : [];
+    }, [thietBiList]);
 
     // Xử lý chọn các thiết bị trong phòng
     const handleDeviceSelect = (e, thietbi_id, thongtinthietbi_id) => {
@@ -367,17 +405,17 @@ const BaoHong = () => {
                 </form>
 
                 {/* Danh Sách Thiết Bị (nếu loại là 'Các Loại Thiết Bị') */}
-                <div className={`p-4 border rounded-lg ${damageForm.damageType === "Các Loại Thiết Bị" ? '' : 'hidden'}`}>
+                <div className={`p-4 border rounded-lg ${damageForm.damageType === "Các Loại Thiết Bị" ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                     <label className="block mb-2 text-lg font-medium text-card-foreground">
                         Chọn Thiết Bị Hỏng {label}
                     </label>
-                    {(damageForm.damageType === "Các Loại Thiết Bị" && (!thietBiList || thietBiList.length === 0)) && (
-                        <p className="italic text-center text-gray-500">Không tìm thấy thiết bị nào trong phòng này hoặc vui lòng chọn phòng trước.</p>
-                    )}
-                    {(damageForm.damageType === "Các Loại Thiết Bị" && thietBiList && thietBiList.length > 0) && (
-                        <div className="mt-2 overflow-x-auto max-h-96"> {/* Limit height and allow scroll */}
+                    {/* Thông báo */}
+                    {(damageForm.damageType === "Các Loại Thiết Bị" && !formData.idPhong) && (<p className="italic text-center text-gray-500">Vui lòng chọn phòng.</p>)}
+                    {(damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong && (!thietBiList || thietBiList.length === 0)) && (<p className="italic text-center text-gray-500">Phòng này không có thiết bị hoặc đang tải...</p>)}
+
+                    {(damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong && thietBiList && thietBiList.length > 0) && (
+                        <div className="mt-2 overflow-x-auto max-h-96">
                             <table className="w-full border border-gray-300 table-auto">
-                                {/* ... (thead for grouped list) ... */}
                                 <thead className="sticky top-0 bg-gray-100">
                                     <tr>
                                         <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">STT</th>
@@ -387,25 +425,25 @@ const BaoHong = () => {
                                 </thead>
                                 <tbody>
                                     {groupedThietBiList.map((group, index) => (
-                                        <React.Fragment key={group.theLoai + index}>
+                                        <React.Fragment key={group.tenTheLoai + index}>
                                             {/* Parent Row */}
                                             <tr className="hover:bg-gray-50">
                                                 <td className="px-4 py-2 text-sm text-center border">{index + 1}</td>
                                                 <td className="px-4 py-2 text-sm border">
                                                     <div className="flex items-center justify-between">
-                                                        {group.theLoai}
-                                                        <button onClick={() => toggleRow(group.theLoai)} className="ml-2 text-gray-500 hover:text-gray-700">
-                                                            {expandedRows.includes(group.theLoai) ? <FaChevronUp /> : <FaChevronDown />}
+                                                        {group.tenTheLoai}
+                                                        <button onClick={() => toggleRow(group.tenTheLoai)} className="ml-2 text-gray-500 hover:text-gray-700">
+                                                            {expandedRows.includes(group.tenTheLoai) ? <FaChevronUp /> : <FaChevronDown />}
                                                         </button>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2 text-sm text-center border">{group.total}</td>
                                             </tr>
                                             {/* Child Table */}
-                                            {expandedRows.includes(group.theLoai) && (
+                                            {expandedRows.includes(group.tenTheLoai) && (
                                                 <tr>
-                                                    <td colSpan={1}></td> 
-                                                    <td colSpan={3} className="p-0 border"> 
+                                                    <td colSpan={1}></td>
+                                                    <td colSpan={3} className="p-1 border">
                                                         <table className="w-full border-collapse">
                                                             <thead className="bg-gray-50">
                                                                 <tr>
@@ -416,21 +454,25 @@ const BaoHong = () => {
                                                             </thead>
                                                             <tbody>
                                                                 {group.devices.map(tb => {
-                                                                    const isAlreadyReported = tb.trangThaiBaoHongHienTai && tb.trangThaiBaoHongHienTai !== 'Hoàn Thành';
+                                                                    const reportStatus = tb.trangThaiBaoHongHienTai;
+                                                                    const activeReportStatuses = ['Chờ Duyệt', 'Đã Duyệt', 'Đang Tiến Hành', 'Không Thể Hoàn Thành', 'Yêu Cầu Làm Lại'];
+                                                                    const isAlreadyReported = reportStatus && activeReportStatuses.includes(reportStatus);
                                                                     return (
                                                                         <tr key={tb.thongtinthietbi_id} className="hover:bg-gray-100">
                                                                             <td className="px-3 py-1 text-center border">
                                                                                 <input
                                                                                     type="checkbox"
-                                                                                    className={`w-4 h-4 ${isAlreadyReported ? 'cursor-not-allowed opacity-50' : ''}`}
-                                                                                    checked={!isAlreadyReported && selectedDevices.some(d => d.thietbi_id === tb.thietbi_id && d.thongtinthietbi_id === tb.thongtinthietbi_id)}
-                                                                                    onChange={e => !isAlreadyReported && handleDeviceSelect(e, tb.thietbi_id, tb.thongtinthietbi_id)}
                                                                                     disabled={isAlreadyReported}
+                                                                                    className={`w-4 h-4 ${isAlreadyReported ? 'cursor-not-allowed opacity-50' : ''}`}
+                                                                                    checked={!isAlreadyReported && selectedDevices.some(d => d.thongtinthietbi_id === tb.thongtinthietbi_id)}
+                                                                                    onChange={e => !isAlreadyReported && handleDeviceSelect(e, tb.thietbi_id, tb.thongtinthietbi_id)}
                                                                                 />
-                                                                                {isAlreadyReported && <span className="ml-1 text-xs text-yellow-600">({tb.trangThaiBaoHongHienTai})</span>}
+                                                                                {isAlreadyReported && (
+                                                                                    <span className="ml-1 text-xs text-yellow-600" title={`Trạng thái báo hỏng: ${reportStatus}`}>({reportStatus})</span>
+                                                                                )}
                                                                             </td>
                                                                             <td className="px-3 py-1 text-xs border">{tb.thongtinthietbi_id}</td>
-                                                                            <td className="px-3 py-1 text-xs border">{tb.tenThietBi}</td>
+                                                                            <td className="px-3 py-1 text-xs border">{tb.tenLoaiThietBi}</td>
                                                                         </tr>
                                                                     );
                                                                 })}

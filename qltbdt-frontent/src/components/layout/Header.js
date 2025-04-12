@@ -15,28 +15,43 @@ function Header({ toggleSidebar, scrollToBaoHong, scrollToGopY, scrollToGioiThie
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const notificationCount = 8; // TODO: Lấy từ API sau
   const dropdownRef = useRef(null); // Ref cho khu vực dropdown
+  const lastScrollY = useRef(0); 
 
   const isBaoHongGopYPage = location.pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollThreshold = 10;
+
       if (isBaoHongGopYPage) {
-        setIsScrolled(window.scrollY > 10);
+        setIsScrolled(currentScrollY > scrollThreshold);
       } else {
-        setIsScrolled(true);
+        setIsScrolled(true); 
       }
+      if (currentScrollY <= scrollThreshold) {
+        setHeaderVisible(true); 
+      } else if (currentScrollY > lastScrollY.current) {
+        setHeaderVisible(false); 
+      } else {
+        setHeaderVisible(true); 
+      }
+      lastScrollY.current = Math.max(0, currentScrollY);
     };
 
     handleScroll();
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname, isBaoHongGopYPage]);
+    // Only depends on the page type for the initial setup logic inside handleScroll
+  }, [isBaoHongGopYPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -86,20 +101,21 @@ function Header({ toggleSidebar, scrollToBaoHong, scrollToGopY, scrollToGioiThie
     }
   };
 
-  // Xác định class CSS cho header dựa trên trạng thái
-  const headerBaseClasses = "flex items-center justify-between w-full py-3 transition-colors duration-300 ease-in-out"; // Thêm position: fixed, z-index, transition
-  const headerBgClass = (isBaoHongGopYPage && !isScrolled)
-    ? 'bg-gray-900 bg-opacity-30 text-white shadow-none fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-in-out'
-    : 'bg-gray-900 bg-opacity-100'
+  const headerBaseClasses = "fixed top-0 left-0 right-0 z-40 flex items-center justify-between w-full py-3 transition-transform duration-300 ease-in-out";
+
+  const headerStyleClass = (isBaoHongGopYPage && !isScrolled)
+    ? 'bg-gray-900 bg-opacity-30 text-white shadow-none transition-colors duration-500'
+    : 'bg-gray-900 bg-opacity-100 text-white shadow-md transition-colors duration-300'; 
+
+  const headerVisibilityClass = headerVisible ? 'translate-y-0' : '-translate-y-full';
 
   const headerPaddingClass = "px-4 md:px-4";
 
   return (
-    // flex items-center justify-between w-full py-3 text-gray-200 bg-gray-900 shadow-md md:px-2
-    <header className={`${headerBaseClasses} ${headerBgClass} ${headerPaddingClass}`}>
+    <header className={`${headerBaseClasses} ${headerStyleClass} ${headerVisibilityClass} ${headerPaddingClass}`}>
 
-      {/* Phần Bên Trái: Chỉ còn nút Menu (nếu user tồn tại và có hàm toggle) */}
-      <div className="flex items-center justify-start md:w-60">
+      {/* Phần Bên Trái: Nút Menu */}
+      <div className="flex items-center justify-start md:w-auto">
         {user && typeof toggleSidebar === 'function' && (
           <button
             onClick={toggleSidebar}

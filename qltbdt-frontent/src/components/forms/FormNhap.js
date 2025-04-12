@@ -244,40 +244,6 @@ const FormNhap = ({ onClose, refreshData }) => {
                     </div>
                 </div>
 
-                {/* Input chọn file chứng từ */}
-                <div className="pt-2">
-                    <label className="block font-medium">Chứng Từ Kèm Theo <span className="text-red-500">*</span> (Tối đa 5 file):</label>
-                    <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" // Giới hạn loại file
-                        onChange={handleFileChange}
-                        ref={fileInputRef} // Gán ref
-                        className="w-full p-2 border rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
-                    {/* Hiển thị danh sách file đã chọn */}
-                    {selectedFiles.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                            <p className="text-sm font-medium">File đã chọn:</p>
-                            <ul className="pl-5 list-disc">
-                                {selectedFiles.map((file, index) => (
-                                    <li key={index} className="flex items-center justify-between text-sm">
-                                        <span className="truncate"><FaPaperclip className="flex-shrink-0 inline mr-1" />{file.name}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveFile(file.name)}
-                                            className="flex-shrink-0 ml-2 text-red-500 hover:text-red-700"
-                                            title="Xóa file"
-                                        >
-                                            <FaTrash size={12} />
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
-
                 {/* Phần Danh sách thiết bị */}
                 <div className="pt-4">
                     <h3 className="text-xl font-semibold">Danh Sách Thiết Bị <span className="text-red-500">*</span></h3>
@@ -337,13 +303,13 @@ const FormNhap = ({ onClose, refreshData }) => {
                                     {/* Hàng bảng con - Chỉ hiển thị nếu có chi tiết và đang mở rộng */}
                                     {expandedRows.includes(tb.thietbi_id) && tb.chiTiet && tb.chiTiet.length > 0 && (
                                         <tr className="bg-gray-50">
-                                            <td colSpan="7" className="p-0 border"> {/* Giảm padding */}
-                                                <div className="p-2 bg-gray-100"> {/* Thêm div con để padding */}
+                                            <td colSpan="7" className="p-0 border">
+                                                <div className="p-2 bg-gray-100">
                                                     <table className="w-full border">
                                                         <thead>
                                                             <tr className="bg-gray-300">
                                                                 <th className="px-3 py-1 text-xs border-b">STT</th>
-                                                                <th className="px-3 py-1 text-xs border-b">Mã định danh (TTTB ID)</th>
+                                                                <th className="px-3 py-1 text-xs border-b">Mã định danh</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -364,29 +330,64 @@ const FormNhap = ({ onClose, refreshData }) => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Input chọn file chứng từ */}
+                <div className="pt-2">
+                    <label className="block font-medium">Chứng Từ Kèm Theo <span className="text-red-500">*</span> (Tối đa 5 file):</label>
+                    <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" // Giới hạn loại file
+                        onChange={handleFileChange}
+                        ref={fileInputRef} // Gán ref
+                        className="w-full p-2 border rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {/* Hiển thị danh sách file đã chọn */}
+                    {selectedFiles.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                            <p className="text-sm font-medium">File đã chọn:</p>
+                            <ul className="pl-5 list-disc">
+                                {selectedFiles.map((file, index) => (
+                                    <li key={index} className="flex items-center justify-between text-sm">
+                                        <span className="truncate"><FaPaperclip className="flex-shrink-0 inline mr-1" />{file.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveFile(file.name)}
+                                            className="flex-shrink-0 ml-2 text-red-500 hover:text-red-700"
+                                            title="Xóa file"
+                                        >
+                                            <FaTrash size={12} />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+
             </form>
 
             {/* Footer với các nút hành động */}
             <div className="p-4 mt-auto border-t bg-gray-50">
                 <div className="grid grid-cols-2 gap-4">
+                    {/* Nút thêm tb */}
                     <button
                         type="button"
                         onClick={() => setShowPhieuNhap(true)}
-                        className="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                        className="w-full px-4 py-2 text-white bg-gray-600 rounded hover:bg-gray-900"
                     >
                         Thêm Thiết Bị
                     </button>
-                    {/* Nút Lưu Ghi Nhập được chuyển vào trong form để kích hoạt onSubmit */}
+                    {/* Nút Lưu Ghi Nhập */}
                     <button
                         type="submit"
                         form="nhapForm"
                         className="inline-flex items-center justify-center w-full px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed"
-                        // Disable khi chưa đủ điều kiện HOẶC đang lưu
                         disabled={thietBiNhap.length === 0 || selectedFiles.length === 0 || isSaving}
                     >
                         {isSaving ? (
                             <>
-                                <FaSpinner className="w-4 h-4 mr-2 -ml-1 animate-spin" /> {/* Icon quay */}
+                                <FaSpinner className="w-4 h-4 mr-2 -ml-1 animate-spin" />
                                 Đang xử lý...
                             </>
                         ) : (

@@ -151,25 +151,3 @@ exports.getThongTinThietBi = async (req, res) => {
     }
 };
 
-// Lấy số lượng thiết bị còn lại
-exports.getThietBiConLai = async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            SELECT
-                tb.id,
-                tb.tenThietBi,
-                tb.theloai_id, 
-                tb.tonKho - COALESCE(
-                    (SELECT COUNT(*)
-                     FROM phong_thietbi ptb
-                     WHERE ptb.thietbi_id = tb.id), 0
-                ) AS remainingStock
-            FROM
-                thietbi tb
-        `);
-        res.json(rows);
-    } catch (error) {
-        console.error("Lỗi khi lấy danh sách thiết bị còn lại:", error);
-        res.status(500).json({ error: "Lỗi server khi lấy danh sách thiết bị còn lại!" });
-    }
-};

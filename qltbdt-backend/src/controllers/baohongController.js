@@ -119,20 +119,27 @@ exports.postGuiBaoHong = async (req, res) => {
 exports.getThongTinBaoHong = async (req, res) => {
     try {
         // 1. Lấy thông tin báo hỏng cơ bản và JOIN để lấy tên phòng, tên thiết bị, tên NV đã gán
-        const [baoHongRows] = await pool.query(`
+        const query = `
             SELECT
                 bh.*,
                 p.toa,
                 p.tang,
                 p.soPhong,
-                tb.tenThietBi, 
+                tttb.thietbi_id,       
+                tb.tenThietBi,     
                 u_assigned.hoTen AS tenNhanVienDaGan
             FROM baohong bh
-            JOIN phong p ON bh.phong_id = p.id
-            LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id -- LEFT JOIN nếu thietbi_id có thể NULL
-            LEFT JOIN users u_assigned ON bh.nhanvien_id = u_assigned.id -- LEFT JOIN lấy tên NV đã gán
-            ORDER BY bh.ngayBaoHong DESC
-        `);
+            LEFT JOIN phong p ON bh.phong_id = p.id -- JOIN để lấy thông tin phòng
+            -- JOIN qua thongtinthietbi để lấy thietbi_id
+            LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
+            -- JOIN vào thietbi để lấy tenThietBi
+            LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
+            -- JOIN để lấy tên nhân viên đã được gán
+            LEFT JOIN users u_assigned ON bh.nhanvien_id = u_assigned.id
+            ORDER BY bh.ngayBaoHong DESC; -- Sắp xếp theo ngày báo giảm dần
+        `;
+
+        const [baoHongRows] = await pool.query(query);
 
         const phongMap = new Map(baoHongRows.map(p => [p.phong_id, `${p.toa}${p.tang}.${p.soPhong}`]));
 
@@ -170,15 +177,17 @@ exports.getThongTinBaoHong = async (req, res) => {
                 }
             }
 
+
             return {
                 ...item,
                 phong_name: phongMap.get(item.phong_id) || "Không xác định",
-                tenThietBi: item.tenThietBi || null, // Đảm bảo có trường này
+                tenThietBi: item.tenThietBi || null, 
                 tenNhanVienXuLy: item.tenNhanVienDaGan || null, // Tên NV đã gán chính thức
                 suggested_nhanvien_id, // ID NV gợi ý
                 suggested_nhanvien_name // Tên NV gợi ý
             };
         });
+
 
         const baoHongData = await Promise.all(baoHongDataPromises);
 
@@ -367,8 +376,8 @@ exports.updateBaoHong = async (req, res) => {
                 };
                 emitToUser(finalNhanVienId, 'new_task', taskData);
             }
-       }
-       res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, statusAfterUpdate: statusAfterUpdate });
+        }
+        res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, statusAfterUpdate: statusAfterUpdate });
 
     } catch (error) {
         await connection.rollback();

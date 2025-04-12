@@ -217,9 +217,14 @@ export const fetchThietBiTrongPhong = async (phongId) => {
 };
 
 export const addPhongAPI = async (phongData) => {
-  const { data } = await api.post("/phong", phongData);
-  return data;
+  try {
+      const { data } = await api.post("/phong", phongData);
+      return data;
+  } catch (error) {
+      throw error; 
+  }
 };
+
 
 export const updatePhongAPI = async ({ id, ...phongData }) => {
   const { data } = await api.put(`/phong/${id}`, phongData);
@@ -231,14 +236,38 @@ export const deletePhongAPI = async (phongId) => {
   return data;
 };
 
-export const addThietBiToPhongAPI = async (thietBiListData) => {
-  const { data } = await api.post("/phong/add-thietbi", thietBiListData);
+export const removeThietBiFromPhongAPI = async (payload) => {
+  const { phong_id, thongtinthietbi_id } = payload;
+
+  if (!phong_id || !thongtinthietbi_id) {
+    return Promise.reject(new Error("Thiếu ID phòng hoặc ID tài sản khi gọi API xóa khỏi phòng."));
+  }
+
+  const { data } = await api.post("/phong/xoathietbi", payload);
   return data;
 };
 
-export const removeThietBiFromPhongAPI = async (payload) => {
-  const { data } = await api.post("/phong/xoathietbi", payload);
-  return data;
+// Hàm  cho bảng Phong.js, sử dụng useQuery
+export const fetchPhongTableData = async () => {
+  try {
+      // Gọi API lấy danh sách phòng cơ bản
+      const response = await api.get("/phong"); 
+      if (!Array.isArray(response.data)) {
+          console.error("API fetch phòng không trả về mảng:", response.data);
+          return [];
+      }
+      // Bổ sung totalDevices cho từng phòng
+      const roomsWithDevices = await Promise.all(
+          response.data.map(async (room) => {
+              const totalDevices = await fetchTotalDevicesForRoom(room.id); 
+              return { ...room, totalDevices };
+          })
+      );
+      return roomsWithDevices;
+  } catch (error) {
+      console.error("Lỗi fetch dữ liệu phòng:", error);
+      throw error;
+  }
 };
 //============================================================================================ //
 
@@ -248,15 +277,6 @@ export const fetchTheLoaiList = async () => {
   return data;
 };
 
-export const fetchThietBiConLai = async () => {
-  const { data } = await api.get("/thietbi/thietbiconlai");
-  return data;
-};
-
-export const fetchThongTinThietBiChuaPhanBo = async (thietbi_id) => {
-  const { data } = await api.get(`/tttb/unassigned`, { params: { thietbi_id } });
-  return data;
-};
 // ========================================================================================= //
 
 
@@ -442,13 +462,11 @@ export const deleteBaoHongAPI = async (baoHongId) => {
 };
 
 // Xóa hàng loạt báo hỏng (Bulk Delete)
-// Giả định backend có route DELETE /api/baohong/bulk nhận body { ids: [...] }
 export const deleteBulkBaohongAPI = async (baoHongIdsArray) => {
   if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0) {
     // Có thể trả về Promise.resolve hoặc ném lỗi tùy logic mong muốn
     console.warn("No IDs provided for bulk delete.");
     return { message: "Không có ID nào được chọn để xóa." };
-    // throw new Error("No IDs provided for bulk delete.");
   }
   try {
     // Axios yêu cầu data cho DELETE phải nằm trong config object
@@ -579,14 +597,9 @@ export const uploadInvoiceImagesAPI = async (files) => {
 // ============================================================================
 
 // API cho Quản lý Tài sản
-export const getAllTaiSanAPI = async (params = { page: 1, limit: 10 }) => {
-  try {
-    const response = await api.get('/tttb/taisan', { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi lấy danh sách tài sản:", error);
-    throw error;
-  }
+export const getAllTaiSanAPI = (params = {}) => {
+  // params có thể là { trangThai: '...', phongId: '...' }
+  return api.get('/tttb/taisan', { params });
 };
 
 export const updateTinhTrangTaiSanAPI = (id, data) => {
@@ -594,7 +607,11 @@ export const updateTinhTrangTaiSanAPI = (id, data) => {
   return api.put(`/tttb/taisan/${id}/tinhtrang`, data);
 };
 
-export const assignTaiSanToPhongAPI = (thongtinthietbi_id, phong_id) => {
+export const assignTaiSanToPhongAPI = (payload) => {
+  const { thongtinthietbi_id, phong_id } = payload;
+  if (!thongtinthietbi_id || !phong_id) {
+    return Promise.reject(new Error("Thiếu ID tài sản hoặc ID phòng khi gọi API gán."));
+  }
   return api.post(`/tttb/taisan/${thongtinthietbi_id}/phanbo`, { phong_id });
 };
 
@@ -693,6 +710,6 @@ export const getThietBiByTheLoaiAPI = async (theLoaiId) => {
     return [];
   }
 };
-
+ 
 
 

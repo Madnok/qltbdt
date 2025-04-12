@@ -100,7 +100,6 @@ exports.deletePhong = async (req, res) => {
     }
 };
 
-
 // Lấy danh sách phòng (Dropdown)
 exports.getListPhong = async (req, res) => {
     try {
@@ -116,122 +115,112 @@ exports.getListPhong = async (req, res) => {
     }
 };
 
-// Thêm thiết bị vào phòng
-exports.addThietBiToPhong = async (req, res) => {
-    try {
-        const thietbiList = req.body; // Nhận danh sách thiết bị từ frontend
-
-        if (!thietbiList || thietbiList.length === 0) {
-            return res.status(400).json({ error: "Danh sách thiết bị rỗng!" });
-        }
-
-        for (let item of thietbiList) {
-            const { phong_id, thietbi_id, thongtinthietbi_id } = item;
-
-            if (!phong_id || !thietbi_id || !thongtinthietbi_id) {
-                return res.status(400).json({ error: "Thiếu dữ liệu, vui lòng kiểm tra lại!" });
-            }
-
-            // Kiểm tra thiết bị đã được phân bổ vào phòng khác hay chưa
-            const [[existingDevice]] = await pool.query(
-                "SELECT phong_id FROM phong_thietbi WHERE thongtinthietbi_id = ?",
-                [thongtinthietbi_id]
-            );
-            
-            if (existingDevice && existingDevice.phong_id !== phong_id) {
-                return res.status(400).json({
-                    error: `Thiết bị có thongtinthietbi_id ${thongtinthietbi_id} đã được phân bổ vào phòng khác!`,
-                });
-            }
-            
-            // Thêm thiết bị vào phòng
-            await pool.query(
-                "INSERT INTO phong_thietbi (phong_id, thietbi_id, thongtinthietbi_id) VALUES (?, ?, ?)",
-                [phong_id, thietbi_id, thongtinthietbi_id]
-            );
-        }
-
-        res.json({ success: true, message: "Thêm thiết bị vào phòng thành công!" });
-    } catch (error) {
-        console.error("Lỗi thêm thiết bị vào phòng:", error);
-        res.status(500).json({ error: "Lỗi server!" });
-    }
-};
-
-
 // Lấy Danh Sách Thiết Bị Trong Phòng
 exports.getThietBiTrongPhong = async (req, res) => {
-    const { phong_id } = req.params;
+    const phongIdParam = req.params.id || req.params.phong_id; // Lấy ID phòng từ URL
 
-    if (!phong_id) {
-        return res.status(400).json({ error: "Thiếu mã phòng!" });
+    if (!phongIdParam) {
+        return res.status(400).json({ error: "Thiếu ID phòng!" });
+    }
+
+    // Chuyển đổi sang số nguyên một cách an toàn
+    const phong_id = parseInt(phongIdParam, 10);
+    if (isNaN(phong_id)) {
+        return res.status(400).json({ error: "ID phòng không hợp lệ." });
     }
 
     try {
-        const [results] = await pool.query(
-            `SELECT
-                ptb.id, ptb.phong_id, ptb.thietbi_id, ptb.thongtinthietbi_id,
-                tb.tenThietBi,
-                tttb.tinhTrang, tttb.thoiGianBaoHanh, tttb.ngayBaoHanhKetThuc,
-                tl.theLoai,
-                -- Lấy trạng thái của báo hỏng gần nhất CHƯA HOÀN THÀNH cho TTTB này
-                (SELECT bh.trangThai
-                 FROM baohong bh
-                 WHERE bh.thongtinthietbi_id = ptb.thongtinthietbi_id
-                   AND bh.trangThai NOT IN ('Hoàn Thành', 'Không Thể Hoàn Thành') -- Hoặc chỉ check NOT IN ('Hoàn Thành')
-                 ORDER BY bh.ngayBaoHong DESC
-                 LIMIT 1
-                ) AS trangThaiBaoHongHienTai
-            FROM phong_thietbi ptb
-            JOIN thietbi tb ON ptb.thietbi_id = tb.id
-            JOIN thongtinthietbi tttb ON ptb.thongtinthietbi_id = tttb.id
-            JOIN theloai tl ON tb.theloai_id = tl.id
-            WHERE ptb.phong_id = ?`,
-            [phong_id]
-        );
+        // Query ĐÚNG: Lấy từ thongtinthietbi
+        const query = `
+            SELECT tttb.id AS thongtinthietbi_id, tttb.tinhTrang, tb.tenThietBi AS tenLoaiThietBi, tl.theLoai AS tenTheLoai, bh_latest.trangThai AS trangThaiBaoHongHienTai
+             FROM thongtinthietbi tttb
+             LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
+             LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            LEFT JOIN (
+                SELECT
+                    bh.thongtinthietbi_id,
+                    bh.trangThai,
+                    ROW_NUMBER() OVER(PARTITION BY bh.thongtinthietbi_id ORDER BY bh.ngayBaoHong DESC, bh.id DESC) as rn
+                FROM baohong bh
+                WHERE bh.trangThai != 'Hoàn Thành'
+            ) bh_latest ON tttb.id = bh_latest.thongtinthietbi_id AND bh_latest.rn = 1
+            WHERE
+                tttb.phong_id = ?
+            ORDER BY
+                tl.theLoai, tb.tenThietBi, tttb.id; -- Giữ nguyên ORDER BY cũ của bạn
+        `;
 
-        // Nếu không có thiết bị nào trong phòng
-        if (results.length === 0) {
-            return res.status(200).json({ message: "Phòng chưa có thiết bị nào!" });
-        }
+        const [thietBiList] = await pool.query(query, [phong_id]);
+        // Trả về mảng rỗng nếu không có
+        res.status(200).json(thietBiList || []);
 
-        // Trả về danh sách thiết bị
-        res.json(results);
     } catch (error) {
         console.error("Lỗi lấy danh sách thiết bị trong phòng:", error);
         res.status(500).json({ error: "Lỗi server!" });
     }
 };
 
-
-
 // Xóa thiết bị khỏi phòng và cập nhật tồn kho
-exports.removeThietBiFromPhong = async (req, res) => {
+exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
+    const { phong_id, thongtinthietbi_id } = req.body;
+
+    // --- Input Validation ---
+    if (!phong_id || !thongtinthietbi_id || isNaN(parseInt(phong_id, 10)) || isNaN(parseInt(thongtinthietbi_id, 10))) {
+        return res.status(400).json({ error: "Thiếu hoặc sai định dạng ID phòng hoặc ID tài sản." });
+    }
+    const phongIdInt = parseInt(phong_id, 10);
+    const tttbIdInt = parseInt(thongtinthietbi_id, 10);
+    // ------------------------
+
+    const connection = await pool.getConnection();
+
     try {
-        const { phong_id, thongtinthietbi_id } = req.body;
+        await connection.beginTransaction();
 
-        if (!phong_id || !thongtinthietbi_id) {
-            return res.status(400).json({ error: "Thiếu dữ liệu, vui lòng kiểm tra lại!" });
-        }
-
-        // Kiểm tra xem thiết bị có tồn tại trong phòng không
-        const [existing] = await pool.query(
-            "SELECT * FROM phong_thietbi WHERE phong_id = ? AND thongtinthietbi_id = ?",
-            [phong_id, thongtinthietbi_id]
+        // --- Kiểm tra tài sản trong bảng thongtinthietbi ---
+        const [rows] = await connection.query(
+            'SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE', // Chỉ cần lấy phong_id để kiểm tra
+            [tttbIdInt]
         );
 
-        if (existing.length === 0) {
-            return res.status(404).json({ error: "Thiết bị không tồn tại trong phòng này!" });
+        if (rows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: `Không tìm thấy tài sản với ID ${tttbIdInt}.` });
         }
 
-        // Xóa thiết bị khỏi phòng
-        await pool.query("DELETE FROM phong_thietbi WHERE phong_id = ? AND thongtinthietbi_id = ?", [phong_id, thongtinthietbi_id]);
+        const taiSan = rows[0];
 
-        res.status(200).json({ message: "Xóa thiết bị khỏi phòng thành công!" });
+        // Kiểm tra xem tài sản có đúng là thuộc phòng này không
+        if (taiSan.phong_id !== phongIdInt) {
+            await connection.rollback();
+            return res.status(400).json({ error: `Tài sản ID ${tttbIdInt} không thực sự thuộc phòng ID ${phongIdInt}.` });
+        }
+        // ----------------------------------------------------
+
+        // --- Chỉ Cập nhật phong_id = NULL ---
+        const [updateResult] = await connection.query(
+            'UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?', // Bỏ cập nhật tinhTrang
+            [tttbIdInt]
+        );
+
+        if (updateResult.affectedRows === 0) {
+            await connection.rollback();
+            throw new Error(`Không thể cập nhật thông tin thu hồi cho tài sản ID ${tttbIdInt}.`);
+        }
+        // -----------------------------------
+
+        await connection.commit();
+
+        res.status(200).json({ message: `Đã thu hồi tài sản ID ${tttbIdInt} thành công!` });
+
     } catch (error) {
-        console.error("Lỗi khi xóa thiết bị khỏi phòng:", error);
-        res.status(500).json({ error: "Lỗi server!" });
+        await connection.rollback();
+        console.error("Lỗi khi thu hồi tài sản khỏi phòng:", error);
+        res.status(500).json({ error: "Lỗi máy chủ nội bộ khi thu hồi tài sản." });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
 };
-
 

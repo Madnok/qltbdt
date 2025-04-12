@@ -1,9 +1,9 @@
-// src/components/QuanLyTaiSan/FormPhanBo.js
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { fetchPhongList, assignTaiSanToPhongAPI } from '../../api'; // Import API cần thiết
-import Popup from '../layout/Popup'; // Sử dụng Popup component có sẵn của bạn
+import { fetchPhongList, assignTaiSanToPhongAPI } from '../../api';
+import Popup from '../layout/Popup';
 import { toast } from 'react-toastify';
+import eventBus from '../../utils/eventBus';
 
 const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
     const [selectedPhongId, setSelectedPhongId] = useState('');
@@ -11,17 +11,13 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
     // Lấy danh sách phòng cho dropdown
     const { data: phongList, isLoading: isLoadingPhong } = useQuery({
         queryKey: ['listPhong'],
-        queryFn: () => fetchPhongList().then(res => res.data || res), // Đảm bảo lấy đúng dữ liệu
+        queryFn: () => fetchPhongList().then(res => res.data || res),
         enabled: isOpen, // Chỉ fetch khi modal mở
     });
 
     // Mutation để gán tài sản vào phòng
     const assignMutation = useMutation({
-        mutationFn: ({ thongtinthietbi_id, phong_id }) => assignTaiSanToPhongAPI(thongtinthietbi_id, phong_id),
-        onError: (error, variables) => {
-            console.error(`Lỗi phân bổ thiết bị ID ${variables.thongtinthietbi_id}:`, error);
-            toast.error(`Lỗi phân bổ TB ID ${variables.thongtinthietbi_id}: ${error.response?.data?.error || error.message}`);
-        }
+        mutationFn: assignTaiSanToPhongAPI,
     });
 
     // Xử lý khi nhấn nút Xác nhận
@@ -39,20 +35,39 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
 
         toast.info(`Đang phân bổ ${selectedIds.length} thiết bị vào phòng...`);
 
+        let successCount = 0;
+        let errorCount = 0;
+        const assignPromises = selectedIds.map(thietBiId =>
+            assignMutation.mutateAsync({ thongtinthietbi_id: thietBiId, phong_id: selectedPhongId })
+                .then(() => {
+                    successCount++;
+                })
+                .catch((error) => {
+                    errorCount++;
+                    console.error(`Lỗi phân bổ TB ID ${thietBiId} vào phòng ${selectedPhongId}:`, error);
+                    toast.error(`Lỗi phân bổ TB ID ${thietBiId}: ${error.response?.data?.error || error.message}`);
+                })
+        );
         try {
-            const assignPromises = selectedIds.map(thietBiId =>
-                assignMutation.mutateAsync({ thongtinthietbi_id: thietBiId, phong_id: selectedPhongId })
-            );
             await Promise.all(assignPromises);
 
-            toast.success(`Đã phân bổ thành công ${selectedIds.length} thiết bị!`);
-            triggerRefetch(); // Làm mới bảng dữ liệu
-            onClose(); // Đóng modal sau khi thành công
+            if (successCount > 0) {
+                toast.success(`Đã phân bổ thành công ${successCount} thiết bị!`);
+                console.log('[FormPhanBo] Emitting phongDataUpdated for phongId:', selectedPhongId, typeof selectedPhongId);
+                eventBus.emit('phongDataUpdated', selectedPhongId);
+
+                triggerRefetch();
+                onClose();
+            }
+
+            if (errorCount > 0) {
+                toast.warn(`Có ${errorCount} lỗi xảy ra trong quá trình phân bổ.`);
+            }
+
 
         } catch (error) {
-            // Lỗi đã được xử lý trong onError của mutation
-            console.error("Có lỗi xảy ra trong quá trình phân bổ hàng loạt.", error);
-            // Không đóng modal nếu lỗi để người dùng biết
+            console.error("Có lỗi không mong muốn xảy ra trong quá trình phân bổ hàng loạt.", error);
+            toast.error("Lỗi không xác định trong quá trình phân bổ.");
         }
     };
 
@@ -71,9 +86,9 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
                             required // Bắt buộc chọn phòng
                         >
                             <option value="" disabled>-- Chọn phòng --</option>
-                            {phongList?.map(p => (
-                                <option key={p.id} value={p.id}>
-                                    {p.phong} ({p.chucNang || 'N/A'})
+                            {Array.isArray(phongList) && phongList.map(p => (
+                                <option key={p.id || p._id} value={p.id || p._id}>
+                                    {p.phong || `${p.toa}${p.tang}.${p.soPhong}` } ({p.chucNang || 'N/A'})
                                 </option>
                             ))}
                         </select>

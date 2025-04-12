@@ -10,7 +10,6 @@ router.use(verifyToken);
 
 router.get("/", thietBiController.getAllThietBi);
 router.get("/tongsoluongnhap/", thietBiController.getAllThietBiFromPhieuNhap);
-router.get("/thietbiconlai", thietBiController.getThietBiConLai);
 router.get("/thongtin/:thietbi_id", thietBiController.getThongTinThietBi);
 router.get("/:id", thietBiController.getThietBiById);
 router.post("/", thietBiController.createThietBi);

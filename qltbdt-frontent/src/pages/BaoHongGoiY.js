@@ -22,13 +22,21 @@ const BaoHongGoiY = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const scrollToSection = (ref) => {
+        const headerElement = document.querySelector('header');
+        const headerHeight = headerElement ? headerElement.offsetHeight : 20;
+
         if (ref === gioiThieuRef) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (ref.current) {
+            const elementPosition = ref.current.offsetTop;
+            const offsetPosition = elementPosition - headerHeight;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
         }
     };
-
 
     useEffect(() => {
         if (slideshowImages.length > 1) {
@@ -48,12 +56,11 @@ const BaoHongGoiY = () => {
                 scrollToGopY={() => scrollToSection(gopYRef)}
                 scrollToGioiThieu={() => scrollToSection(gioiThieuRef)}
             />
-
             {/* Section Giới thiệu */}
             <section
                 ref={gioiThieuRef}
                 id="gioi-thieu"
-                className="relative flex items-center justify-center overflow-hidden text-center text-white bg-center bg-cover h-sceen md:h-screen"
+                className="relative flex items-center justify-center h-screen overflow-hidden text-center text-white bg-center bg-cover"
             >
                 <div className="absolute inset-0 w-full h-full">
                     {slideshowImages.map((imgSrc, index) => (
@@ -108,7 +115,7 @@ const BaoHongGoiY = () => {
                         </button>
                         <button
                             onClick={() => scrollToSection(gopYRef)}
-                            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-800 rounded-lg shadow-md focus:ring-4 focus:ring-blue-300 hover:bg-blue-800 transition duration-300 w-[96px] sm:w-auto"
+                            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-800 rounded-lg shadow-md focus:ring-4 focus:ring-blue-300 hover:bg-blue-800 transition duration-300 w-full sm:w-auto"
                         >
                             <i className="w-4 h-4 mr-2 fas fa-comment-dots"></i> Gửi Góp Ý
                         </button>
@@ -117,22 +124,22 @@ const BaoHongGoiY = () => {
                 </div>
             </section>
 
-            {/* Section Báo Hỏng */}
+            {/* Section Báo Hỏng  */}
             <section ref={baoHongRef} id="bao-hong" className="flex items-center justify-center h-screen bg-gray-100">
-                <div className="max-w-4xl px-4 mx-auto sm:px-6 lg:px-8">{/* Thêm padding ngang responsive */}
+                <div className="w-full max-w-6xl px-4 mx-auto sm:px-6 lg:px-8">
                     <BaoHong />
                 </div>
             </section>
 
-            {/* Section Góp Ý */}
-            <section ref={gopYRef} id="gop-y" className="items-center justify-center h-screen py-2 bg-gray-100 md:py-6">
-                <div className="max-w-4xl px-4 mx-auto sm:px-6 lg:px-8">
+            {/* Section Góp Ý - Consistent max-width */}
+            <section ref={gopYRef} id="gop-y" className="flex items-center justify-center h-screen bg-gray-100">
+                <div className="w-full max-w-4xl px-4 mx-auto sm:px-6 lg:px-8">
                     <GopY />
                 </div>
             </section>
 
             <Footer />
-            <ScrollToTopButton /> {/* Thêm nút Scroll-to-Top */}
+            <ScrollToTopButton />
         </div>
     );
 };
