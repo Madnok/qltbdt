@@ -11,7 +11,7 @@ const Sidebar = ({ isOpen = true, toggleSidebar }) => { // Nhận hàm toggleSid
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/auth/me", { withCredentials: true });
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`, { withCredentials: true });
         setUser(response.data.user);
       } catch (error) {
         console.error("Không thể lấy thông tin người dùng:", error);

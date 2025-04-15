@@ -23,7 +23,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser()); // Thêm dòng này để đọc cookies
 app.use(cors({
-  origin: "http://localhost:3000", 
+  origin: process.env.FRONTEND_URL, 
   credentials: true,  //Cho phép gửi cookies từ frontend
 }));
 

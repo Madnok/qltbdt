@@ -7,7 +7,7 @@ const ChiTietTheLoai = ({ record, onClose, refreshData }) => {
     const [isEditing, setIsEditing] = useState(false); // Trạng thái chỉnh sửa
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/theloai/${record.id}`, {withCredentials: true})
+        axios.get(`${process.env.REACT_APP_API_URL}/api/theloai/${record.id}`, {withCredentials: true})
             .then(response => {
                 setEditData({ theLoai: response.data.theLoai.theLoai });
                 setDsThietBi(response.data.dsThietBi);
@@ -23,7 +23,7 @@ const ChiTietTheLoai = ({ record, onClose, refreshData }) => {
     const handleSave = async () => {
         const config = {withCredentials: true}
         try {
-            await axios.put(`http://localhost:5000/api/theloai/${record.id}`, editData, config);
+            await axios.put(`${process.env.REACT_APP_API_URL}/api/theloai/${record.id}`, editData, config);
             alert("Cập nhật thành công!");
             setIsEditing(false); // Sau khi lưu, tắt chỉnh sửa
             refreshData(); // Cập nhật lại dữ liệu
@@ -37,7 +37,7 @@ const ChiTietTheLoai = ({ record, onClose, refreshData }) => {
     const handleDelete = async () => {
         if (!window.confirm("Bạn có chắc muốn xóa thể loại này không?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/theloai/${record.id}`, {withCredentials: true});
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/theloai/${record.id}`, {withCredentials: true});
             alert("Xóa thành công!");
             refreshData();
             onClose();

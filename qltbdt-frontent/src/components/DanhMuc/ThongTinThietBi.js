@@ -13,10 +13,10 @@ const ThongTinThietBi = ({ setSelectedRecord, refresh }) => {
     // Hàm tải dữ liệu
     const fetchData = async () => {
         try {
-            const responseData = await axios.get("http://localhost:5000/api/tttb",{withCredentials:true});
+            const responseData = await axios.get(`${process.env.REACT_APP_API_URL}/api/tttb`,{withCredentials:true});
             setData(responseData.data);
 
-            const thietBiResponse = await axios.get("http://localhost:5000/api/tttb/thietbi-list",{withCredentials:true});
+            const thietBiResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/tttb/thietbi-list`,{withCredentials:true});
             setThietBiList(thietBiResponse.data);
         } catch (error) {
             console.error("Lỗi tải thông tin:", error);

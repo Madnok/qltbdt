@@ -28,7 +28,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     };
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/thietbi-list", {withCredentials:true})
+        axios.get(`${process.env.REACT_APP_API_URL}/api/tttb/thietbi-list`, {withCredentials:true})
             .then(response => setThietBiList(response.data))
             .catch(error => console.error("Lỗi tải danh sách thiết bị:", error));
     }, []);
@@ -49,7 +49,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
 
     const handleSave = async () => {
         try {
-            await axios.put(`http://localhost:5000/api/tttb/${record.id}`, editData, { withCredentials: true });
+            await axios.put(`${process.env.REACT_APP_API_URL}/api/tttb/${record.id}`, editData, { withCredentials: true });
             alert("Cập nhật thông tin thiết bị thành công!");
             setIsEditing(false);
             refreshData();
@@ -63,7 +63,7 @@ const ChiTietTTTB = ({ onClose, record, refreshData }) => {
     // const handleDelete = async () => {
     //     if (window.confirm("Bạn có chắc chắn muốn xóa thông tin thiết bị này?")) {
     //         try {
-    //             await axios.delete(`http://localhost:5000/api/tttb/${record.id}`, { withCredentials: true });
+    //             await axios.delete(`${process.env.REACT_APP_API_URL}/api/tttb/${record.id}`, { withCredentials: true });
     //             alert("Xóa thông tin thiết bị thành công!");
     //             refreshData();
     //             onClose();

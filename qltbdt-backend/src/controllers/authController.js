@@ -142,7 +142,7 @@ exports.forgotPassword = async (req, res) => {
       [resetToken, new Date(resetPasswordExpires), user[0].id]
     );
 
-    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     const subject = "Yêu cầu đặt lại mật khẩu";
     const html = `
       <p>Bạn nhận được email này vì bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>

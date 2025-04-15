@@ -11,7 +11,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
     const [thoiGianBaoHanh, setThoiGianBaoHanh] = useState(0); // Thêm thời gian bảo hành
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/tttb/thietbi-list", { withCredentials: true })
+        axios.get(`${process.env.REACT_APP_API_URL}/api/tttb/thietbi-list`, { withCredentials: true })
             .then((response) => setThietBiList(response.data))
             .catch((error) => console.error("ERROR", error));
     }, []);
@@ -38,7 +38,7 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
     
     const getNextId = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/tttb/next-id", { withCredentials: true }); // Gọi API
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/tttb/next-id`, { withCredentials: true }); // Gọi API
             return response.data.nextId; // Trả về nextId từ API
         } catch (error) {
             console.error("Lỗi lấy nextId:", error);

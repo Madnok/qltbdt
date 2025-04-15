@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   // Hàm gọi API lấy thông tin user
   const refreshUser = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/auth/me", { withCredentials: true });
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`, { withCredentials: true });
       setUser(res.data.user);
     } catch (err) {
       console.error("Lỗi lấy user:", err);
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   // Hàm đăng nhập
   const login = async (credentials) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", credentials, { withCredentials: true });
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, credentials, { withCredentials: true });
       setUser(res.data.user); // Cập nhật user ngay lập tức
       window.location.reload();
       await refreshUser(); // Gọi lại API để đảm bảo đồng bộ dữ liệu
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   // Hàm đăng xuất
   const logout = async () => {
-    await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+    await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {}, { withCredentials: true });
     setUser(null);
     navigate("/login");
   };

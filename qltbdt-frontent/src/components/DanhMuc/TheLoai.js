@@ -8,7 +8,7 @@ const TheLoai = ({ setSelectedRecord, refresh }) => {
 
     // Hàm tải dữ liệu
     const fetchData = () => {
-        axios.get("http://localhost:5000/api/theloai",{withCredentials: true})
+        axios.get(`${process.env.REACT_APP_API_URL}/api/theloai`,{withCredentials: true})
             .then(response => setData(response.data))
             .catch(error => console.error("Lỗi tải dữ liệu:", error));
     };
