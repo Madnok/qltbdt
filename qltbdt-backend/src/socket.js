@@ -30,7 +30,7 @@ function initializeSocket(server) { // Nhận httpServer
 
     ioInstance = new Server(server, {
         cors: {
-            origin: process.env.FRONTEND_URL || "http://localhost:3000", // Lấy từ env hoặc mặc định
+            origin: [process.env.FRONTEND_URL, "http://localhost:3000"],
             methods: ["GET", "POST"],
             credentials: true
         }
