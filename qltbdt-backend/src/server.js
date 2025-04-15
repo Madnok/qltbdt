@@ -13,11 +13,11 @@ const httpServer = http.createServer(app);
 const io = initializeSocket(httpServer);
 
 // Kiểm tra kết nối DB trước khi chạy server
-httpServer.listen(PORT, async () => {
+httpServer.listen(PORT, '0.0.0.0', async () => {
   try {
       await pool.query('SELECT 1');
       console.log("✅ Kết nối MySQL thành công!");
-      console.log(`🚀 Server chạy tại http://localhost:${PORT}`);
+      console.log(`🚀 Server chạy tại http://0.0.0.0:${PORT}`);
   } catch (error) {
     console.error("❌ Lỗi kết nối DB:", error);
   }
