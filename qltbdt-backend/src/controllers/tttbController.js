@@ -226,7 +226,7 @@ exports.getThietBiTrongPhong = async (req, res) => {
             LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
             LEFT JOIN theloai tl ON tb.theloai_id = tl.id
             WHERE tttb.phong_id = ?
-            ORDER BY tl.theLoai, tb.tenThietBi, tttb.id`, 
+            ORDER BY tl.theLoai, tb.tenThietBi, tttb.id`,
             [phong_id]
         );
 
@@ -389,9 +389,9 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         }
         if (phongId === 'kho' || phongId === 'null' || phongId === '') {
             whereClause += " AND ttb.phong_id IS NULL";
-        } else if (phongId) { 
+        } else if (phongId) {
             const parsedPhongId = parseInt(phongId);
-            if (!isNaN(parsedPhongId)) { 
+            if (!isNaN(parsedPhongId)) {
                 whereClause += " AND ttb.phong_id = ?";
                 params.push(parsedPhongId);
             } else {
@@ -425,7 +425,10 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         // --- Query chính để lấy dữ liệu trang hiện tại ---
         let query = `
             SELECT
-                ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.nguoiDuocCap, ttb.ngayBaoHanhKetThuc, ttb.thietbi_id, ttb.phieunhap_id, ttb.ngayMua, ttb.giaTriBanDau, 
+                ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.nguoiDuocCap, 
+                ttb.ngayBaoHanhKetThuc, 
+                ttb.ngayDuKienTra,
+                ttb.thietbi_id, ttb.phieunhap_id, ttb.ngayMua, ttb.giaTriBanDau, 
                 tb.tenThietBi AS tenLoaiThietBi,
                 tb.theloai_id, tb.tonKho,
                 tl.theLoai AS tenTheLoai,
@@ -451,42 +454,6 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         `;
         const paramsWithPagination = [...params, limit, offset];
         const [rows] = await pool.query(query, paramsWithPagination);
-        // --- Kết thúc query chính ---
-
-        // // Thêm điều kiện lọc
-        // if (trangThai) {
-        //     query += " AND ttb.tinhTrang = ?";
-        //     params.push(trangThai);
-        // }
-        // if (phongId === 'kho') { // Lọc thiết bị "trong kho" (chưa phân bổ)
-        //     query += " AND ttb.phong_id IS NULL";
-        // } else if (phongId) {
-        //     query += " AND ttb.phong_id = ?";
-        //     params.push(parseInt(phongId));
-        // }
-        // if (theLoaiId) {
-        //     query += " AND tb.theloai_id = ?";
-        //     params.push(parseInt(theLoaiId));
-        // }
-        // if (thietBiId) {
-        //     query += " AND ttb.thietbi_id = ?";
-        //     params.push(parseInt(thietBiId));
-        // }
-
-        // Thêm sắp xếp (Ví dụ: Mặc định theo ID giảm dần)
-        // query += " ORDER BY ttb.id DESC";
-        // if (sortBy) {
-        //    const orderDirection = order === 'asc' ? 'ASC' : 'DESC';
-        //    // Cần kiểm tra sortBy có phải là cột hợp lệ không để tránh SQL Injection
-        //    const validSortColumns = ['id', 'ngayNhapKho', 'ngayBaoHanhKetThuc', 'tenLoaiThietBi'];
-        //    if (validSortColumns.includes(sortBy)) {
-        //        query += ` ORDER BY ${sortBy} ${orderDirection}`;
-        //    } else {
-        //        query += " ORDER BY ttb.id DESC"; // Mặc định
-        //    }
-        // } else {
-        //    query += " ORDER BY ttb.id DESC"; // Mặc định
-        // }
 
         // Xử lý thêm tên phòng đầy đủ
         const finalData = rows.map(item => ({
@@ -512,37 +479,49 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
     }
 };
 
-// API MỚI (hoặc sửa updateThongTinThietBi): Chỉ cập nhật trạng thái
 
 exports.updateTinhTrangTaiSan = async (req, res) => {
-    const { id } = req.params; // ID của thongtinthietbi
-    const { tinhTrang, ghiChu } = req.body; // Trạng thái mới (vd: 'cho_thanh_ly') và ghi chú (tùy chọn)
+    const { id } = req.params;
+    const { tinhTrang, ghiChu } = req.body;
 
     // --- Validation ---
     if (!id || isNaN(parseInt(id))) {
         return res.status(400).json({ error: "ID thông tin thiết bị không hợp lệ." });
     }
-    // Có thể thêm kiểm tra giá trị tinhTrang hợp lệ
-    const validStates = ['con_bao_hanh', 'het_bao_hanh', 'dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly'];
+    // Thêm 'san_sang', 'dang_su_dung', 'hong' vào validStates nếu chúng hợp lệ
+    const validStates = ['san_sang', 'dang_su_dung', 'hong', 'con_bao_hanh', 'het_bao_hanh', 'dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly','da_bao_hanh'];
     if (!tinhTrang || !validStates.includes(tinhTrang)) {
         return res.status(400).json({ error: `Trạng thái '${tinhTrang}' không hợp lệ.` });
     }
-    // --- Kết thúc Validation ---
+    //--- Kết thúc validation ---
 
     try {
-        // Chỉ cập nhật cột tinhTrang và có thể thêm ghi chú vào đâu đó nếu cần
-        const [result] = await pool.query(
-            "UPDATE thongtinthietbi SET tinhTrang = ? WHERE id = ?",
-            [tinhTrang, id]
-        );
-
-        if (result.affectedRows === 0) {
+        // --- Kiểm tra trạng thái hiện tại ---
+        const [currentRows] = await pool.query("SELECT tinhTrang FROM thongtinthietbi WHERE id = ?", [id]);
+        if (currentRows.length === 0) {
             return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị để cập nhật trạng thái." });
         }
+        const currentStatus = currentRows[0].tinhTrang;
 
-        res.json({ message: `Cập nhật trạng thái thiết bị ID <span class="math-inline">\{id\} thành '</span>{tinhTrang}' thành công!` });
+        let query = "UPDATE thongtinthietbi SET tinhTrang = ?";
+        const params = [tinhTrang];
+        if (currentStatus === 'dang_bao_hanh' && tinhTrang !== 'dang_bao_hanh') {
+            query += ", ngayDuKienTra = NULL";
+        }
+        query += " WHERE id = ?";
+        params.push(id);
+
+        const [result] = await pool.query(query, params);
+
+        // --- Kiểm tra affectedRows ---
+        if (result.affectedRows === 0) {
+             console.warn(`[updateTinhTrangTaiSan] ID: ${id}, Update failed (affectedRows = 0).`);
+        }
+        console.log(`[updateTinhTrangTaiSan] ID: ${id}, Update successful. Sending response.`);
+        res.status(200).json({ message: `Cập nhật trạng thái thiết bị ${id} thành công.` });
+
     } catch (error) {
-        console.error(`Lỗi khi cập nhật trạng thái thiết bị ${id}:`, error);
+        console.error(`[updateTinhTrangTaiSan] ID: ${id}, ERROR:`, error);
         res.status(500).json({ error: "Lỗi máy chủ khi cập nhật trạng thái thiết bị." });
     }
 };
@@ -572,8 +551,8 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         const currentTaiSan = rows[0];
 
         if (currentTaiSan.phong_id !== null) {
-             await connection.rollback();
-             return res.status(400).json({ error: `Tài sản ID ${thongTinThietBiId} đã được gán cho phòng khác rồi.` });
+            await connection.rollback();
+            return res.status(400).json({ error: `Tài sản ID ${thongTinThietBiId} đã được gán cho phòng khác rồi.` });
         }
 
         const [updateResult] = await connection.query(
@@ -590,7 +569,7 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         res.status(200).json({ message: `Đã phân bổ tài sản ID ${thongTinThietBiId} vào phòng ID ${phongIdInt} thành công.` });
 
     } catch (error) {
-        await connection.rollback(); 
+        await connection.rollback();
         console.error("Lỗi server khi phân bổ tài sản:", error);
         res.status(500).json({ error: "Lỗi máy chủ nội bộ." });
     } finally {

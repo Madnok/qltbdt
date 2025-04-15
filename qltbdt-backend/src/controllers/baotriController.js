@@ -1,5 +1,19 @@
 const pool = require("../config/db");
 
+async function getCurrentDeviceStatusAndWarranty(conn, deviceId) {
+    if (!deviceId) return { tinhTrang: null, ngayBaoHanhKetThuc: null };
+    const [rows] = await conn.query("SELECT tinhTrang, ngayBaoHanhKetThuc FROM thongtinthietbi WHERE id = ?", [deviceId]);
+    return rows[0] || { tinhTrang: null, ngayBaoHanhKetThuc: null };
+}
+function determineFinalStatusInternal(warrantyEndDate) {
+    if (!warrantyEndDate) return 'het_bao_hanh';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(warrantyEndDate);
+    endDate.setHours(0, 0, 0, 0);
+    return endDate >= today ? 'con_bao_hanh' : 'het_bao_hanh';
+}
+
 // Lấy task đang xử lý của nhân viên
 exports.getMyTasks = async (req, res) => {
     const nhanvien_id = req.user?.id;
@@ -7,25 +21,39 @@ exports.getMyTasks = async (req, res) => {
         return res.status(401).json({ error: "Unauthorized" });
     }
     try {
-        const [tasks] = await pool.query(
-            `SELECT
-                bh.id, bh.phong_id, p.toa, p.tang, p.soPhong,
-                bh.thietbi_id, tb.tenThietBi, bh.thongtinthietbi_id,
-                bh.moTa, bh.loaithiethai, bh.thiethai, bh.ngayBaoHong, 
-                bh.trangThai, bh.ghiChuAdmin, bh.coLogBaoTri
-             FROM baohong bh
-             JOIN phong p ON bh.phong_id = p.id
-             LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id
-             WHERE bh.nhanvien_id = ? AND bh.trangThai IN ('Đang Tiến Hành', 'Yêu Cầu Làm Lại')
-             ORDER BY bh.ngayBaoHong DESC`, // Ưu tiên task mới hơn hoặc theo yêu cầu
-            [nhanvien_id]
-        );
-        // Tạo tên phòng đầy đủ
-        const tasksWithPhongName = tasks.map(task => ({
+        const query = `
+            SELECT
+                bh.id, bh.phong_id,
+                p.toa, p.tang, p.soPhong,
+                bh.thongtinthietbi_id,
+                tttb.thietbi_id,
+                tttb.tinhTrang AS tinhTrangThietBi,
+                tb.tenThietBi,
+                bh.moTa, bh.loaithiethai, bh.thiethai, bh.ngayBaoHong,
+                bh.trangThai, bh.ghiChuAdmin, bh.coLogBaoTri,
+                tttb.ngayBaoHanhKetThuc
+            FROM baohong bh
+            LEFT JOIN phong p ON bh.phong_id = p.id
+            LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
+            LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
+            WHERE
+                bh.nhanvien_id = ?
+                AND bh.trangThai IN ('Đang Tiến Hành', 'Yêu Cầu Làm Lại')
+            ORDER BY
+                bh.ngayBaoHong DESC;
+        `;
+
+        const [tasks] = await pool.query(query, [nhanvien_id]);
+
+        const tasksWithDetails = tasks.map(task => ({
             ...task,
-            phong_name: `${task.toa}${task.tang}.${task.soPhong}`
+            phong_name: task.toa ? `${task.toa}${task.tang}.${task.soPhong}` : `Phòng ID:${task.phong_id}`,
+            tenThietBi: task.tenThietBi || null,
+            tinhTrangThietBi: task.tinhTrangThietBi || null
         }));
-        res.json(tasksWithPhongName);
+
+        res.json(tasksWithDetails);
+
     } catch (error) {
         console.error("Error fetching my tasks:", error);
         res.status(500).json({ error: "Lỗi server khi lấy danh sách công việc." });
@@ -37,82 +65,112 @@ exports.createLogBaoTri = async (req, res) => {
     const nhanvien_id = req.user?.id;
     const {
         baohong_id,
-        thongtinthietbi_id, // Lấy từ thông tin báo hỏng liên quan
-        phong_id,           // Lấy từ thông tin báo hỏng liên quan
+        thongtinthietbi_id,
+        phong_id,
         hoatdong,
         ketQuaXuLy,
-        phuongAnXuLy, // Thêm mới
-        phuongAnKhacChiTiet, // Thêm mới
+        phuongAnXuLy,
+        phuongAnKhacChiTiet,
         suDungVatTu,
         ghiChuVatTu,
         chiPhi,
-        hinhAnhHoaDonUrls, // Mảng URL ảnh hóa đơn đã upload
-        hinhAnhHongHocUrls // Thêm mới (mảng URL ảnh hỏng hóc)
+        hinhAnhHoaDonUrls,
+        hinhAnhHongHocUrls,
+        ngayDuKienTra
     } = req.body;
 
-    // Validation cơ bản (thêm phuongAnXuLy nếu bắt buộc)
-    if (!nhanvien_id || !baohong_id || !phong_id || !hoatdong || !ketQuaXuLy || !phuongAnXuLy) {
-        return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
+    // Validation 
+    if (!nhanvien_id || !baohong_id || isNaN(parseInt(baohong_id)) || !phong_id || !hoatdong || !ketQuaXuLy || !phuongAnXuLy) {
+        return res.status(400).json({ error: "Thiếu thông tin bắt buộc (bao gồm ID Báo hỏng hợp lệ, Phòng, Hoạt động, Kết quả, Phương án)." });
     }
-    // Validation cho phương án "Khác"
     if (phuongAnXuLy === 'Khác' && (!phuongAnKhacChiTiet || phuongAnKhacChiTiet.trim() === '')) {
         return res.status(400).json({ error: "Vui lòng nhập chi tiết cho phương án xử lý 'Khác'." });
     }
-
-    if (!nhanvien_id || !baohong_id || !phong_id || !hoatdong || !ketQuaXuLy) {
-        return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
-    }
-
     if (suDungVatTu === true && (!ghiChuVatTu || !hinhAnhHoaDonUrls || hinhAnhHoaDonUrls.length === 0)) {
-        return res.status(400).json({ error: "Vui lòng cung cấp chi tiết vật tư và hình ảnh hóa đơn." });
+        return res.status(400).json({ error: "Vui lòng cung cấp chi tiết vật tư, dịch vụ và hình ảnh hóa đơn." });
     }
+
 
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         // 1. Lưu log vào bảng `baotri`
-        const [logResult] = await connection.query(
+        const sqlInsertLog =
             `INSERT INTO baotri (
-                baohong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong,
-                ketQuaXuLy, phuongAnXuLy, phuongAnKhacChiTiet,
-                suDungVatTu, ghiChuVatTu, chiPhi,
-                hinhAnhHoaDonUrls, hinhAnhHongHocUrls,
-                thoiGian
-             )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [
-                baohong_id, nhanvien_id, thongtinthietbi_id || null, phong_id, hoatdong,
-                ketQuaXuLy, phuongAnXuLy || null, // Lưu phương án xử lý
-                (phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet : null), // Chỉ lưu chi tiết nếu là 'Khác'
-                suDungVatTu === true,
-                suDungVatTu === true ? ghiChuVatTu : null,
-                (typeof chiPhi === 'number' ? chiPhi : null), // Đảm bảo chiPhi là số hoặc null
-                hinhAnhHoaDonUrls && hinhAnhHoaDonUrls.length > 0 ? JSON.stringify(hinhAnhHoaDonUrls) : null,
-                hinhAnhHongHocUrls && hinhAnhHongHocUrls.length > 0 ? JSON.stringify(hinhAnhHongHocUrls) : null // Lưu ảnh hỏng hóc
-            ]
-        );
+                 baohong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong,
+                 ketQuaXuLy, phuongAnXuLy, phuongAnKhacChiTiet,
+                 suDungVatTu, ghiChuVatTu, chiPhi,
+                 hinhAnhHoaDonUrls, hinhAnhHongHocUrls,
+                 ngayDuKienTra,
+                 thoiGian
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+        const logParams = [
+            parseInt(baohong_id),
+            nhanvien_id,
+            (thongtinthietbi_id !== null && thongtinthietbi_id !== undefined && !isNaN(parseInt(thongtinthietbi_id))) ? parseInt(thongtinthietbi_id) : null,
+            phong_id, hoatdong, ketQuaXuLy,
+            phuongAnXuLy,
+            (phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet : null),
+            suDungVatTu === true,
+            suDungVatTu === true ? ghiChuVatTu : null,
+            (suDungVatTu === true && chiPhi && !isNaN(parseInt(chiPhi))) ? parseInt(chiPhi) : null,
+            hinhAnhHoaDonUrls && hinhAnhHoaDonUrls.length > 0 ? JSON.stringify(hinhAnhHoaDonUrls) : null,
+            hinhAnhHongHocUrls && hinhAnhHongHocUrls.length > 0 ? JSON.stringify(hinhAnhHongHocUrls) : null,
+            (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành' ? ngayDuKienTra || null : null)
+        ];
 
-        // 2. Cập nhật `baohong.coLogBaoTri = TRUE`
-        await connection.query("UPDATE baohong SET coLogBaoTri = TRUE WHERE id = ?", [baohong_id]);
+        const [logResult] = await connection.query(sqlInsertLog, logParams);
 
-        // 3. Cập nhật `thongtinthietbi.tinhTrang` nếu cần
-        let tttbUpdateQuery = "";
-        let tttbParams = [];
-        if (thongtinthietbi_id) { // Chỉ cập nhật nếu báo hỏng này liên quan đến TTTB cụ thể
-            if (ketQuaXuLy === 'Đã gửi bảo hành') {
-                tttbUpdateQuery = "UPDATE thongtinthietbi SET tinhTrang = 'dang_bao_hanh' WHERE id = ?";
-                tttbParams = [thongtinthietbi_id];
-            } else if (ketQuaXuLy === 'Đề xuất thanh lý') {
-                tttbUpdateQuery = "UPDATE thongtinthietbi SET tinhTrang = 'cho_thanh_ly' WHERE id = ?";
-                tttbParams = [thongtinthietbi_id];
+        // 2. Cập nhật `baohong.coLogBaoTri = TRUE` 
+        await connection.query("UPDATE baohong SET coLogBaoTri = TRUE WHERE id = ?", [parseInt(baohong_id)]);
+
+        // 3. Cập nhật thongtinthietbi 
+        const isThietBiIdValid = thongtinthietbi_id !== null && thongtinthietbi_id !== undefined && !isNaN(parseInt(thongtinthietbi_id));
+        if (isThietBiIdValid) {
+            const tttbIdInt = parseInt(thongtinthietbi_id);
+            if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
+                await connection.query("UPDATE thongtinthietbi SET tinhTrang = 'dang_bao_hanh', ngayDuKienTra = ? WHERE id = ?", [ngayDuKienTra || null, tttbIdInt]);
             }
-            // Có thể thêm logic cập nhật lại 'con_bao_hanh'/'het_bao_hanh' nếu 'Đã sửa chữa xong'
-            // tùy thuộc vào quy trình xác nhận bảo hành trả về
+            else if (ketQuaXuLy === 'Đề xuất thanh lý') {
+                await connection.query("UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?", [tttbIdInt]);
+            }
+            else if (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý') {
+                const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
+                const finalStatus = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
+                await connection.query("UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?", [finalStatus, tttbIdInt]);
+            }
         }
 
-        if (tttbUpdateQuery) {
-            await connection.query(tttbUpdateQuery, tttbParams);
+        //  4. CẬP NHẬT TRẠNG THÁI BÁO HỎNG 
+        const bhIdInt = parseInt(baohong_id);
+        let nextBaoHongStatus = null;
+
+        if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
+            // Nếu gửi bảo hành, chuyển trạng thái Báo hỏng sang "Chờ Hoàn Tất Bảo Hành"
+            nextBaoHongStatus = 'Chờ Hoàn Tất Bảo Hành';
+        } else if (ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' || (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong')) {
+            nextBaoHongStatus = 'Hoàn Thành';
+             // Không cần chờ xem xét nếu đã tự hoàn thành
+        } else if (ketQuaXuLy === 'Đề xuất thanh lý' || phuongAnXuLy === 'Khác' || phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') {
+             // Các trường hợp cần admin xem xét (đề xuất TL, bàn giao, phương án khác...)
+             nextBaoHongStatus = 'Chờ Xem Xét';
+        }
+
+        // Thực hiện cập nhật trạng thái Báo hỏng nếu có trạng thái mới
+        if (nextBaoHongStatus) {
+            let updateBaoHongQuery = "UPDATE baohong SET trangThai = ?";
+            const updateBaoHongParams = [nextBaoHongStatus];
+
+            // Nếu Hoàn Thành, cập nhật thêm thời gian xử lý
+            if (nextBaoHongStatus === 'Hoàn Thành') {
+                updateBaoHongQuery += ", thoiGianXuLy = NOW()"; // Cập nhật thoiGianXuLy khi Hoàn Thành
+            }
+
+            updateBaoHongQuery += " WHERE id = ?";
+            updateBaoHongParams.push(bhIdInt);
+
+            await connection.query(updateBaoHongQuery, updateBaoHongParams);
         }
 
         await connection.commit();
@@ -120,10 +178,9 @@ exports.createLogBaoTri = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
-        console.error("Error creating maintenance log:", error);
         res.status(500).json({ error: "Lỗi server khi ghi nhận bảo trì." });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 
@@ -155,8 +212,8 @@ exports.getBaoHongLog = async (req, res) => {
                         const parsed = JSON.parse(data);
                         return Array.isArray(parsed) ? parsed : [];
                     } catch (e) {
-                         console.error(`Lỗi parse JSON cho log ${log.id}:`, e, "Giá trị gốc:", data);
-                         return []; // Trả về mảng rỗng nếu lỗi parse
+                        console.error(`Lỗi parse JSON cho log ${log.id}:`, e, "Giá trị gốc:", data);
+                        return []; // Trả về mảng rỗng nếu lỗi parse
                     }
                 }
                 return []; // Trả về mảng rỗng nếu null, undefined, chuỗi rỗng, hoặc không phải mảng/chuỗi hợp lệ
@@ -177,7 +234,6 @@ exports.getBaoHongLog = async (req, res) => {
     }
 };
 
-// ... các hàm khác ...
 
 // Upload ảnh hóa đơn
 exports.uploadInvoiceImage = (req, res) => {

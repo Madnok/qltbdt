@@ -7,7 +7,7 @@ router.use(verifyToken);
 
 // --- Route cho Module "Quản Lý Tài Sản" ---
 router.get("/taisan", requireRole(['admin', 'nhanvien']), tttbController.getAllTaiSanChiTiet); // API chính lấy danh sách
-router.put("/taisan/:id/tinhtrang", requireRole(['admin']), tttbController.updateTinhTrangTaiSan); // API cập nhật trạng thái (VD: chờ thanh lý)
+router.put("/taisan/:id/tinhtrang", requireRole(['admin', 'nhanvien']), tttbController.updateTinhTrangTaiSan); // API cập nhật trạng thái (VD: chờ thanh lý)
 router.post("/taisan/:id/phanbo", requireRole(['admin']), tttbController.phanBoTaiSanVaoPhong); // API phân bổ vào phòng
 
 router.get("/", tttbController.getAllThongTinThietBi); // lấy danh sách thông tin tb

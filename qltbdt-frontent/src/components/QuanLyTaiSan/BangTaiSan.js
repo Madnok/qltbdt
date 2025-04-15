@@ -129,6 +129,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
             case 'con_bao_hanh': return <span className="inline-flex items-center text-green-600"><FaCheckCircle className="mr-1" /> {label}</span>;
             case 'het_bao_hanh': return <span className="inline-flex items-center text-red-600"><FaTimesCircle className="mr-1" /> {label}</span>;
             case 'dang_bao_hanh': return <span className="inline-flex items-center text-blue-600"><FaWrench className="mr-1" /> {label}</span>;
+            case 'da_bao_hanh': return <span className="inline-flex items-center text-purple-600"><FaWrench className="mr-1" /> {label}</span>;
             case 'cho_thanh_ly': return <span className="inline-flex items-center text-yellow-600"><FaClock className="mr-1" /> {label}</span>;
             case 'da_thanh_ly': return <span className="inline-flex items-center text-gray-500"><FaTrashAlt className="mr-1" /> {label}</span>;
             default: return label;
@@ -164,7 +165,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                 </button>
             </div>
 
-            {/* Bảng dữ liệu được cải thiện style */}
+            {/* Bảng dữ liệu */}
             <div className="overflow-x-auto border border-gray-200 rounded-md">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">

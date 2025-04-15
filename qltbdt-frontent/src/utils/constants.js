@@ -48,16 +48,20 @@ export const getTinhTrangLabel = (tinhTrang) => {
             return "Hết Bảo Hành";
         case "con_bao_hanh":
             return "Còn Bảo Hành";
+        case "dang_bao_hanh":
+            return "Đang Bảo Hành";
+        case "da_bao_hanh":
+            return "Đã Bảo Hành";
         case "muaMoi":
             return "Mua Mới";
         case "taiTro":
             return "Tài Trợ";
+        case "de_xuat_thanh_ly":
+            return "Đề Xuất Thanh Lý";
         case "cho_thanh_ly":
             return "Chờ Thanh Lý";
         case "da_thanh_ly":
             return "Đã Thanh Lý";
-        case "dang_bao_hanh":
-            return "Đang Bảo Hành";
         case "mat_mat":
             return "Mất Mát";
         case "xuat_tra":

@@ -495,23 +495,29 @@ export const assignBulkBaohongAPI = async ({ baoHongIdsArray, nhanVienId }) => {
   }
 };
 
-export const fetchAssignedBaoHongAPI = async () => {
-  // Giả sử backend có route /api/baohong/assigned/me để lấy việc của user đang login
-  // Hoặc bạn có thể lấy user.id từ context và gọi /api/baohong/assigned/:userId
+export const fetchAssignedBaoHongAPI = async (filters = {}) => {
+  // filters = { statuses: ['Đang Tiến Hành', 'Yêu Cầu Làm Lại'] }
+  // hoặc filters = { statuses: ['Chờ Xem Xét'] }
+  let queryString = '';
+  if (filters.statuses && Array.isArray(filters.statuses) && filters.statuses.length > 0) {
+      const encodedStatuses = filters.statuses.map(status => encodeURIComponent(status)).join(',');
+      queryString = `?statuses=${encodedStatuses}`;
+  }
+
   try {
-    const response = await api.get("/baohong/assigned/me"); // *** Cần tạo API này ở backend ***
-    if (!Array.isArray(response.data)) {
-      console.error("API /assigned/me did not return an array!", response.data);
-      return [];
-    }
-    return response.data;
+      const response = await api.get(`/baohong/assigned/me${queryString}`);
+
+      if (!Array.isArray(response.data)) {
+          console.error("API /baohong/assigned/me did not return an array!", response.data);
+          return [];
+      }
+      return response.data; 
   } catch (error) {
-    console.error("Error fetching assigned BaoHong:", error.response?.data || error.message);
-    // Trả về mảng rỗng nếu lỗi (ví dụ 404 Not Found nếu chưa có việc nào)
-    if (error.response?.status === 404) {
-      return [];
-    }
-    throw error; // Ném lỗi khác để React Query xử lý
+      console.error("Error fetching assigned BaoHong:", error.response?.data || error.message);
+      if (error.response?.status === 404 || error.response?.status === 401 || error.response?.status === 403) {
+          return [];
+      }
+      throw error;
   }
 };
 
