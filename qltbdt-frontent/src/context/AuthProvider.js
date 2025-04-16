@@ -31,9 +31,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, credentials, { withCredentials: true });
-      setUser(res.data.user); // Cập nhật user ngay lập tức
-      window.location.reload();
-      await refreshUser(); // Gọi lại API để đảm bảo đồng bộ dữ liệu
+      setUser(res.data.user); // Cập nhật user 
+      navigate('/');
       return res.data;
     } catch (err) {
       console.error("Lỗi đăng nhập:", err);

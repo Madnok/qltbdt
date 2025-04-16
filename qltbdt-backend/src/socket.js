@@ -1,35 +1,35 @@
 const userSockets = new Map(); // Lưu trữ socket của người dùng: Map<userId, socketId>
 const { verify } = require('jsonwebtoken');
 const { Server } = require("socket.io");
+const cookie = require('cookie');
 
 let ioInstance = null;
 
 // Middleware xác thực Socket.IO
 const authenticateSocket = (socket, next) => {
-    const token = socket.handshake.auth?.token; // Ưu tiên lấy từ đây
-
-    console.log("Socket Auth - Received Auth Token:", token); // Log token nhận được
-
-    if (!token) {
-        console.error('Socket Auth Error: No token provided in auth handshake');
-        return next(new Error('Lỗi xác thực: No token provided')); // Thông báo lỗi rõ hơn
-    }
+    let token = null;
     try {
+        // Parse cookie header một cách an toàn
+        const cookies = cookie.parse(socket.handshake.headers?.cookie || '');
+        token = cookies.token; // Lấy giá trị của cookie tên 'token'
+
+        if (!token) {
+            return next(new Error('Lỗi xác thực: Không tìm thấy token cookie'));
+        }
+
+        // Xác thực token lấy từ cookie
         const decoded = verify(token, process.env.JWT_SECRET);
-        socket.user = decoded;
-        console.log("Socket Auth Success for User ID:", decoded.id);
-        next();
+        socket.user = decoded; // Gắn user vào socket
+        next(); 
     } catch (err) {
-        console.error('Socket Auth Error: Invalid token.', err.message);
-        next(new Error('Lỗi xác thực: Invalid token'));
+        console.error('Socket Auth Error:', err.message);
+        next(new Error(`Lỗi xác thực Socket: ${err.message}`)); // Trả lỗi về client
     }
 };
 
 // Hàm khởi tạo và cấu hình Socket.IO
-function initializeSocket(server) { // server là httpServer
-    if (ioInstance) {
-        return ioInstance;
-    }
+function initializeSocket(server) {
+    if (ioInstance) return ioInstance;
 
     const allowedOrigins = [
         "http://localhost:3000",
@@ -37,33 +37,32 @@ function initializeSocket(server) { // server là httpServer
     ];
 
     ioInstance = new Server(server, {
-        pingTimeout: 60000,
         cors: {
             origin: function (origin, callback) {
-                if (!origin || allowedOrigins.includes(origin)) {
-                    callback(null, true);
-                } else {
-                    callback(new Error("Not allowed by CORS for Socket.IO"));
-                }
+                 if (!origin || allowedOrigins.includes(origin)) {
+                     callback(null, true);
+                 } else {
+                     console.error(`CORS Error: Origin ${origin} not allowed for Socket.IO.`);
+                     callback(new Error("Not allowed by CORS for Socket.IO"));
+                 }
             },
             methods: ["GET", "POST"],
-            credentials: true
+            credentials: true // Rất quan trọng để trình duyệt gửi cookie
         }
-    });
-    ioInstance.use(authenticateSocket);
-    ioInstance.on('connection', (socket) => {
-        const userId = socket.user?.id;
-        if (!userId) {
-            socket.disconnect(true);
-            return;
-        }
-        const userRoom = String(userId);
-        socket.join(userRoom);
-        socket.on('disconnect', (reason) => {
-        });
     });
 
-    console.log("Socket.IO đã được khởi tạo.");
+    ioInstance.use(authenticateSocket); // Dùng middleware auth đã sửa
+
+    ioInstance.on('connection', (socket) => {
+         const userId = socket.user?.id;
+         if (!userId) { /* ... xử lý lỗi user không có ID ... */ return; }
+         const userRoom = String(userId);
+         socket.join(userRoom);
+         console.log(`User ${userId} connected and joined room ${userRoom}. Socket: ${socket.id}`);
+         socket.on('disconnect', (reason) => { /* ... */ });
+    });
+
+    console.log("Socket.IO initialized with cookie authentication.");
     return ioInstance;
 }
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import io from 'socket.io-client';
-import { useAuth } from '../context/AuthProvider';
+import { useAuth } from '../context/AuthProvider'; 
 import { toast } from 'react-toastify';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -10,22 +10,18 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
-    const { user, token, logout } = useAuth(); 
+    const { user, logout } = useAuth(); 
     const queryClient = useQueryClient();
 
     useEffect(() => {
         let newSocket = null;
 
-        if (user?.id && token) { 
+        if (user?.id ) { 
             console.log("[SocketContext] Attempting socket connection for user:", user.id);
             const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
             newSocket = io(SOCKET_URL, {
-                auth: {
-                    token: token 
-                },
                 withCredentials: true 
-
             });
 
             newSocket.on('connect', () => {
@@ -38,14 +34,9 @@ export const SocketProvider = ({ children }) => {
 
             newSocket.on('connect_error', (error) => {
                 console.error('❌ [SocketContext] Connection Error:', error.message, error.data || '');
-                if (error.message.includes('Invalid token') || error.message.includes('No token')) {
-                     toast.error("Lỗi xác thực kết nối máy chủ thông báo. Vui lòng đăng nhập lại.");
-                     logout();
-                } else {
-                     toast.error("Lỗi kết nối máy chủ thông báo.");
-                }
-                if (socket) socket.disconnect(); 
-                setSocket(null); 
+                toast.error("Lỗi kết nối máy chủ thông báo.");
+                if (newSocket) newSocket.disconnect();
+                setSocket(null);
             });
 
              newSocket.on('status_changed', (data) => {
@@ -71,11 +62,8 @@ export const SocketProvider = ({ children }) => {
             setSocket(newSocket);
 
         } else {
-             console.log("[SocketContext] Skipping socket connection: User or Token not available.", { hasUser: !!user?.id, hasToken: !!token });
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
-            }
+            console.log("Không có user");
+            setSocket(null);
         }
 
         // --- Hàm cleanup ---
@@ -91,7 +79,7 @@ export const SocketProvider = ({ children }) => {
                newSocket.disconnect();
             }
         };
-    }, [user, token, logout, queryClient,socket]); 
+    }, [user, logout, queryClient]); 
 
     const contextValue = useMemo(() => ({ socket }), [socket]);
 
