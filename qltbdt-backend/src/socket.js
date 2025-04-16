@@ -6,58 +6,61 @@ let ioInstance = null;
 
 // Middleware xác thực Socket.IO
 const authenticateSocket = (socket, next) => {
-    const token = socket.handshake.auth?.token || socket.handshake.headers?.cookie?.split('token=')[1]?.split(';')[0];
+    const token = socket.handshake.auth?.token; // Ưu tiên lấy từ đây
+
+    console.log("Socket Auth - Received Auth Token:", token); // Log token nhận được
+
     if (!token) {
-        console.error('Lỗi xác thực: No token');
-        return next(new Error('Lỗi xác thực: No token'));
+        console.error('Socket Auth Error: No token provided in auth handshake');
+        return next(new Error('Lỗi xác thực: No token provided')); // Thông báo lỗi rõ hơn
     }
     try {
         const decoded = verify(token, process.env.JWT_SECRET);
-        socket.user = decoded; // Gắn { id, role } vào socket
+        socket.user = decoded;
+        console.log("Socket Auth Success for User ID:", decoded.id);
         next();
     } catch (err) {
-        console.error('Socket lỗi xác thực: Invalid token.', err.message);
+        console.error('Socket Auth Error: Invalid token.', err.message);
         next(new Error('Lỗi xác thực: Invalid token'));
     }
 };
 
 // Hàm khởi tạo và cấu hình Socket.IO
-function initializeSocket(server) { // Nhận httpServer
+function initializeSocket(server) { // server là httpServer
     if (ioInstance) {
-        console.warn("Socket.IO already initialized.");
         return ioInstance;
     }
 
+    const allowedOrigins = [
+        "http://localhost:3000",
+        process.env.FRONTEND_URL
+    ];
+
     ioInstance = new Server(server, {
+        pingTimeout: 60000,
         cors: {
-            // Tạm thời hardcode để test
-            origin: "https://iuhelpfacilitymanagement-5vd09qmoi-madnoks-projects.vercel.app" || "http://localhost:3000",
+            origin: function (origin, callback) {
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error("Not allowed by CORS for Socket.IO"));
+                }
+            },
             methods: ["GET", "POST"],
             credentials: true
         }
     });
-
-    // Áp dụng middleware xác thực
     ioInstance.use(authenticateSocket);
-
-    // Xử lý kết nối - chỉ cần một io.on('connection')
     ioInstance.on('connection', (socket) => {
         const userId = socket.user?.id;
         if (!userId) {
-            console.error('Từ chối kết nối socket: No user ID found after auth.', socket.id);
             socket.disconnect(true);
             return;
         }
-
-        // Tự động cho user tham gia room riêng của họ
         const userRoom = String(userId);
         socket.join(userRoom);
-
-        // Xử lý khi ngắt kết nối
         socket.on('disconnect', (reason) => {
-            console.log(`User ${userId} ngắt kết nối khỏi ${userRoom}. Socket: ${socket.id}. Lý do: ${reason}`);
         });
-
     });
 
     console.log("Socket.IO đã được khởi tạo.");
@@ -84,5 +87,5 @@ function emitToUser(userId, eventName, data) {
 module.exports = {
     initializeSocket,
     emitToUser,
-    getIoInstance: () => ioInstance // Cách an toàn để lấy io instance từ module khác
+    getIoInstance: () => ioInstance 
 };

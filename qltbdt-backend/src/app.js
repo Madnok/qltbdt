@@ -19,20 +19,21 @@ const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
 const app = express();
 
 const allowedOrigins = [
-  "https://iuhelpfacilitymanagement-5vd09qmoi-madnoks-projects.vercel.app",
   "http://localhost:3000",
+  process.env.FRONTEND_URL // Đảm bảo biến này đúng trên Fly.io!
 ];
 
 const corsOptions = {
-  origin: allowedOrigins,
+  // Chỉ cần function kiểm tra origin
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
+      if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+      } else {
+          console.error(`CORS Error (Express): Origin ${origin} not allowed.`); // Thêm log để phân biệt
+          callback(new Error("Not allowed by CORS"));
+      }
   },
-  credentials: true, 
+  credentials: true,
   optionsSuccessStatus: 200,
 };
 
@@ -40,13 +41,10 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 
-app.use(express.json()); 
+app.use(helmet()); 
+app.use(express.json());
 app.use(cookieParser()); 
 app.use(express.urlencoded({ extended: true })); 
-
-app.use(helmet());
-app.use(express.json());
-app.use(cookieParser());
 
 
 // routes
