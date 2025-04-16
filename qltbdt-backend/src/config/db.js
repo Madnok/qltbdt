@@ -12,6 +12,7 @@
 
 // module.exports = db;
 
+
 const mysql = require('mysql2/promise');
 require('dotenv').config(); 
 // Tạo connection pool

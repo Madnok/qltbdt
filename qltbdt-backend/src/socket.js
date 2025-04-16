@@ -30,7 +30,8 @@ function initializeSocket(server) { // Nhận httpServer
 
     ioInstance = new Server(server, {
         cors: {
-            origin: [process.env.FRONTEND_URL, "http://localhost:3000"],
+            // Tạm thời hardcode để test
+            origin: "https://iuhelpfacilitymanagement-5vd09qmoi-madnoks-projects.vercel.app" || "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true
         }

@@ -19,30 +19,30 @@ const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
 const app = express();
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:3000"
+  "https://iuhelpfacilitymanagement-5vd09qmoi-madnoks-projects.vercel.app",
+  "http://localhost:3000",
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
-app.use(cors({
+const corsOptions = {
   origin: allowedOrigins,
-  credentials: true,
-}));
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, 
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+
+app.use(express.json()); 
+app.use(cookieParser()); 
+app.use(express.urlencoded({ extended: true })); 
 
 app.use(helmet());
 app.use(express.json());
