@@ -454,11 +454,8 @@ export const updateBaoHongAPI = async ({ id, updateData }) => {
 
 // Xóa một báo hỏng
 export const deleteBaoHongAPI = async (baoHongId) => {
-  if (!baoHongId) {
-    throw new Error("Missing ID for deleting BaoHong");
-  }
-  const response = await api.delete(`/baohong/${baoHongId}`);
-  return response.data;
+  const { data } = await api.delete(`/baohong/${baoHongId}`);
+  return data;
 };
 
 // Xóa hàng loạt báo hỏng (Bulk Delete)
@@ -582,6 +579,20 @@ export const getBaoHongLogAPI = async (baoHongId) => {
       return [];
     }
     throw error;
+  }
+};
+
+// Lấy lịch sử log của một thongtinthietbi_id
+export const fetchBaoTriByThietBiAPI = async (thongtinthietbiId) => {
+  if (!thongtinthietbiId) {
+      return [];
+  }
+  try {
+      const { data } = await api.get(`/baotri/thietbi/${thongtinthietbiId}`);
+      return data || [];
+  } catch (error) {
+      console.error("Lỗi khi lấy log bảo trì theo thiết bị:", error);
+      throw error;
   }
 };
 

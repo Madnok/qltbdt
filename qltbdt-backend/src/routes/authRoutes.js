@@ -5,9 +5,9 @@ const { verifyToken } = require("../middleware/authMiddleware");
 const rateLimit = require("express-rate-limit");
 
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 phút
-    max: 10, // Giới hạn mỗi IP chỉ được 10 request trong khoảng thời gian windowMs
-    message: "Quá nhiều yêu cầu đăng nhập từ IP này, vui lòng thử lại sau 15 phút.",
+    windowMs: 5 * 60 * 1000, // 5 phút
+    max: 15, // Giới hạn mỗi IP chỉ được 10 request trong khoảng thời gian windowMs
+    message: "Quá nhiều yêu cầu đăng nhập từ IP này, vui lòng thử lại sau 5 phút.",
     standardHeaders: true, // Trả về headers thông báo lỗi
     legacyHeaders: false, 
 });

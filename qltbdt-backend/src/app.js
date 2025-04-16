@@ -18,6 +18,8 @@ const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const allowedOrigins = [
   "http://localhost:3000",
   process.env.FRONTEND_URL // Đảm bảo biến này đúng trên Fly.io!

@@ -74,9 +74,10 @@ exports.login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 4 * 60 * 60 * 1000 
+  });
 
     console.log("✅ Đăng nhập thành công:", user.username);
     return res.json({

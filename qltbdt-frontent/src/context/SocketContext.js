@@ -57,7 +57,12 @@ export const SocketProvider = ({ children }) => {
                  queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
                  queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
              });
-
+             newSocket.on('new_baohong_created', (data) => {
+                console.log('[SocketContext] Received new_baohong_created:', data);
+                toast.info(data.message || `Có báo hỏng mới!`);
+                console.log("[SocketContext] Invalidating baoHongList query...");
+                queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+            });
 
             setSocket(newSocket);
 
@@ -76,6 +81,7 @@ export const SocketProvider = ({ children }) => {
                newSocket.off('status_changed');
                newSocket.off('new_task');
                newSocket.off('task_cancelled');
+               newSocket.off('new_baohong_created')
                newSocket.disconnect();
             }
         };

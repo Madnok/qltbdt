@@ -5,6 +5,7 @@ import { getTinhTrangLabel } from '../../utils/constants';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModalXemLogBaoTri from './ModalXemLogBaoTri';
 import { toast } from 'react-toastify';
+import eventBus from '../../utils/eventBus';
 
 import {
     fetchBaoHongListAPI,
@@ -90,8 +91,8 @@ const ThongTinBaoHong = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedAssignee, setSelectedAssignee] = useState({}); // Lưu NV được chọn cho từng báo hỏng { baoHongId: nhanVienId }
     const [modalImage, setModalImage] = useState(null); // State cho modal ảnh
-    const [viewingLogFor, setViewingLogFor] = useState(null); // Lưu ID báo hỏng đang xem log
-    const [phongNameForModal, setPhongNameForModal] = useState("");
+    // const [viewingLogFor, setViewingLogFor] = useState(null); // Lưu ID báo hỏng đang xem log
+    // const [phongNameForModal, setPhongNameForModal] = useState("");
     const [reassignData, setReassignData] = useState({ baoHongId: null, nhanVienId: null, ghiChuAdmin: '' });
     const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
     const [approveData, setApproveData] = useState({ baoHongId: null, nhanVienId: null, phongName: '', ghiChuAdmin: '' });
@@ -109,6 +110,11 @@ const ThongTinBaoHong = () => {
         baoHongId: null,
         originalDeviceStatus: null, // Lưu trạng thái TTTB gốc khi mở modal
     });
+    const [viewingDeviceHistory, setViewingDeviceHistory] = useState({
+        thongtinthietbiId: null,
+        tenThietBi: null,
+        phongName: null,
+    });
 
     const queryClient = useQueryClient();
 
@@ -125,6 +131,21 @@ const ThongTinBaoHong = () => {
         queryKey: ['nhanVienListForAssign'],
         queryFn: fetchNhanVienList
     });
+
+    // Lắng nghe sự kiện báo hỏng mới -----
+    useEffect(() => {
+        const handleNewBaoHong = () => {
+            console.log("Received 'baoHongSubmitted' event. Invalidating baoHongList query.");
+            queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+        };
+
+        eventBus.on('baoHongSubmitted', handleNewBaoHong);
+        console.log("Event listener for 'baoHongSubmitted' registered.");
+
+        return () => {
+            eventBus.off('baoHongSubmitted', handleNewBaoHong);
+        };
+    }, [queryClient]);
 
     // Tạo lookup maps bằng useMemo
     const phongMap = useMemo(() => new Map(phongList.map(p => [p.id, p.phong])), [phongList]);
@@ -238,16 +259,16 @@ const ThongTinBaoHong = () => {
                 newSelected.delete(baoHongId); // Xóa khỏi danh sách chọn nếu có
                 return newSelected;
             });
-            alert('Xóa báo hỏng thành công!'); // Hoặc dùng thư viện toast/notification
+            toast.success(data?.message || 'Xóa báo hỏng thành công!');
         },
         onError: (error) => {
             console.error("Lỗi khi xóa báo hỏng:", error);
-            alert('Lỗi khi xóa báo hỏng: ' + (error.response?.data?.error || error.message));
+            toast.error('Lỗi khi xóa báo hỏng: ' + (error.response?.data?.message || error.message));
         }
     });
 
     const handleDelete = (baoHongId) => {
-        if (window.confirm(`Bạn có chắc muốn xóa báo hỏng ID ${baoHongId}?`)) {
+        if (window.confirm(`Bạn có chắc muốn xóa báo hỏng ID ${baoHongId}? Hành động này sẽ tạo log bảo trì (nếu có) trước khi xóa.`)) {
             deleteMutation.mutate(baoHongId);
         }
     };
@@ -258,12 +279,14 @@ const ThongTinBaoHong = () => {
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             if (isApproveModalOpen && approveData.baoHongId === variables.id) setIsApproveModalOpen(false);
             if (isReassignModalOpen && reassignData.baoHongId === variables.id) setIsReassignModalOpen(false);
+            if (isCancelModalOpen && cancelData.baoHongId === variables.id) setIsCancelModalOpen(false);
+            if (isConfirmCompleteModalOpen && confirmCompleteData.baoHongId === variables.id) setIsConfirmCompleteModalOpen(false);
             toast.success(data?.message || 'Cập nhật thành công!');
             setSelectedAssignee(prev => { const newState = { ...prev }; delete newState[variables.id]; return newState; });
         },
         onError: (error, variables) => {
             console.error(`Lỗi khi cập nhật trạng thái cho ID ${variables.id}:`, error);
-            toast.error('Lỗi khi cập nhật: ' + (error.response?.data?.error || error.message)); // Dùng toast
+            toast.error('Lỗi khi cập nhật: ' + (error.response?.data?.message || error.message));
         }
     });
 
@@ -490,7 +513,26 @@ const ThongTinBaoHong = () => {
                                                             {/* 1. Xem chi tiết */}
                                                             <button onClick={() => toggleRow(item.id)} className="text-gray-600 hover:text-indigo-900" title={expandedRows.has(item.id) ? "Thu gọn" : "Xem chi tiết"}><FaEye /></button>
                                                             {/* 2. Xem Log Bảo trì */}
-                                                            <button onClick={() => { setViewingLogFor(item.id); setPhongNameForModal(item.phong_name); }} className={`${!!item.coLogBaoTri ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} title={!!item.coLogBaoTri ? "Xem lịch sử bảo trì" : "Chưa có lịch sử bảo trì"} disabled={!item.coLogBaoTri}><FaHistory /></button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (item.thongtinthietbi_id) {
+                                                                        setViewingDeviceHistory({
+                                                                            thongtinthietbiId: item.thongtinthietbi_id,
+                                                                            // Lấy tên thiết bị từ dữ liệu item (cần đảm bảo API trả về tenThietBi)
+                                                                            tenThietBi: item.tenThietBi || `Thiết bị ID: ${item.thongtinthietbi_id}`,
+                                                                            phongName: item.phong_name || 'Không rõ phòng'
+                                                                        });
+                                                                    } else {
+                                                                        toast.info("Báo hỏng này không liên kết với thiết bị cụ thể.");
+                                                                    }
+                                                                }}
+                                                                // Chỉ bật khi có thongtinthietbi_id
+                                                                disabled={!item.thongtinthietbi_id}
+                                                                className={`${item.thongtinthietbi_id ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`}
+                                                                title={item.thongtinthietbi_id ? "Xem toàn bộ lịch sử thiết bị" : "Không phải báo hỏng thiết bị"}
+                                                            >
+                                                                <FaHistory />
+                                                            </button>
 
                                                             {/* --- ACTIONS CHO ADMIN --- */}
                                                             {/* 3. Duyệt và Gán (khi 'Chờ Duyệt') */}
@@ -572,15 +614,8 @@ const ThongTinBaoHong = () => {
                                                             {/* 7. Xóa */}
                                                             <button
                                                                 onClick={() => handleDelete(item.id)}
-                                                                className={`
-        ${item.trangThai === 'Chờ Duyệt' && !(deleteMutation.isPending && deleteMutation.variables === item.id)
-                                                                        ? 'text-red-600 hover:text-red-900' 
-                                                                        : 'text-gray-400 cursor-not-allowed' 
-                                                                    }
-         ${(deleteMutation.isPending && deleteMutation.variables === item.id) ? 'opacity-50' : ''} 
-    `}
+                                                                className={` ${item.trangThai === 'Chờ Duyệt' ? 'text-red-600 hover:text-red-900' : 'text-gray-400 cursor-not-allowed'} ${(deleteMutation.isPending && deleteMutation.variables === item.id) ? 'opacity-50' : ''} `}
                                                                 title={item.trangThai === 'Chờ Duyệt' ? "Xóa báo hỏng" : "Không thể xóa khi đang xử lý hoặc đã hoàn thành"}
-                                                                // Chỉ enable khi trạng thái là 'Chờ Duyệt' VÀ không có mutation xóa đang chạy cho item này
                                                                 disabled={item.trangThai !== 'Chờ Duyệt' || (deleteMutation.isPending && deleteMutation.variables === item.id)}
                                                             >
                                                                 <FaTrashAlt />
@@ -629,13 +664,13 @@ const ThongTinBaoHong = () => {
             <ImageModal imageUrl={modalImage} onClose={() => setModalImage(null)} />
 
             {/* Modal Xem Log Bảo trì */}
-            {viewingLogFor && (
+            {viewingDeviceHistory.thongtinthietbiId && (
                 <ModalXemLogBaoTri
-                    baoHongId={viewingLogFor}
-                    phongName={phongNameForModal}
+                    thongtinthietbiId={viewingDeviceHistory.thongtinthietbiId}
+                    tenThietBi={viewingDeviceHistory.tenThietBi}
+                    phongName={viewingDeviceHistory.phongName}
                     onClose={() => {
-                        setViewingLogFor(null);
-                        setPhongNameForModal("");
+                        setViewingDeviceHistory({ thongtinthietbiId: null, tenThietBi: null, phongName: null });
                     }}
                 />
             )}

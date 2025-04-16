@@ -18,4 +18,8 @@ router.post("/", requireRole(['nhanvien']), baotriController.createLogBaoTri);
 // Upload ảnh hóa đơn (nếu có)
 router.post("/upload-invoice", requireRole(['nhanvien']), uploadInvoiceImage.array('hinhAnhHoaDon', 5), baotriController.uploadInvoiceImage); // Cho phép upload tối đa 5 ảnh
 
+// === Lấy log theo thongtinthietbi_id ===
+router.get('/thietbi/:thongtinthietbi_id', requireRole(['admin', 'nhanvien']), baotriController.getLogsByThietBiId);
+
+
 module.exports = router;

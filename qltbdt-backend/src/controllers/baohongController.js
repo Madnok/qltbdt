@@ -1,723 +1,3 @@
-// const pool = require("../config/db");
-// const { emitToUser } = require('../socket');
-// // const moment = require("moment");
-
-// const validateForeignKeys = async (thietbi_id, thongtinthietbi_id, phong_id) => {
-//     if (thietbi_id) {
-//         const [rows] = await pool.query(
-//             `SELECT * FROM phong_thietbi WHERE thietbi_id = ? AND phong_id = ?`,
-//             [thietbi_id, phong_id]
-//         );
-//         if (rows.length === 0) return false; // Không khớp thietbi_id và phong_id
-//     }
-
-//     if (thongtinthietbi_id) {
-//         const [rowsThongTin] = await pool.query(
-//             `SELECT * FROM thongtinthietbi WHERE id = ?`,
-//             [thongtinthietbi_id]
-//         );
-//         if (rowsThongTin.length === 0) return false; // Không tồn tại thongtinthietbi_id
-//     }
-
-//     return true; // Các giá trị hợp lệ
-// };
-
-// exports.postGuiBaoHong = async (req, res) => {
-//     const { devices = [], phong_id, thiethai, moTa, hinhAnh, loaithiethai } = req.body;
-//     const user_id = req.user?.id; // Lấy user_id từ token nếu có
-
-//     // --- Validation cơ bản ---
-//     if (!phong_id || !thiethai || !loaithiethai) {
-//         return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
-//     }
-//     if (loaithiethai === 'Các Loại Thiết Bị' && devices.length === 0) {
-//         return res.status(400).json({ error: "Vui lòng chọn ít nhất một thiết bị khi báo hỏng loại 'Các Loại Thiết Bị'." });
-//     }
-//     const connection = await pool.getConnection();
-//     try {
-//         await connection.beginTransaction();
-
-//         const insertResults = [];
-
-//         if (devices.length === 0) {
-//             // Báo hỏng chung cho phòng
-//             const [result] = await connection.query(`
-//                 INSERT INTO baohong (phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
-//                 VALUES (?, ?, ?, ?, ?, ?, NOW())
-//             `, [phong_id, user_id || null, thiethai, moTa, hinhAnh || null, loaithiethai]);
-//             insertResults.push(result); // Lưu kết quả
-//         } else {
-//             // Báo hỏng cho từng thiết bị
-//             for (const device of devices) {
-//                 const { thietbi_id, thongtinthietbi_id } = device;
-//                 if (!thongtinthietbi_id) continue;
-
-//                 // Kiểm tra trùng lặp
-//                 const [existingPending] = await connection.query(
-//                     `SELECT id FROM baohong WHERE thongtinthietbi_id = ? AND trangThai NOT IN ('Hoàn Thành', 'Không Thể Hoàn Thành')`,
-//                     [thongtinthietbi_id]
-//                 );
-//                 if (existingPending.length > 0) {
-//                     throw new Error(`Thiết bị (MDD: ${thongtinthietbi_id}) đã được báo hỏng và đang chờ xử lý.`);
-//                 }
-
-//                 const [result] = await connection.query(`
-//                     INSERT INTO baohong (thietbi_id, thongtinthietbi_id, phong_id, user_id, thiethai, moTa, hinhAnh, loaithiethai, ngayBaoHong)
-//                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-//                 `, [thietbi_id || null, thongtinthietbi_id, phong_id, user_id || null, thiethai, moTa, hinhAnh || null, loaithiethai]);
-//                 insertResults.push(result); // Lưu kết quả
-//             }
-//         }
-//         if (insertResults.length === 0 && devices.length > 0) {
-//             throw new Error("Không có thông tin thiết bị hợp lệ để báo hỏng.");
-//         }
-
-//         await connection.commit();
-
-//         try {
-//             const firstInsertedId = insertResults[0]?.insertId;
-//             if (firstInsertedId) {
-//                 const [newBaoHong] = await pool.query(`
-//                             SELECT bh.*, p.toa, p.tang, p.soPhong, tb.tenThietBi, u_report.hoTen as nguoiBaoCao
-//                             FROM baohong bh
-//                             JOIN phong p ON bh.phong_id = p.id
-//                             LEFT JOIN thietbi tb ON bh.thietbi_id = tb.id
-//                             LEFT JOIN users u_report ON bh.user_id = u_report.id
-//                             WHERE bh.id = ?`,
-//                     [firstInsertedId]
-//                 );
-
-//                 if (newBaoHong.length > 0) {
-//                     const eventData = {
-//                         ...newBaoHong[0],
-//                         phong_name: `${newBaoHong[0].toa}${newBaoHong[0].tang}.${newBaoHong[0].soPhong}`
-//                     };
-//                     emitToUser(1, 'new_baohong', eventData);
-//                 }
-//             }
-//         } catch (socketError) {
-//             console.error("Lỗi khi gửi socket event sau khi tạo báo hỏng:", socketError);
-//         }
-
-//         res.status(201).json({ message: "Gửi báo hỏng thành công!" });
-
-//     } catch (error) {
-//         await connection.rollback();
-//         console.error("Lỗi khi lưu báo hỏng:", error);
-//         if (error.message.includes("đã được báo hỏng")) {
-//             res.status(409).json({ error: error.message });
-//         } else {
-//             res.status(500).json({ error: "Không thể lưu báo hỏng." });
-//         }
-//     } finally {
-//         connection.release();
-//     }
-// };
-
-
-// exports.getThongTinBaoHong = async (req, res) => {
-//     try {
-//         // 1. Lấy thông tin báo hỏng cơ bản và JOIN để lấy tên phòng, tên thiết bị, tên NV đã gán
-//         const query = `
-//             SELECT
-//                 bh.*,
-//                 p.toa,
-//                 p.tang,
-//                 p.soPhong,
-//                 tttb.thietbi_id,
-//                 tttb.tinhTrang,       
-//                 tb.tenThietBi,     
-//                 u_assigned.hoTen AS tenNhanVienDaGan,
-//                 latest_log.phuongAnXuLy AS phuongAnXuLyCuoiCung
-//             FROM baohong bh
-//             LEFT JOIN phong p ON bh.phong_id = p.id -- JOIN để lấy thông tin phòng
-//             -- JOIN qua thongtinthietbi để lấy thietbi_id
-//             LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
-//             -- JOIN vào thietbi để lấy tenThietBi
-//             LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
-//             -- JOIN để lấy tên nhân viên đã được gán
-//             LEFT JOIN users u_assigned ON bh.nhanvien_id = u_assigned.id
-//             LEFT JOIN (
-//                 SELECT
-//                     bt.baohong_id,
-//                     bt.phuongAnXuLy,
-//                     ROW_NUMBER() OVER(PARTITION BY bt.baohong_id ORDER BY bt.thoiGian DESC) as rn
-//                 FROM baotri bt
-//             ) AS latest_log ON bh.id = latest_log.baohong_id AND latest_log.rn = 1
-//             ORDER BY bh.ngayBaoHong ASC;
-//         `;
-
-//         const [baoHongRows] = await pool.query(query);
-
-//         const phongMap = new Map(baoHongRows.map(p => [p.phong_id, `${p.toa}${p.tang}.${p.soPhong}`]));
-
-//         const baoHongDataPromises = baoHongRows.map(async (item) => {
-//             let suggested_nhanvien_id = null;
-//             let suggested_nhanvien_name = null;
-
-//             if (item.trangThai === 'Chờ Duyệt') {
-//                 // Ưu tiên 1: Tìm phân công cố định
-//                 const [fixedAssign] = await pool.query(
-//                     `SELECT npp.nhanvien_id, u.hoTen
-//                      FROM nhanvien_phong_phutrach npp
-//                      JOIN users u ON npp.nhanvien_id = u.id
-//                      WHERE npp.phong_id = ? AND u.tinhTrang = 'on'`, // Chỉ gợi ý NV đang hoạt động
-//                     [item.phong_id]
-//                 );
-
-//                 if (fixedAssign.length > 0) {
-//                     suggested_nhanvien_id = fixedAssign[0].nhanvien_id;
-//                     suggested_nhanvien_name = fixedAssign[0].hoTen;
-//                 } else {
-//                     // Ưu tiên 2: Tìm người trực theo lịch tại thời điểm báo hỏng
-//                     const [shiftAssign] = await pool.query(
-//                         `SELECT lt.nhanvien_id, u.hoTen
-//                          FROM lichtruc lt
-//                          JOIN users u ON lt.nhanvien_id = u.id
-//                          WHERE ? BETWEEN lt.start_time AND lt.end_time AND u.tinhTrang = 'on'
-//                          LIMIT 1`, // Lấy người đầu tiên tìm thấy nếu có nhiều người trùng lịch
-//                         [item.ngayBaoHong] // Thời điểm báo hỏng
-//                     );
-//                     if (shiftAssign.length > 0) {
-//                         suggested_nhanvien_id = shiftAssign[0].nhanvien_id;
-//                         suggested_nhanvien_name = shiftAssign[0].hoTen;
-//                     }
-//                 }
-//             }
-
-
-//             return {
-//                 ...item,
-//                 phong_name: phongMap.get(item.phong_id) || "Không xác định",
-//                 tenThietBi: item.tenThietBi || null,
-//                 tenNhanVienXuLy: item.tenNhanVienDaGan || null, // Tên NV đã gán chính thức
-//                 suggested_nhanvien_id, // ID NV gợi ý
-//                 suggested_nhanvien_name, // Tên NV gợi ý
-//                 phuongAnXuLy: item.phuongAnXuLyCuoiCung || null
-//             };
-//         });
-
-
-//         const baoHongData = await Promise.all(baoHongDataPromises);
-
-//         res.status(200).json(baoHongData);
-
-//     } catch (error) {
-//         console.error("Lỗi khi lấy thông tin báo hỏng:", error);
-//         res.status(500).json({ error: "Không thể lấy thông tin báo hỏng." });
-//     }
-// };
-
-// exports.updateBaoHong = async (req, res) => {
-//     const { id } = req.params;
-//     // Lấy các trường từ body
-//     const { trangThai, nhanvien_id, ghiChuXuLy, ghiChuAdmin, action, finalDeviceStatus } = req.body;
-//     const requesterRole = req.user?.role;
-//     const requesterId = req.user?.id;
-
-//     let finalNhanVienId = null;
-//     let statusAfterUpdate = '';
-
-//     // --- Validation ---
-//     if (trangThai === 'Đã Duyệt' && requesterRole === 'admin' && !nhanvien_id) {
-//         console.log(`[updateBaoHong] ID: ${id}, Validation Failed: Admin duyệt nhưng thiếu nhân viên.`);
-//         return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt." });
-//     }
-
-//     const allowedStatusUpdatesByNhanVien = ['Đang Tiến Hành', 'Hoàn Thành', 'Không Thể Hoàn Thành', 'Chờ Xem Xét'];
-//     // Kiểm tra chỉ khi trangThai được gửi lên từ client và người gửi là nhân viên
-//     if (trangThai && requesterRole === 'nhanvien' && !allowedStatusUpdatesByNhanVien.includes(trangThai)) {
-//         console.log(`[updateBaoHong] ID: ${id}, Forbidden: Nhân viên không được đặt trạng thái ${trangThai}.`);
-//         return res.status(403).json({ error: "Bạn không có quyền đặt trạng thái này." });
-//     }
-//     //--- Kết thúc validation ---
-
-//     const connection = await pool.getConnection();
-
-//     try {
-//         await connection.beginTransaction();
-
-//         // --- Pre-update checks ---
-//         const [currentBaoHongRows] = await connection.query(
-//             `SELECT bh.trangThai, bh.nhanvien_id, bh.coLogBaoTri, bh.thongtinthietbi_id, tttb.tinhTrang as currentDeviceStatus
-//              FROM baohong bh
-//              LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
-//              WHERE bh.id = ?`, [id]);
-//         if (currentBaoHongRows.length === 0) {
-//             await connection.rollback();
-//             return res.status(404).json({ error: "Báo hỏng không tồn tại." });
-//         }
-//         const currentBaoHong = currentBaoHongRows[0];
-
-//         // Kiểm tra quyền nếu người yêu cầu là nhân viên
-//         if (requesterRole === 'nhanvien' && currentBaoHong.nhanvien_id !== requesterId) {
-//             await connection.rollback();
-//             console.log(`[updateBaoHong] ID: ${id}, Forbidden: Nhân viên ${requesterId} không được gán cho task này (NV ${currentBaoHong.nhanvien_id}).`);
-//             return res.status(403).json({ error: "Bạn không được giao xử lý báo hỏng này." });
-//         }
-//         // --- Kết thúc Pre-update checks ---
-
-//         // --- Xử lý action 'cancel' ---
-//         if (requesterRole === 'admin' && action === 'cancel') {
-//             const allowedCancelStates = ['Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại', 'Chờ Hoàn Tất Bảo Hành', 'Chờ Xem Xét']; // Mở rộng các trạng thái có thể hủy
-//             if (!allowedCancelStates.includes(currentBaoHong.trangThai)) {
-//                 await connection.rollback();
-//                 return res.status(400).json({ error: `Không thể hủy lệnh khi báo hỏng đang ở trạng thái '${currentBaoHong.trangThai}'.` });
-//             }
-
-//             // Lấy ID nhân viên hiện tại TRƯỚC KHI reset
-//             const currentNhanVienId = currentBaoHong.nhanvien_id;
-
-//             statusAfterUpdate = 'Chờ Duyệt'; // Luôn quay về Chờ Duyệt khi hủy
-//             const queryCancel = `UPDATE baohong SET trangThai = ?, nhanvien_id = NULL, thoiGianXuLy = NULL, ghiChuAdmin = NULL, ghiChuXuLy = NULL, coLogBaoTri = FALSE WHERE id = ?`;
-//             const paramsCancel = [statusAfterUpdate, id];
-
-//             const [cancelResult] = await connection.query(queryCancel, paramsCancel);
-
-//             if (cancelResult.affectedRows === 0) {
-//                 await connection.rollback();
-//                 return res.status(404).json({ error: "Không tìm thấy báo hỏng để hủy lệnh." });
-//             }
-
-//             await connection.commit();
-
-//             // ... (Gửi socket hủy) ...
-//             if (currentNhanVienId) { 
-//                 try {
-//                     emitToUser(currentNhanVienId, 'task_cancelled', {
-//                         baoHongId: parseInt(id), // Đảm bảo ID là số nếu cần
-//                         statusAfterUpdate: statusAfterUpdate
-//                     });
-//                 } catch (socketError) {
-//                 }
-//                 return res.status(200).json({
-//                     message: "Đã hủy lệnh và đặt lại trạng thái về 'Chờ Duyệt' thành công!",
-//                     id: id, 
-//                     statusAfterUpdate: statusAfterUpdate
-//                 });
-//             }
-//         }
-//         // --- Kết thúc Cancel ---
-
-//         // --- XỬ LÝ DUYỆT LẦN ĐẦU ---
-//         else if (requesterRole === 'admin' && currentBaoHong.trangThai === 'Chờ Duyệt' && trangThai === 'Đã Duyệt') {
-//             console.log(`[updateBaoHong] ID: ${id}, Processing initial Admin approval.`);
-
-//             // Validation: Đảm bảo nhanvien_id được gửi lên
-//             if (nhanvien_id === undefined || nhanvien_id === null) {
-//                 await connection.rollback();
-//                 console.log(`[updateBaoHong] ID: ${id}, Validation Failed: Admin duyệt nhưng thiếu nhân viên.`);
-//                 return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý khi duyệt." });
-//             }
-
-//             statusAfterUpdate = 'Đã Duyệt';
-//             finalNhanVienId = nhanvien_id; // LẤY ID TỪ REQUEST BODY
-
-//             // Câu lệnh SQL cập nhật cả trạng thái và nhân viên
-//             const queryApprove = `
-//                         UPDATE baohong
-//                         SET trangThai = ?,
-//                             nhanvien_id = ?,
-//                             ghiChuAdmin = ?,
-//                             thoiGianXuLy = NULL,  -- Reset thời gian xử lý cũ nếu có
-//                             coLogBaoTri = FALSE, -- Reset cờ log bảo trì
-//                             ghiChuXuLy = NULL   -- Reset ghi chú xử lý cũ nếu có
-//                         WHERE id = ?`;
-//             const paramsApprove = [statusAfterUpdate, finalNhanVienId, ghiChuAdmin || null, id];
-
-//             console.log(`[updateBaoHong] ID: ${id}, Executing Initial Approval SQL: ${queryApprove} with params:`, paramsApprove);
-//             const [approveResult] = await connection.query(queryApprove, paramsApprove);
-//             console.log(`[updateBaoHong] ID: ${id}, Initial Approval result:`, approveResult);
-
-//             if (approveResult.affectedRows === 0) {
-//                 await connection.rollback();
-//                 return res.status(404).json({ error: "Không tìm thấy báo hỏng để duyệt." });
-//             }
-
-//             await connection.commit();
-//             console.log(`[updateBaoHong] ID: ${id}, Initial Approval Transaction committed.`);
-
-//             // Gửi thông báo socket tới nhân viên được gán (nếu cần)
-//             // Ví dụ: emitToUser(finalNhanVienId, 'new_task_assigned', { baoHongId: parseInt(id) });
-
-//             console.log(`[updateBaoHong] ID: ${id}, Sending Initial Approval success response.`);
-//             // Trả về ID và trạng thái mới
-//             return res.status(200).json({
-//                 message: "Duyệt và gán báo hỏng thành công!",
-//                 id: id, // Chuyển id về kiểu number nếu cần thiết ở frontend
-//                 statusAfterUpdate: statusAfterUpdate
-//             });
-//         }
-//         // --- END: THÊM KHỐI XỬ LÝ DUYỆT LẦN ĐẦU ---
-
-//         // --- Xử lý Admin duyệt lại ---
-//         else if (requesterRole === 'admin' && (currentBaoHong.trangThai === 'Hoàn Thành' || currentBaoHong.trangThai === 'Không Thể Hoàn Thành' || currentBaoHong.trangThai === 'Chờ Xem Xét')) {
-//             // Các trạng thái Admin có thể chuyển đến từ các trạng thái trên
-//             const validNextAdminStates = ['Yêu Cầu Làm Lại', 'Đã Duyệt', 'Hoàn Thành'];
-//             if (trangThai && validNextAdminStates.includes(trangThai)) {
-//                 console.log(`[updateBaoHong] ID: ${id}, Processing Admin action. Target state: ${trangThai}`);
-//                 statusAfterUpdate = trangThai;
-//                 finalNhanVienId = nhanvien_id === undefined ? currentBaoHong.nhanvien_id : nhanvien_id;
-
-//                 // Nếu chuyển về trạng thái cần NV xử lý mà không có NV -> lỗi
-//                 if (!finalNhanVienId && (statusAfterUpdate === 'Đã Duyệt' || statusAfterUpdate === 'Yêu Cầu Làm Lại')) {
-//                     await connection.rollback();
-//                     return res.status(400).json({ error: "Vui lòng chọn nhân viên xử lý." });
-//                 }
-
-//                 // --- Xử lý cập nhật TTTB nếu duyệt từ 'Chờ Xem Xét' thành 'Hoàn Thành' ---
-//                 let updateDeviceStatus = false;
-//                 if (currentBaoHong.trangThai === 'Chờ Xem Xét' && statusAfterUpdate === 'Hoàn Thành' && currentBaoHong.thongtinthietbi_id) {
-//                     const currentDeviceStatus = currentBaoHong.currentDeviceStatus;
-//                     // Trường hợp 1: Thiết bị đã bảo hành về (da_bao_hanh) -> Admin phải chọn finalDeviceStatus
-//                     if (currentDeviceStatus === 'da_bao_hanh') {
-//                         if (!finalDeviceStatus || !['con_bao_hanh', 'het_bao_hanh'].includes(finalDeviceStatus)) {
-//                             await connection.rollback();
-//                             console.error(`[updateBaoHong] ID: ${id}, Missing/Invalid finalDeviceStatus ('${finalDeviceStatus}') for da_bao_hanh.`);
-//                             return res.status(400).json({ error: "Vui lòng chọn trạng thái 'Còn bảo hành' hoặc 'Hết bảo hành' cho thiết bị." });
-//                         }
-//                         updateDeviceStatus = true; // Đánh dấu cần cập nhật TTTB
-//                     }
-//                     // Trường hợp 2: Đề xuất thanh lý -> Admin phải chọn finalDeviceStatus
-//                     else if (currentDeviceStatus === 'de_xuat_thanh_ly') {
-//                         const validDisposalFinalStates = ['cho_thanh_ly', 'con_bao_hanh', 'het_bao_hanh'];
-//                         if (!finalDeviceStatus || !validDisposalFinalStates.includes(finalDeviceStatus)) {
-//                             await connection.rollback();
-//                             console.error(`[updateBaoHong] ID: ${id}, Missing/Invalid finalDeviceStatus ('${finalDeviceStatus}') for de_xuat_thanh_ly.`);
-//                             return res.status(400).json({ error: "Vui lòng chọn 'Chờ thanh lý', 'Còn bảo hành' hoặc 'Hết bảo hành'." });
-//                         }
-//                         updateDeviceStatus = true; // Đánh dấu cần cập nhật TTTB
-//                     }
-//                 }
-
-//                 // Cập nhật TTTB nếu cần (trong cùng transaction)
-//                 if (updateDeviceStatus) {
-//                     console.log(`[updateBaoHong] ID: ${id}, Updating TTTB ${currentBaoHong.thongtinthietbi_id} to status: ${finalDeviceStatus}`);
-//                     const [tttbUpdateResult] = await connection.query(
-//                         "UPDATE thongtinthietbi SET tinhTrang = ? WHERE id = ?",
-//                         [finalDeviceStatus, currentBaoHong.thongtinthietbi_id]
-//                     );
-//                     if (tttbUpdateResult.affectedRows === 0) {
-//                         await connection.rollback();
-//                         console.warn(`[updateBaoHong] ID: ${id}, Failed to update TTTB ${currentBaoHong.thongtinthietbi_id}.`);
-//                         return res.status(404).json({ error: "Không tìm thấy thiết bị liên quan để cập nhật." });
-//                     }
-//                     console.log(`[updateBaoHong] ID: ${id}, TTTB ${currentBaoHong.thongtinthietbi_id} updated successfully.`);
-//                 }
-//                 // --- Kết thúc xử lý cập nhật TTTB ---
-
-//                 // --- Cập nhật Báo hỏng ---
-//                 let queryAdminAction = "UPDATE baohong SET trangThai = ?, nhanvien_id = ?, ghiChuAdmin = ?";
-//                 let paramsAdminAction = [statusAfterUpdate, finalNhanVienId, ghiChuAdmin || null];
-
-//                 // Reset các trường nếu cần
-//                 if (statusAfterUpdate === 'Yêu Cầu Làm Lại' || statusAfterUpdate === 'Đã Duyệt') {
-//                     queryAdminAction += ", thoiGianXuLy = NULL, coLogBaoTri = FALSE, ghiChuXuLy = NULL";
-//                 } else if (statusAfterUpdate === 'Hoàn Thành') {
-//                     queryAdminAction += ", thoiGianXuLy = NOW()"; // Ghi nhận thời gian hoàn thành
-//                 }
-
-//                 queryAdminAction += " WHERE id = ?";
-//                 paramsAdminAction.push(id);
-
-//                 console.log(`[updateBaoHong] ID: ${id}, Executing Admin Action SQL: ${queryAdminAction} with params:`, paramsAdminAction);
-//                 const [adminActionResult] = await connection.query(queryAdminAction, paramsAdminAction);
-//                 console.log(`[updateBaoHong] ID: ${id}, Admin Action result:`, adminActionResult);
-
-//                 if (adminActionResult.affectedRows === 0) {
-//                     await connection.rollback();
-//                     return res.status(404).json({ error: "Không tìm thấy báo hỏng để xử lý." });
-//                 }
-
-//                 await connection.commit();
-//                 console.log(`[updateBaoHong] ID: ${id}, Admin Action Transaction committed.`);
-//                 console.log(`[updateBaoHong] ID: ${id}, Sending Admin Action success response.`);
-//                 return res.status(200).json({ message: `Đã cập nhật trạng thái thành '${statusAfterUpdate}'.`, id: id, statusAfterUpdate: statusAfterUpdate });
-
-//             } else {
-//                 // Trường hợp admin cố cập nhật từ trạng thái cuối sang trạng thái không hợp lệ khác
-//                 await connection.rollback();
-//                 return res.status(400).json({ error: `Không thể chuyển từ '${currentBaoHong.trangThai}' sang '${trangThai}'.` });
-//             }
-//         }
-//         // --- Kết thúc Duyệt lại ---
-
-//         // --- Kiểm tra Hoàn thành sớm ---
-//         else if (requesterRole === 'nhanvien' && trangThai === 'Hoàn Thành') {
-//             console.log(`[updateBaoHong] ID: ${id}, Processing Technician complete request.`);
-//             if (currentBaoHong.trangThai !== 'Đang Tiến Hành') { await connection.rollback(); return res.status(400).json({ error: "Chỉ hoàn thành khi đang 'Đang Tiến Hành'." }); }
-//             if (!currentBaoHong.coLogBaoTri) { await connection.rollback(); return res.status(400).json({ error: "Cần ghi log trước khi hoàn thành." }); }
-//             if (currentBaoHong.thongtinthietbi_id) {
-//                 const [tttbRows] = await connection.query("SELECT tinhTrang FROM thongtinthietbi WHERE id = ?", [currentBaoHong.thongtinthietbi_id]);
-//                 if (tttbRows.length > 0 && ['dang_bao_hanh', 'de_xuat_thanh_ly'].includes(tttbRows[0].tinhTrang)) {
-//                     await connection.rollback(); return res.status(400).json({ error: `Không thể hoàn thành khi thiết bị '${tttbRows[0].tinhTrang}'.` });
-//                 }
-//             }
-//             const [lastLog] = await connection.query("SELECT ketQuaXuLy FROM baotri WHERE baohong_id = ? ORDER BY thoiGian DESC LIMIT 1", [id]);
-//             if (lastLog.length > 0 && ['Đã gửi bảo hành', 'Đề xuất thanh lý'].includes(lastLog[0].ketQuaXuLy)) {
-//                 await connection.rollback(); return res.status(400).json({ error: "Log cuối chưa cho phép hoàn thành." });
-//             }
-
-//             // Nếu vượt qua kiểm tra -> tiến hành cập nhật thành Hoàn Thành
-//             statusAfterUpdate = 'Hoàn Thành';
-//             let queryComplete = "UPDATE baohong SET trangThai = ?, thoiGianXuLy = NOW() WHERE id = ?";
-//             const paramsComplete = [statusAfterUpdate, id];
-//             const [completeResult] = await connection.query(queryComplete, paramsComplete);
-//             if (completeResult.affectedRows === 0) { await connection.rollback(); return res.status(404).json({ error: "Không tìm thấy báo hỏng để hoàn thành." }); }
-//             await connection.commit();
-//             return res.status(200).json({ message: "Đã hoàn thành công việc!", id: id, statusAfterUpdate: statusAfterUpdate });
-//         }
-//         // --- Kết thúc Hoàn thành sớm ---
-
-//         // --- XỬ LÝ CẬP NHẬT TRẠNG THÁI THÔNG THƯỜNG  ---
-//         else if (trangThai) {
-//             console.log(`[updateBaoHong] ID: ${id}, Processing normal status update to: ${trangThai} by ${requesterRole}`);
-//             // Chỉ cho phép nhân viên cập nhật các trạng thái được phép
-//             if (requesterRole === 'nhanvien' && !allowedStatusUpdatesByNhanVien.includes(trangThai)) {
-//                 await connection.rollback();
-//                 console.log(`[updateBaoHong] ID: ${id}, Forbidden: Nhân viên không được đặt trạng thái ${trangThai}.`);
-//                 return res.status(403).json({ error: "Bạn không có quyền đặt trạng thái này." });
-//             }
-
-//             statusAfterUpdate = trangThai;
-//             finalNhanVienId = currentBaoHong.nhanvien_id;
-
-//             let query = "UPDATE baohong SET trangThai = ?";
-//             const params = [statusAfterUpdate];
-
-//             // Chỉ cập nhật ghi chú xử lý nếu người gửi là nhân viên và có ghi chú
-//             if (requesterRole === 'nhanvien' && ghiChuXuLy !== undefined) {
-//                 query += ", ghiChuXuLy = ?";
-//                 params.push(ghiChuXuLy || null);
-//             }
-
-//             // Xử lý riêng cho các trạng thái cụ thể nếu cần thêm trường
-//             if (statusAfterUpdate === 'Không Thể Hoàn Thành' && requesterRole === 'nhanvien') {
-//                 query += ", thoiGianXuLy = NOW()";
-//             } else if (statusAfterUpdate === 'Đang Tiến Hành' && requesterRole === 'nhanvien') {
-//                 query += ", ghiChuAdmin = NULL";
-//             } else if (statusAfterUpdate === 'Chờ Xem Xét' && requesterRole === 'nhanvien') {
-//                 query += ", thoiGianXuLy = NOW()";
-//             }
-
-
-//             query += " WHERE id = ?";
-//             params.push(id);
-
-//             console.log(`[updateBaoHong] ID: ${id}, Executing Normal Update SQL: ${query} with params:`, params);
-//             const [result] = await connection.query(query, params);
-//             console.log(`[updateBaoHong] ID: ${id}, Normal Update result:`, result);
-
-//             if (result.affectedRows === 0) {
-//                 await connection.rollback();
-//                 return res.status(404).json({ error: "Không tìm thấy báo hỏng hoặc trạng thái không thay đổi." });
-//             }
-
-//             await connection.commit();
-//             // Thông báo cho admin khi nhân viên cập nhật trạng thái (ví dụ: chờ xem xét)
-//             if (requesterRole === 'nhanvien' && statusAfterUpdate === 'Chờ Xem Xét') {
-//                 // emitToRole('admin', 'task_needs_review', { baoHongId: parseInt(id) });
-//             } else if (requesterRole === 'nhanvien' && statusAfterUpdate === 'Không Thể Hoàn Thành') {
-//                 // emitToRole('admin', 'task_cannot_complete', { baoHongId: parseInt(id) });
-//             }
-
-//             res.status(200).json({ message: "Cập nhật báo hỏng thành công!", id: id, statusAfterUpdate: statusAfterUpdate });
-
-//         } else {
-//             // Hiện tại logic này không cho phép chỉ cập nhật ghi chú mà không đổi trạng thái
-//             await connection.rollback(); // Rollback vì không có hành động rõ ràng
-//             console.warn(`[updateBaoHong] ID: ${id}, Update request missing 'trangThai'.`);
-//             return res.status(400).json({ error: "Thiếu thông tin trạng thái cần cập nhật." });
-//         }
-
-//     } catch (error) {
-//         await connection.rollback();
-//         res.status(500).json({ error: "Lỗi máy chủ khi cập nhật báo hỏng." });
-//     } finally {
-//         if (connection) {
-//             connection.release();
-//         }
-//     }
-// }
-
-// exports.uploadBaoHongImage = (req, res) => {
-//     if (!req.file) {
-//         return res.status(400).json({ error: 'Không có file nào được tải lên.' });
-//     }
-//     // req.file.path chứa URL từ Cloudinary do cấu hình multer-storage-cloudinary
-//     res.json({ imageUrl: req.file.path });
-// };
-
-// // Controller lấy báo hỏng được gán
-// // exports.getAssignedBaoHong = async (req, res) => {
-// //     const nhanvien_id = req.user?.id;
-
-// //     if (!nhanvien_id) {
-// //         return res.status(401).json({ error: "Không thể xác định nhân viên." });
-// //     }
-// //     try {
-// //         const sqlQuery = `
-// //             SELECT
-// //                 bh.*,
-// //                 p.toa,
-// //                 p.tang,
-// //                 p.soPhong,
-// //                 tttb.thietbi_id,
-// //                 tb.tenThietBi 
-// //             FROM baohong bh
-// //             LEFT JOIN phong p ON bh.phong_id = p.id -- JOIN để lấy thông tin phòng
-// //             LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
-// //             LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
-// //             WHERE
-// //                 bh.nhanvien_id = ? 
-// //                 AND bh.trangThai IN ('Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại')
-// //             ORDER BY
-// //                 FIELD(bh.trangThai, 'Đã Duyệt', 'Yêu Cầu Làm Lại', 'Đang Tiến Hành'),
-// //                 bh.ngayBaoHong ASC;
-// //         `;
-// //         const [assignedRows] = await pool.query(sqlQuery, [nhanvien_id]);
-
-// //         const assignedData = assignedRows.map(item => ({
-// //             ...item,
-// //             phong_name: item.toa ? `${item.toa}${item.tang}.${item.soPhong}` : `Phòng ID:${item.phong_id}`,
-// //             tenThietBi: item.tenThietBi || null 
-// //         }));
-
-// //         res.status(200).json(assignedData);
-
-// //     } catch (error) {
-// //         console.error("Lỗi khi lấy báo hỏng được gán:", error);
-// //         res.status(500).json({ error: "Lỗi máy chủ khi lấy công việc được giao." });
-// //     }
-// // };
-
-// exports.getAssignedBaoHong = async (req, res) => {
-//     const nhanvien_id = req.user?.id;
-
-//     // Lấy danh sách trạng thái từ query params, phân tách bằng dấu phẩy
-//     const requestedStatusesQuery = req.query.statuses;
-//     let requestedStatuses = null;
-//     if (requestedStatusesQuery) {
-//         // Lọc bỏ các giá trị trống hoặc không hợp lệ sau khi split
-//         requestedStatuses = requestedStatusesQuery.split(',').map(s => s.trim()).filter(s => s);
-//     }
-
-//     if (!nhanvien_id) {
-//         return res.status(401).json({ error: "Không thể xác định nhân viên." });
-//     }
-//     try {
-//         let sqlQuery = `
-//             SELECT
-//                 bh.*,
-//                 p.toa, p.tang, p.soPhong,
-//                 tttb.thietbi_id,
-//                 tb.tenThietBi,
-//                 tttb.tinhTrang AS tinhTrangThietBi
-//             FROM baohong bh
-//             LEFT JOIN phong p ON bh.phong_id = p.id -- JOIN để lấy thông tin phòng
-//             LEFT JOIN thongtinthietbi tttb ON bh.thongtinthietbi_id = tttb.id
-//             LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
-//             WHERE
-//                 bh.nhanvien_id = ?
-//         `;
-//         const queryParams = [nhanvien_id];
-//         let statusesToFilter;
-
-//         // Xác định trạng thái cần lọc
-//         if (requestedStatuses && requestedStatuses.length > 0) {
-//             statusesToFilter = requestedStatuses;
-//         } else {
-//             // Mặc định nếu không có query param 'statuses'
-//             statusesToFilter = ['Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại'];
-//         }
-
-//         // Thêm điều kiện lọc trạng thái vào câu query
-//         if (statusesToFilter && statusesToFilter.length > 0) {
-//             sqlQuery += ` AND bh.trangThai IN (?)`;
-//             queryParams.push(statusesToFilter);
-//         } else {
-//             console.warn("Không có trạng thái hợp lệ để lọc cho nhân viên ID:", nhanvien_id);
-//             return res.status(200).json([]);
-//         }
-
-//         // Thêm ORDER BY
-//         sqlQuery += `
-//             ORDER BY
-//                 FIELD(bh.trangThai,
-//                     'Yêu Cầu Làm Lại',  -- Ưu tiên cao nhất
-//                     'Đã Duyệt',          -- Tiếp theo
-//                     'Đang Tiến Hành',    -- Đang làm
-//                     'Chờ Hoàn Tất Bảo Hành', -- Chờ nhận về
-//                     'Chờ Xem Xét'       -- Chờ duyệt cuối
-//                 ),
-//                 bh.ngayBaoHong DESC; -- Cuối cùng theo ngày báo
-//         `;
-
-//         const [assignedRows] = await pool.query(sqlQuery, queryParams);
-
-//         const assignedData = assignedRows.map(item => ({
-//             id: item.id,
-//             phong_id: item.phong_id,
-//             thongtinthietbi_id: item.thongtinthietbi_id,
-//             moTa: item.moTa,
-//             ngayBaoHong: item.ngayBaoHong,
-//             thoiGianXuLy: item.thoiGianXuLy,
-//             thiethai: item.thiethai,
-//             loaiThietHai: item.loaithietHai,
-//             trangThai: item.trangThai,
-//             nhanvien_id: item.nhanvien_id, // người được gán xử lý
-//             ghiChuAdmin: item.ghiChuAdmin,
-//             ghiChuXuLy: item.ghiChuXuLy,
-//             coLogBaoTri: Boolean(item.coLogBaoTri), // Chuyển thành boolean
-//             phong_name: item.toa ? `${item.toa}${item.tang}.${item.soPhong}` : (item.phong_id ? `Phòng ID:${item.phong_id}` : 'N/A'), // Xử lý cả trường hợp null phong_id
-//             tenThietBi: item.tenThietBi || (item.thongtinthietbi_id ? `Thiết bị ID:${item.thongtinthietbi_id}` : 'Không có TB'), // Tên TB hoặc ID
-//             tinhTrangThietBi: item.tinhTrangThietBi // Thêm tình trạng thiết bị
-//         }));
-
-//         res.status(200).json(assignedData); // Trả về mảng dữ liệu
-
-//     } catch (error) {
-//         console.error("Lỗi khi lấy báo hỏng được gán:", error);
-//         res.status(500).json({ error: "Lỗi máy chủ khi lấy công việc được giao." });
-//     }
-// };
-
-
-// exports.deleteBaoHong = async (req, res) => {
-//     const { id } = req.params;
-
-//     if (!id || isNaN(parseInt(id))) {
-//         return res.status(400).json({ error: "ID báo hỏng không hợp lệ." });
-//     }
-
-//     const connection = await pool.getConnection();
-//     try {
-//         await connection.beginTransaction();
-//         // Ví dụ: Xóa cả log bảo trì liên quan
-//         await connection.query("DELETE FROM baotri WHERE baohong_id = ?", [id]);
-
-//         const [result] = await connection.query("DELETE FROM baohong WHERE id = ?", [id]);
-
-//         if (result.affectedRows === 0) {
-//             await connection.rollback();
-//             return res.status(404).json({ error: "Không tìm thấy báo hỏng để xóa." });
-//         }
-
-//         await connection.commit();
-//         res.status(200).json({ message: "Xóa báo hỏng thành công!", id: id });
-
-//     } catch (error) {
-//         await connection.rollback();
-//         console.error("Lỗi khi xóa báo hỏng:", error);
-//         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-//             return res.status(400).json({ error: "Không thể xóa báo hỏng này vì còn dữ liệu liên quan (ví dụ: trong bảng baohong_lichtruc)." });
-//         }
-//         res.status(500).json({ error: "Lỗi máy chủ khi xóa báo hỏng." });
-//     } finally {
-//         connection.release();
-//     }
-// };
-
 const pool = require("../config/db");
 const { emitToUser } = require('../socket');
 
@@ -1212,12 +492,36 @@ exports.postGuiBaoHong = async (req, res) => {
         console.log("Báo hỏng đã được tạo thành công. Số lượng:", insertResults.length);
 
         // Gửi socket sau khi commit thành công
-        try {
-            for (const result of insertResults) {
-                const insertedId = result.insertId;
-            }
-        } catch (socketError) { console.error("Lỗi khi gửi socket event sau khi tạo báo hỏng:", socketError); }
+        if (insertResults.length > 0) {
+            try {
+                // 1. Lấy ID của tất cả admin đang hoạt động
+                const [adminUsers] = await connection.query( // Dùng lại connection từ transaction
+                    "SELECT id FROM users WHERE role = 'admin' AND tinhTrang = 'on'"
+                );
 
+                if (adminUsers.length > 0) {
+                    const firstInsertedId = insertResults[0].insertId;
+                    const eventData = {
+                         message: `Có ${insertResults.length} báo hỏng mới được tạo.`,
+                         firstId: firstInsertedId,
+                         count: insertResults.length
+                    };
+
+                    console.log(`[postGuiBaoHong] Found ${adminUsers.length} active admins. Emitting 'new_baohong_created' to each...`);
+
+                    // 2. Lặp qua từng admin và gửi sự kiện
+                    for (const admin of adminUsers) {
+                        emitToUser(admin.id, 'new_baohong_created', eventData);
+                    }
+                     console.log(`[postGuiBaoHong] Finished emitting to admins.`);
+                } else {
+                    console.log("[postGuiBaoHong] No active admin users found to notify.");
+                }
+
+            } catch (socketOrDbError) {
+                console.error("Lỗi khi lấy danh sách admin hoặc gửi socket event:", socketOrDbError);
+            }
+        }
         // Tạo thông báo kết quả
         let message = `Gửi ${insertResults.length} báo hỏng thành công!`;
         if (skippedDevices.length > 0) {
@@ -1488,35 +792,106 @@ exports.getAssignedBaoHong = async (req, res) => {
 
 exports.deleteBaoHong = async (req, res) => {
     const { id } = req.params;
+    const adminUserId = req.user?.id || null; // Sử dụng null nếu req.user.id không tồn tại
 
     if (!id || isNaN(parseInt(id))) {
-        return res.status(400).json({ error: "ID báo hỏng không hợp lệ." });
+        return res.status(400).json({ message: "ID báo hỏng không hợp lệ." });
+    }
+
+    // Log xem adminUserId có được lấy không
+    if (!adminUserId) {
+         console.warn(`[deleteBaoHong] Không thể xác định ID admin thực hiện xóa báo hỏng ID: ${id}.`);
+    } else {
+        console.log(`[deleteBaoHong] Admin ID ${adminUserId} yêu cầu xóa báo hỏng ID: ${id}`);
     }
 
     let connection;
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
-        await connection.query("DELETE FROM baotri WHERE baohong_id = ?", [id]);
-        await connection.query("DELETE FROM log_huy_congviec WHERE baohong_id = ?", [id]);
-        const [result] = await connection.query("DELETE FROM baohong WHERE id = ?", [id]);
+        console.log(`[deleteBaoHong ID ${id}] Bắt đầu transaction.`);
 
-        if (result.affectedRows === 0) {
+        // --- Bước 1: Lấy thông tin báo hỏng cần xóa ---
+        const [baoHongRows] = await connection.query("SELECT * FROM baohong WHERE id = ?", [id]);
+        if (baoHongRows.length === 0) {
+            console.log(`[deleteBaoHong ID ${id}] Báo hỏng không tồn tại.`);
             await connection.rollback();
-            return res.status(404).json({ error: "Không tìm thấy báo hỏng để xóa." });
+            return res.status(404).json({ message: "Không tìm thấy báo hỏng để xóa." });
+        }
+        const baoHongToDelete = baoHongRows[0];
+        console.log(`[deleteBaoHong ID ${id}] Tìm thấy báo hỏng:`, JSON.stringify(baoHongToDelete));
+
+        // --- Bước 2: Kiểm tra coLogBaoTri và tạo log nếu cần ---
+        if (baoHongToDelete.coLogBaoTri === 1) { // Sử dụng so sánh lỏng lẻo hoặc chặt (== hoặc ===) tùy kiểu dữ liệu tinyint
+            console.log(`[deleteBaoHong ID ${id}] Cờ coLogBaoTri = 1. Tiến hành tạo log bảo trì lưu trữ.`);
+
+            // Chuẩn bị dữ liệu cho bản ghi baotri mới
+            const userIdForLog = adminUserId ? `Admin ID ${adminUserId}` : 'Người dùng không xác định';
+            const hoatDongLog = `Lưu trữ log từ báo hỏng ID ${id} (Trạng thái cuối: ${baoHongToDelete.trangThai}) đã bị xóa bởi ${userIdForLog}. Mô tả gốc: ${baoHongToDelete.moTa || 'Không có'}. Ghi chú xử lý cuối: ${baoHongToDelete.ghiChuXuLy || 'Không có'}. Ghi chú Admin cuối: ${baoHongToDelete.ghiChuAdmin || 'Không có'}.`;
+            let ketQuaXuLyLog = 'Không cần xử lý';
+            if (baoHongToDelete.trangThai === 'Hoàn Thành') ketQuaXuLyLog = 'Đã sửa chữa xong';
+            else if (baoHongToDelete.trangThai === 'Không Thể Hoàn Thành') ketQuaXuLyLog = 'Đề xuất thanh lý';
+
+            const baoTriLogData = {
+                baohong_id: id,
+                nhanvien_id: adminUserId, 
+                thongtinthietbi_id: baoHongToDelete.thongtinthietbi_id,
+                phong_id: baoHongToDelete.phong_id,
+                hoatdong: hoatDongLog,
+                ketQuaXuLy: ketQuaXuLyLog,
+                phuongAnXuLy: 'Khác',
+                phuongAnKhacChiTiet: 'Log lưu trữ tự động khi xóa báo hỏng.',
+                suDungVatTu: 0,
+                ghiChuVatTu: null,
+                chiPhi: null,
+                hinhAnhHoaDonUrls: null,
+                ngayDuKienTra: null,
+            };
+
+             const [insertLogResult] = await connection.query("INSERT INTO baotri SET ?", baoTriLogData);
+             console.log(`[deleteBaoHong ID ${id}] Đã tạo log bảo trì lưu trữ ID: ${insertLogResult.insertId} với nhanvien_id: ${adminUserId}`);
+
+        } else {
+             console.log(`[deleteBaoHong ID ${id}] Cờ coLogBaoTri = 0. Bỏ qua việc tạo log bảo trì lưu trữ.`);
         }
 
+        // --- Bước 3: Xóa các log phụ (TÙY CHỌN) ---
+        const [deleteLogHuyResult] = await connection.query("DELETE FROM log_huy_congviec WHERE baohong_id = ?", [id]);
+        if (deleteLogHuyResult.affectedRows > 0) {
+             console.log(`[deleteBaoHong ID ${id}] Đã xóa ${deleteLogHuyResult.affectedRows} bản ghi log_huy_congviec.`);
+        }
+
+        // --- Bước 4: Xóa báo hỏng chính ---
+        console.log(`[deleteBaoHong ID ${id}] Tiến hành xóa bản ghi khỏi bảng baohong.`);
+        const [deleteBaoHongResult] = await connection.query("DELETE FROM baohong WHERE id = ?", [id]);
+
+        if (deleteBaoHongResult.affectedRows === 0) {
+            console.error(`[deleteBaoHong ID ${id}] Lỗi: Không thể xóa báo hỏng (affectedRows = 0). Rollback.`);
+            await connection.rollback();
+            return res.status(404).json({ message: "Không tìm thấy báo hỏng để xóa (lỗi sau khi kiểm tra)." });
+        }
+
+        // --- Bước 5: Commit transaction ---
         await connection.commit();
-        res.status(200).json({ message: "Xóa báo hỏng và các log liên quan thành công!", id: parseInt(id) });
+        console.log(`[deleteBaoHong ID ${id}] Đã commit transaction. Xóa thành công.`);
+        res.status(200).json({ message: "Xóa báo hỏng thành công!", id: parseInt(id) });
 
     } catch (error) {
-        if (connection) await connection.rollback();
-        console.error("Lỗi khi xóa báo hỏng:", error);
-        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ error: "Không thể xóa báo hỏng này vì còn dữ liệu liên quan ở bảng khác." });
+        if (connection) {
+            console.error(`[deleteBaoHong ID ${id}] Gặp lỗi, rollback transaction:`, error);
+            await connection.rollback();
+        } else {
+             console.error(`[deleteBaoHong ID ${id}] Gặp lỗi và không có kết nối để rollback:`, error);
         }
-        res.status(500).json({ error: "Lỗi máy chủ khi xóa báo hỏng." });
+
+        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+            return res.status(400).json({ message: "Không thể xóa báo hỏng này vì còn dữ liệu tham chiếu ở bảng khác." });
+        }
+        res.status(500).json({ message: "Lỗi máy chủ khi xóa báo hỏng." });
     } finally {
-        if (connection) connection.release();
+        if (connection) {
+             console.log(`[deleteBaoHong ID ${id}] Giải phóng kết nối.`);
+             connection.release();
+        }
     }
 };
