@@ -62,5 +62,13 @@ app.use("/api/lichtruc", lichTrucRoutes);
 app.use("/api/baotri", baotriRoutes);
 app.use("/api/phieuxuat", phieuxuatRoutes);
 
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Backend đang chạy',
+    timestamp: new Date().toISOString()
+  });
+});
+
 
 module.exports = app;
