@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import io from 'socket.io-client';
-import { useAuth } from '../context/AuthProvider'; 
+import { useAuth } from '../context/AuthProvider';
 import { toast } from 'react-toastify';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -10,18 +10,18 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
-    const { user, logout } = useAuth(); 
+    const { user, logout } = useAuth();
     const queryClient = useQueryClient();
 
     useEffect(() => {
         let newSocket = null;
 
-        if (user?.id ) { 
+        if (user?.id) {
             console.log("[SocketContext] Attempting socket connection for user:", user.id);
             const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
             newSocket = io(SOCKET_URL, {
-                withCredentials: true 
+                withCredentials: true
             });
 
             newSocket.on('connect', () => {
@@ -39,29 +39,34 @@ export const SocketProvider = ({ children }) => {
                 setSocket(null);
             });
 
-             newSocket.on('status_changed', (data) => {
+            newSocket.on('status_changed', (data) => {
                 if (data?.newStatus === 'off') {
                     toast.error(data?.message || 'Tài khoản của bạn đã bị khóa!', { duration: 6000, icon: '🔒' });
                     setTimeout(() => logout(), 1500);
-                 }
-             });
-             newSocket.on('new_task', (taskData) => {
-                 console.log('Có công việc mới:', taskData);
-                 toast.info(`🔔 Có công việc mới: ${taskData.moTa}`);
-                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-                 queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
-             });
-             newSocket.on('task_cancelled', (data) => {
-                 console.log('Hủy công việc:', data);
-                 toast.warn(`⚠️ Công việc ID ${data.baoHongId} đã bị hủy.`);
-                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-                 queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
-             });
-             newSocket.on('new_baohong_created', (data) => {
-                console.log('[SocketContext] Received new_baohong_created:', data);
+                }
+            });
+            newSocket.on('new_task', (taskData) => {
+                toast.info(`🔔 Có công việc mới: ${taskData.moTa}`);
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+            });
+            newSocket.on('task_cancelled', (data) => {
+                toast.warn(`⚠️ Công việc ID ${data.baoHongId} đã bị hủy.`);
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+            });
+            newSocket.on('new_baohong_created', (data) => {
                 toast.info(data.message || `Có báo hỏng mới!`);
-                console.log("[SocketContext] Invalidating baoHongList query...");
                 queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+            });
+            newSocket.on('asset_assigned_to_room', (data) => {
+                toast.info(data.message || `Có cập nhật phân bổ tài sản.`);
+                queryClient.invalidateQueries({ queryKey: ['taiSan'] });
+                queryClient.invalidateQueries({ queryKey: ['availableAssetsForAssignment'] });
+                queryClient.invalidateQueries({ queryKey: ['phongTableData'] });
+                queryClient.invalidateQueries({ queryKey: ['thietBiTrongPhong', data.phongId] });
+                queryClient.invalidateQueries({ queryKey: ['phong', data.phongId] });
+                queryClient.invalidateQueries({ queryKey: ['phongList'] });
             });
 
             setSocket(newSocket);
@@ -74,18 +79,19 @@ export const SocketProvider = ({ children }) => {
         // --- Hàm cleanup ---
         return () => {
             if (newSocket) {
-               console.log("[SocketContext] Cleaning up socket connection.");
-               newSocket.off('connect');
-               newSocket.off('disconnect');
-               newSocket.off('connect_error');
-               newSocket.off('status_changed');
-               newSocket.off('new_task');
-               newSocket.off('task_cancelled');
-               newSocket.off('new_baohong_created')
-               newSocket.disconnect();
+                console.log("[SocketContext] Cleaning up socket connection.");
+                newSocket.off('connect');
+                newSocket.off('disconnect');
+                newSocket.off('connect_error');
+                newSocket.off('status_changed');
+                newSocket.off('new_task');
+                newSocket.off('task_cancelled');
+                newSocket.off('new_baohong_created');
+                newSocket.off('asset_assigned_to_room');
+                newSocket.disconnect();
             }
         };
-    }, [user, logout, queryClient]); 
+    }, [user, logout, queryClient]);
 
     const contextValue = useMemo(() => ({ socket }), [socket]);
 

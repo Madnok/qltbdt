@@ -77,8 +77,6 @@ function emitToUser(userId, eventName, data) {
         console.warn("Đã cố gắng gửi tới người dùng nhưng userId không hợp lệ.");
         return;
     }
-    console.log(`Emit event [${eventName}] đến room: ${targetUserId}`);
-    // Gửi tới room có tên là userId
     ioInstance.to(targetUserId).emit(eventName, data);
 }
 

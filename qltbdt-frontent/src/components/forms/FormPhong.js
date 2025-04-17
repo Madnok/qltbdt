@@ -10,7 +10,6 @@ import {
     getAllTaiSanAPI,
     assignTaiSanToPhongAPI
 } from "../../api"; 
-import eventBus from '../../utils/eventBus';
 
 const FormPhong = ({ onClose, refreshData }) => {
     const [activeTab, setActiveTab] = useState("themPhong");
@@ -155,6 +154,7 @@ const FormPhong = ({ onClose, refreshData }) => {
                 })
         );
 
+    try {
         // Đợi tất cả các promise hoàn thành
         await Promise.all(assignPromises);
 
@@ -162,14 +162,14 @@ const FormPhong = ({ onClose, refreshData }) => {
 
         if (successCount > 0) {
             toast.success(`Hoàn tất: Đã gán thành công ${successCount}/${totalToAssign} tài sản.`);
-            eventBus.emit('phongDataUpdated', phongIdInt);
-            setSelectedAssetsOptions([]); 
-            queryClient.invalidateQueries({ queryKey: ['availableAssetsForAssignment'] });
-            queryClient.invalidateQueries({ queryKey: ['taiSanList'] }); 
+            setSelectedAssetsOptions([]);
+            queryClient.invalidateQueries({ queryKey: ['availableAssetsForAssignment'] }); 
+            queryClient.invalidateQueries({ queryKey: ['taiSan'] }); 
             queryClient.invalidateQueries({ queryKey: ['phongTableData'] }); 
             queryClient.invalidateQueries({ queryKey: ['thietBiTrongPhong', phongIdInt] }); 
-            queryClient.invalidateQueries({ queryKey: ['phongList'] }); 
-            if (refreshData) refreshData(); 
+            queryClient.invalidateQueries({ queryKey: ['phong', phongIdInt] });
+            queryClient.invalidateQueries({ queryKey: ['phongList'] });
+            if (refreshData) refreshData();
         }
         if (errorCount > 0) {
             toast.error(`Hoàn tất: Có ${errorCount}/${totalToAssign} tài sản gán thất bại.`);
@@ -177,6 +177,12 @@ const FormPhong = ({ onClose, refreshData }) => {
          if (successCount === 0 && errorCount === 0) {
              toast.info("Không có tài sản nào được gán.");
          }
+        } catch (err) {
+            console.error("Lỗi không mong muốn trong handleAssignMultipleAssets:", err);
+            toast.error("Đã xảy ra lỗi không mong muốn trong quá trình gán.");
+        } finally {
+            setIsAssigning(false); 
+        }
     };
 
     return (

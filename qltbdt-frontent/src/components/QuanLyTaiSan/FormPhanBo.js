@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPhongList, assignTaiSanToPhongAPI } from '../../api';
 import Popup from '../layout/Popup';
 import { toast } from 'react-toastify';
-import eventBus from '../../utils/eventBus';
+import { FaSpinner } from 'react-icons/fa';
 
 const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
     const [selectedPhongId, setSelectedPhongId] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
-    // Lấy danh sách phòng cho dropdown
     const { data: phongList, isLoading: isLoadingPhong } = useQuery({
-        queryKey: ['listPhong'],
-        queryFn: () => fetchPhongList().then(res => res.data || res),
-        enabled: isOpen, // Chỉ fetch khi modal mở
-    });
-
-    // Mutation để gán tài sản vào phòng
-    const assignMutation = useMutation({
-        mutationFn: assignTaiSanToPhongAPI,
+        queryKey: ['listPhong', isOpen],
+        queryFn: () => fetchPhongList().then(res => res.data || res || []),
+        enabled: isOpen,
+        staleTime: 5 * 60 * 1000,
     });
 
     // Xử lý khi nhấn nút Xác nhận
@@ -33,41 +30,63 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
             return;
         }
 
-        toast.info(`Đang phân bổ ${selectedIds.length} thiết bị vào phòng...`);
+        setIsSubmitting(true);
+        toast.info(`Đang phân bổ ${selectedIds.length} thiết bị...`);
 
-        let successCount = 0;
-        let errorCount = 0;
         const assignPromises = selectedIds.map(thietBiId =>
-            assignMutation.mutateAsync({ thongtinthietbi_id: thietBiId, phong_id: selectedPhongId })
-                .then(() => {
-                    successCount++;
-                })
-                .catch((error) => {
-                    errorCount++;
-                    console.error(`Lỗi phân bổ TB ID ${thietBiId} vào phòng ${selectedPhongId}:`, error);
-                    toast.error(`Lỗi phân bổ TB ID ${thietBiId}: ${error.response?.data?.error || error.message}`);
-                })
+            assignTaiSanToPhongAPI({ thongtinthietbi_id: thietBiId, phong_id: selectedPhongId })
+                .then(response => ({ status: 'fulfilled', id: thietBiId, value: response }))
+                .catch(error => ({ status: 'rejected', id: thietBiId, reason: error }))
         );
-        try {
-            await Promise.all(assignPromises);
 
+        try {
+            const results = await Promise.all(assignPromises);
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    successCount++;
+                } else {
+                    errorCount++;
+                    const thietBiId = result.id;
+                    const error = result.reason;
+                    toast.error(`Lỗi phân bổ TB ID ${thietBiId}: ${error?.response?.data?.error || error?.message || 'Lỗi không xác định'}`);
+                }
+            });
+
+            // Thông báo kết quả tổng hợp
             if (successCount > 0) {
                 toast.success(`Đã phân bổ thành công ${successCount} thiết bị!`);
-                console.log('[FormPhanBo] Emitting phongDataUpdated for phongId:', selectedPhongId, typeof selectedPhongId);
-                eventBus.emit('phongDataUpdated', selectedPhongId);
+                queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+                queryClient.invalidateQueries({ queryKey: ['availableAssetsForAssignment'] });
+                queryClient.invalidateQueries({ queryKey: ['phongTableData'] });
+                queryClient.invalidateQueries({ queryKey: ['thietBiTrongPhong', parseInt(selectedPhongId, 10)] });
+                queryClient.invalidateQueries({ queryKey: ['phong', parseInt(selectedPhongId, 10)] });
+                queryClient.invalidateQueries({ queryKey: ['phongList'] });
 
-                triggerRefetch();
-                onClose();
+                if (typeof triggerRefetch === 'function') {
+                    triggerRefetch();
+                } else {
+                    console.warn('[FormPhanBo] triggerRefetch function is not passed as a prop.');
+                }
+                // ----- END MODIFICATION -----
             }
-
             if (errorCount > 0) {
                 toast.warn(`Có ${errorCount} lỗi xảy ra trong quá trình phân bổ.`);
             }
-
+            if (successCount === 0 && errorCount === 0) {
+                toast.info("Không có thay đổi nào được thực hiện.");
+            }
 
         } catch (error) {
-            console.error("Có lỗi không mong muốn xảy ra trong quá trình phân bổ hàng loạt.", error);
+            console.error("Lỗi không mong muốn trong Promise.all:", error);
             toast.error("Lỗi không xác định trong quá trình phân bổ.");
+        } finally {
+            console.log('[FormPhanBo] Assignment process finished. Setting isSubmitting false.');
+            setIsSubmitting(false);
+            onClose();
         }
     };
 
@@ -88,7 +107,7 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
                             <option value="" disabled>-- Chọn phòng --</option>
                             {Array.isArray(phongList) && phongList.map(p => (
                                 <option key={p.id || p._id} value={p.id || p._id}>
-                                    {p.phong || `${p.toa}${p.tang}.${p.soPhong}` } ({p.chucNang || 'N/A'})
+                                    {p.phong || `${p.toa}${p.tang}.${p.soPhong}`} ({p.chucNang || 'N/A'})
                                 </option>
                             ))}
                         </select>
@@ -99,16 +118,17 @@ const FormPhanBo = ({ isOpen, onClose, selectedIds = [], triggerRefetch }) => {
                         type="button"
                         onClick={onClose}
                         className="px-4 py-2 mr-2 text-gray-700 bg-gray-300 rounded hover:bg-gray-400"
-                        disabled={assignMutation.isPending} // Disable khi đang xử lý
+                        disabled={isSubmitting}
                     >
                         Hủy
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:opacity-50"
-                        disabled={isLoadingPhong || assignMutation.isPending || !selectedPhongId} // Disable khi đang tải phòng, đang xử lý hoặc chưa chọn phòng
+                        disabled={isLoadingPhong || isSubmitting || !selectedPhongId}
                     >
-                        {assignMutation.isPending ? 'Đang phân bổ...' : 'Xác nhận'}
+                        {isSubmitting && <FaSpinner className="w-4 h-4 mr-2 animate-spin" />}
+                        {isSubmitting ? 'Đang phân bổ...' : 'Xác nhận'}
                     </button>
                 </div>
             </form>

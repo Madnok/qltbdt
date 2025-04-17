@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { emitToUser } = require("../socket");
 
 // Lấy danh sách tất cả thông tin thiết bị
 exports.getAllThongTinThietBi = async (req, res) => {
@@ -384,7 +385,7 @@ exports.updateTinhTrangTaiSan = async (req, res) => {
         return res.status(400).json({ error: "ID thông tin thiết bị không hợp lệ." });
     }
     // Thêm 'san_sang', 'dang_su_dung', 'hong' vào validStates nếu chúng hợp lệ
-    const validStates = ['san_sang', 'dang_su_dung', 'hong', 'con_bao_hanh', 'het_bao_hanh', 'dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly','da_bao_hanh'];
+    const validStates = ['san_sang', 'dang_su_dung', 'hong', 'con_bao_hanh', 'het_bao_hanh', 'dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly', 'da_bao_hanh'];
     if (!tinhTrang || !validStates.includes(tinhTrang)) {
         return res.status(400).json({ error: `Trạng thái '${tinhTrang}' không hợp lệ.` });
     }
@@ -410,7 +411,7 @@ exports.updateTinhTrangTaiSan = async (req, res) => {
 
         // --- Kiểm tra affectedRows ---
         if (result.affectedRows === 0) {
-             console.warn(`[updateTinhTrangTaiSan] ID: ${id}, Update failed (affectedRows = 0).`);
+            console.warn(`[updateTinhTrangTaiSan] ID: ${id}, Update failed (affectedRows = 0).`);
         }
         console.log(`[updateTinhTrangTaiSan] ID: ${id}, Update successful. Sending response.`);
         res.status(200).json({ message: `Cập nhật trạng thái thiết bị ${id} thành công.` });
@@ -426,16 +427,15 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
     const thongTinThietBiId = parseInt(req.params.id, 10);
     const { phong_id } = req.body;
 
-    if (isNaN(thongTinThietBiId)) {
-        return res.status(400).json({ error: "ID thông tin thiết bị không hợp lệ trong URL." });
-    }
-    if (!phong_id || isNaN(parseInt(phong_id, 10))) {
-        return res.status(400).json({ error: "ID phòng không hợp lệ hoặc bị thiếu trong body." });
-    }
+    if (isNaN(thongTinThietBiId)) return res.status(400).json({ error: "ID thông tin thiết bị không hợp lệ." });
+    if (!phong_id || isNaN(parseInt(phong_id, 10))) return res.status(400).json({ error: "ID phòng không hợp lệ hoặc bị thiếu." });
     const phongIdInt = parseInt(phong_id, 10);
 
-    const connection = await pool.getConnection();
+
+    let connection;
     try {
+        const connection = await pool.getConnection();
+
         await connection.beginTransaction();
 
         const [rows] = await connection.query('SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE', [thongTinThietBiId]);
@@ -461,13 +461,55 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         }
 
         await connection.commit();
+        console.log(`[phanBoTaiSan] Committed transaction for TTTB ID ${thongTinThietBiId} to Phong ID ${phongIdInt}.`);
+
         res.status(200).json({ message: `Đã phân bổ tài sản ID ${thongTinThietBiId} vào phòng ID ${phongIdInt} thành công.` });
+        console.log(`[phanBoTaiSan] Sent HTTP 200 OK for TTTB ID ${thongTinThietBiId}.`);
+
+        setImmediate(async () => {
+            let socketConnection = null;
+            try {
+                socketConnection = await pool.getConnection();
+
+                // Lấy thông tin cần thiết
+                const [deviceInfo] = await socketConnection.query("SELECT tb.tenThietBi FROM thietbi tb JOIN thongtinthietbi tttb ON tb.id = tttb.thietbi_id WHERE tttb.id = ?", [thongTinThietBiId]);
+                const [roomInfo] = await socketConnection.query("SELECT CONCAT(toa, tang, '.', soPhong) as tenPhong FROM phong WHERE id = ?", [phongIdInt]);
+                const [targetUsers] = await socketConnection.query(
+                    "SELECT id FROM users WHERE tinhTrang = 'on'"
+                );
+
+                if (targetUsers.length > 0) {
+                    const eventData = {
+                        message: `Tài sản '${deviceInfo[0]?.tenThietBi || `ID ${thongTinThietBiId}`}' đã được phân bổ vào phòng '${roomInfo[0]?.tenPhong || `ID ${phongIdInt}`}'.`,
+                        thongTinThietBiId: thongTinThietBiId,
+                        phongId: phongIdInt,
+                    };
+                    const eventName = 'asset_assigned_to_room';
+                    console.log(`[phanBoTaiSan - Socket Task] Triển khai '${eventName}' đến ${targetUsers.length} users qua emitToUser.`);
+
+                    // Lặp và gửi tới từng user ID
+                    for (const user of targetUsers) {
+                        emitToUser(user.id, eventName, eventData); // Dùng hàm đã có từ socket.js
+                    }
+                } else {
+                    console.log("[phanBoTaiSan - Socket Task] No target users found to notify.");
+                }
+
+            } catch (socketOrDbError) {
+                console.error("[phanBoTaiSan - Socket Task] Error:", socketOrDbError);
+            } finally {
+                if (socketConnection) socketConnection.release();
+            }
+        });
 
     } catch (error) {
-        await connection.rollback();
+        if (connection) await connection.rollback();
         console.error("Lỗi server khi phân bổ tài sản:", error);
-        res.status(500).json({ error: "Lỗi máy chủ nội bộ." });
+        if (!res.headersSent) {
+            res.status(500).json({ error: error.message || "Lỗi máy chủ nội bộ." });
+        }
     } finally {
         if (connection) connection.release();
+        console.log(`[phanBoTaiSan] Main connection released for TTTB ID ${thongTinThietBiId}.`);
     }
 };
