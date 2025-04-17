@@ -9,11 +9,11 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
     const [danhSachTheLoai, setDanhSachTheLoai] = useState([]);
 
     useEffect(() => {
-        axios.get(`${process.env.REACT_APP_API_URL}/api/thietbi/${record.id}`,{withCredentials:true})
+        axios.get(`${process.env.REACT_APP_API_URL}/thietbi/${record.id}`,{withCredentials:true})
             .then(response => setEditData(response.data))
             .catch(error => console.error("Lỗi tải chi tiết:", error));
 
-        axios.get(`${process.env.REACT_APP_API_URL}/api/theloai`,{withCredentials:true})
+        axios.get(`${process.env.REACT_APP_API_URL}/theloai`,{withCredentials:true})
             .then(response => setDanhSachTheLoai(response.data))
             .catch(error => console.error("Lỗi lấy danh sách thể loại:", error));
     }, [record]);
@@ -34,7 +34,7 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
     const handleSave = async () => {
         try {
             const config = {withCredentials:true};
-            await axios.put(`${process.env.REACT_APP_API_URL}/api/thietbi/${record.id}`, editData, config);
+            await axios.put(`${process.env.REACT_APP_API_URL}/thietbi/${record.id}`, editData, config);
             alert("Cập nhật thành công!");
             setIsEditing(false);
             refreshData();
@@ -49,7 +49,7 @@ const ChiTietThietBi = ({ onClose, record, refreshData }) => {
     
         try {
             const config = {withCredentials:true};
-            const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/thietbi/${record.id}`, config);
+            const response = await axios.delete(`${process.env.REACT_APP_API_URL}/thietbi/${record.id}`, config);
             alert(response.data.message || "Xóa thành công!");
             refreshData();
             onClose();

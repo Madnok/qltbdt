@@ -27,7 +27,7 @@ const FormNhap = ({ onClose, refreshData }) => {
         setNgayTao(formattedDate);
 
         const userId = 1;
-        axios.get(`${process.env.REACT_APP_API_URL}/api/nhap/user/${userId}`, { withCredentials: true })
+        axios.get(`${process.env.REACT_APP_API_URL}/nhap/user/${userId}`, { withCredentials: true })
             .then((res) => setNguoiTao(res.data.hoTen))
             .catch((error) => console.error("Lỗi lấy thông tin người tạo:", error));
     }, []);
@@ -36,7 +36,7 @@ const FormNhap = ({ onClose, refreshData }) => {
     useEffect(() => {
         if (!phieuNhapId) return; // Nếu không có ID phiếu nhập (ví dụ khi tạo mới) thì không làm gì
 
-        axios.get(`${process.env.REACT_APP_API_URL}/api/nhap/${phieuNhapId}/thongtinthietbi`, { withCredentials: true })
+        axios.get(`${process.env.REACT_APP_API_URL}/nhap/${phieuNhapId}/thongtinthietbi`, { withCredentials: true })
             .then((res) => {
                 console.log("Thiết bị trong phiếu nhập:", res.data);
                 setThietBiNhap(res.data);
@@ -138,7 +138,7 @@ const FormNhap = ({ onClose, refreshData }) => {
 
             // --- Bước 1: Tạo phiếu nhập ---
             console.log("Đang gửi payload tạo phiếu nhập:", payload);
-            const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/nhap`, payload, config);
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/nhap`, payload, config);
             console.log("Response tạo phiếu nhập:", response);
 
             const createdPhieuNhapId = response?.data?.phieunhapId;

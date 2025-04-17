@@ -39,8 +39,8 @@ const BaoHong = () => {
     useEffect(() => {
         // Gọi song song hai API
         Promise.all([
-            axios.get(`${process.env.REACT_APP_API_URL}/api/phong`), // API lấy thông tin chi tiết phòng
-            axios.get(`${process.env.REACT_APP_API_URL}/api/phong/phonglist`) // API lấy danh sách phòng theo dạng ID và tên
+            axios.get(`${process.env.REACT_APP_API_URL}/phong`), // API lấy thông tin chi tiết phòng
+            axios.get(`${process.env.REACT_APP_API_URL}/phong/phonglist`) // API lấy danh sách phòng theo dạng ID và tên
         ])
             .then(([phongDetailsRes, phongListRes]) => {
                 const phongDetails = phongDetailsRes.data;
@@ -115,7 +115,7 @@ const BaoHong = () => {
             return;
         }
         console.log(`Workspaceing devices for room ID: ${roomId}`);
-        axios.get(`${process.env.REACT_APP_API_URL}/api/phong/danhsach-thietbi/${roomId}`)
+        axios.get(`${process.env.REACT_APP_API_URL}/phong/danhsach-thietbi/${roomId}`)
             .then((response) => {
                 console.log("API response for devices:", response.data);
                 const devices = Array.isArray(response.data) ? response.data : [];
@@ -197,7 +197,7 @@ const BaoHong = () => {
             uploadData.append('hinhAnh', imageFile);
 
             try {
-                const uploadResponse = await axios.post(`${process.env.REACT_APP_API_URL}/api/baohong/upload-image`, uploadData, {
+                const uploadResponse = await axios.post(`${process.env.REACT_APP_API_URL}/baohong/upload-image`, uploadData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 imageUrl = uploadResponse.data.imageUrl;
@@ -222,7 +222,7 @@ const BaoHong = () => {
         console.log("Dữ liệu gửi đi:", requestData);
 
         try {
-            await axios.post(`${process.env.REACT_APP_API_URL}/api/baohong/guibaohong`, requestData);
+            await axios.post(`${process.env.REACT_APP_API_URL}/baohong/guibaohong`, requestData);
             toast.success("Gửi phiếu Báo Hỏng thành công!");
 
             setDamageForm(prev => ({ ...prev, description: "" }));
