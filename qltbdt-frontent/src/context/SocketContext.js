@@ -34,7 +34,6 @@ export const SocketProvider = ({ children }) => {
 
             newSocket.on('connect_error', (error) => {
                 console.error('❌ [SocketContext] Connection Error:', error.message, error.data || '');
-                toast.error("Lỗi kết nối máy chủ thông báo.");
                 if (newSocket) newSocket.disconnect();
                 setSocket(null);
             });

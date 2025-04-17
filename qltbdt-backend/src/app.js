@@ -22,7 +22,7 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = [
   "http://localhost:3000",
-  process.env.FRONTEND_URL // Đảm bảo biến này đúng trên Fly.io!
+  process.env.FRONTEND_URL 
 ];
 
 const corsOptions = {
@@ -31,7 +31,7 @@ const corsOptions = {
       if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
       } else {
-          console.error(`CORS Error (Express): Origin ${origin} not allowed.`); // Thêm log để phân biệt
+          console.error(`CORS Error (Express): Origin ${origin} not allowed.`);
           callback(new Error("Not allowed by CORS"));
       }
   },
