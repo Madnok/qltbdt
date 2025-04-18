@@ -11,7 +11,7 @@ const GopY = () => {
     return (
         <div className="p-4 bg-white rounded-lg shadow-lg">
             <h2 className="flex items-center mb-6 text-xl font-semibold border-b text-card-foreground">
-                <MdDescription className="mr-2 text-accent" />
+                <MdDescription className="mr-2 text-blue-700" />
                 Gợi Ý Đánh Giá
             </h2>
 
