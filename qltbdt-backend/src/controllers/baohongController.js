@@ -212,7 +212,14 @@ async function _handleAdminReviewOrRework(connection, id, updateData, currentBao
                 if (!finalDeviceStatus || !validDisposalFinalStates.includes(finalDeviceStatus)) throw new Error("Vui lòng chọn 'Chờ thanh lý', 'Còn bảo hành' hoặc 'Hết bảo hành' cho đề xuất thanh lý.");
                 newDeviceStatus = finalDeviceStatus;
             }
+            else if (currentDeviceStatus === 'con_bao_hanh' || currentDeviceStatus === 'het_bao_hanh') {
+                if (!finalDeviceStatus || !['con_bao_hanh', 'het_bao_hanh'].includes(finalDeviceStatus)) {
 
+                    throw new Error("Vui lòng chọn lại trạng thái 'Còn bảo hành' hoặc 'Hết bảo hành' để xác nhận.");
+                }
+                newDeviceStatus = finalDeviceStatus; // Gán trạng thái được chọn
+            } 
+            
             // Thực hiện cập nhật TTTB nếu có newDeviceStatus
             if (newDeviceStatus) {
                 const [tttbUpdateResult] = await connection.query("UPDATE thongtinthietbi SET tinhTrang = ? WHERE id = ?", [newDeviceStatus, currentBaoHong.thongtinthietbi_id]);
@@ -502,9 +509,9 @@ exports.postGuiBaoHong = async (req, res) => {
                 if (adminUsers.length > 0) {
                     const firstInsertedId = insertResults[0].insertId;
                     const eventData = {
-                         message: `Có ${insertResults.length} báo hỏng mới được tạo.`,
-                         firstId: firstInsertedId,
-                         count: insertResults.length
+                        message: `Có ${insertResults.length} báo hỏng mới được tạo.`,
+                        firstId: firstInsertedId,
+                        count: insertResults.length
                     };
 
                     console.log(`[postGuiBaoHong] Found ${adminUsers.length} active admins. Emitting 'new_baohong_created' to each...`);
@@ -513,7 +520,7 @@ exports.postGuiBaoHong = async (req, res) => {
                     for (const admin of adminUsers) {
                         emitToUser(admin.id, 'new_baohong_created', eventData);
                     }
-                     console.log(`[postGuiBaoHong] Finished emitting to admins.`);
+                    console.log(`[postGuiBaoHong] Finished emitting to admins.`);
                 } else {
                     console.log("[postGuiBaoHong] No active admin users found to notify.");
                 }
@@ -800,7 +807,7 @@ exports.deleteBaoHong = async (req, res) => {
 
     // Log xem adminUserId có được lấy không
     if (!adminUserId) {
-         console.warn(`[deleteBaoHong] Không thể xác định ID admin thực hiện xóa báo hỏng ID: ${id}.`);
+        console.warn(`[deleteBaoHong] Không thể xác định ID admin thực hiện xóa báo hỏng ID: ${id}.`);
     } else {
         console.log(`[deleteBaoHong] Admin ID ${adminUserId} yêu cầu xóa báo hỏng ID: ${id}`);
     }
@@ -834,7 +841,7 @@ exports.deleteBaoHong = async (req, res) => {
 
             const baoTriLogData = {
                 baohong_id: id,
-                nhanvien_id: adminUserId, 
+                nhanvien_id: adminUserId,
                 thongtinthietbi_id: baoHongToDelete.thongtinthietbi_id,
                 phong_id: baoHongToDelete.phong_id,
                 hoatdong: hoatDongLog,
@@ -848,17 +855,17 @@ exports.deleteBaoHong = async (req, res) => {
                 ngayDuKienTra: null,
             };
 
-             const [insertLogResult] = await connection.query("INSERT INTO baotri SET ?", baoTriLogData);
-             console.log(`[deleteBaoHong ID ${id}] Đã tạo log bảo trì lưu trữ ID: ${insertLogResult.insertId} với nhanvien_id: ${adminUserId}`);
+            const [insertLogResult] = await connection.query("INSERT INTO baotri SET ?", baoTriLogData);
+            console.log(`[deleteBaoHong ID ${id}] Đã tạo log bảo trì lưu trữ ID: ${insertLogResult.insertId} với nhanvien_id: ${adminUserId}`);
 
         } else {
-             console.log(`[deleteBaoHong ID ${id}] Cờ coLogBaoTri = 0. Bỏ qua việc tạo log bảo trì lưu trữ.`);
+            console.log(`[deleteBaoHong ID ${id}] Cờ coLogBaoTri = 0. Bỏ qua việc tạo log bảo trì lưu trữ.`);
         }
 
         // --- Bước 3: Xóa các log phụ (TÙY CHỌN) ---
         const [deleteLogHuyResult] = await connection.query("DELETE FROM log_huy_congviec WHERE baohong_id = ?", [id]);
         if (deleteLogHuyResult.affectedRows > 0) {
-             console.log(`[deleteBaoHong ID ${id}] Đã xóa ${deleteLogHuyResult.affectedRows} bản ghi log_huy_congviec.`);
+            console.log(`[deleteBaoHong ID ${id}] Đã xóa ${deleteLogHuyResult.affectedRows} bản ghi log_huy_congviec.`);
         }
 
         // --- Bước 4: Xóa báo hỏng chính ---
@@ -881,7 +888,7 @@ exports.deleteBaoHong = async (req, res) => {
             console.error(`[deleteBaoHong ID ${id}] Gặp lỗi, rollback transaction:`, error);
             await connection.rollback();
         } else {
-             console.error(`[deleteBaoHong ID ${id}] Gặp lỗi và không có kết nối để rollback:`, error);
+            console.error(`[deleteBaoHong ID ${id}] Gặp lỗi và không có kết nối để rollback:`, error);
         }
 
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
@@ -890,8 +897,8 @@ exports.deleteBaoHong = async (req, res) => {
         res.status(500).json({ message: "Lỗi máy chủ khi xóa báo hỏng." });
     } finally {
         if (connection) {
-             console.log(`[deleteBaoHong ID ${id}] Giải phóng kết nối.`);
-             connection.release();
+            console.log(`[deleteBaoHong ID ${id}] Giải phóng kết nối.`);
+            connection.release();
         }
     }
 };

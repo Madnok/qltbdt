@@ -1,160 +1,170 @@
 const pool = require("../config/db");
 const cloudinary = require("../config/cloudinary");
-const fs = require('fs');
-const path = require('path');
+
+
+// Lấy danh sách thiết bị đủ điều kiện xuất kho
+exports.getEligibleDevicesForExport = async (req, res) => {
+    try {
+        const query = `
+            SELECT
+                tttb.id,
+                tttb.ngayMua,
+                tttb.tinhTrang,
+                tb.tenThietBi,
+                tl.theLoai,
+                tttb.giaTriBanDau
+            FROM thongtinthietbi tttb
+            JOIN thietbi tb ON tttb.thietbi_id = tb.id
+            LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            WHERE
+                tttb.phong_id IS NULL
+                AND tttb.tinhTrang IN ('con_bao_hanh', 'het_bao_hanh', 'cho_thanh_ly')
+            ORDER BY
+                FIELD(tttb.tinhTrang, 'cho_thanh_ly', 'het_bao_hanh', 'con_bao_hanh'),
+                tb.tenThietBi
+        `;
+        const [devices] = await pool.query(query);
+        res.status(200).json(devices);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách thiết bị đủ điều kiện xuất kho:", error);
+        res.status(500).json({ error: "Lỗi máy chủ khi lấy dữ liệu thiết bị." });
+    }
+};
 
 // Lấy danh sách tất cả phiếu xuất (để hiển thị trong trang Nhập Xuất)
 exports.getAllPhieuXuat = async (req, res) => {
     try {
-        // Lấy thêm tên người thực hiện
-        const [rows] = await pool.query(`
-            SELECT px.*, u.hoTen AS tenNguoiThucHien
+        const query = `
+            SELECT
+                px.id, px.ngayXuat, px.lyDoXuat, px.ghiChu, px.giaTriThanhLy,
+                u.hoTen AS tenNguoiThucHien, COUNT(pxc.id) AS soLuongThietBi
             FROM phieuxuat px
             JOIN users u ON px.nguoiThucHien_id = u.id
-            ORDER BY px.ngayXuat DESC
-        `);
-        res.json(rows);
+            LEFT JOIN phieuxuat_chitiet pxc ON px.id = pxc.phieuxuat_id
+            GROUP BY px.id ORDER BY px.ngayXuat DESC;
+        `;
+        const [phieuXuatList] = await pool.query(query);
+        res.status(200).json(phieuXuatList);
     } catch (error) {
         console.error("Lỗi khi lấy danh sách phiếu xuất:", error);
         res.status(500).json({ error: "Lỗi máy chủ khi lấy danh sách phiếu xuất." });
     }
 };
 
-// Lấy chi tiết một phiếu xuất (bao gồm danh sách thiết bị đã xuất)
-exports.getPhieuXuatById = async (req, res) => {
+exports.getPhieuXuatDetails = async (req, res) => {
     const { id } = req.params;
-    if (!id || isNaN(parseInt(id))) {
-        return res.status(400).json({ error: "ID phiếu xuất không hợp lệ." });
-    }
+    if (!id) return res.status(400).json({ error: "Thiếu ID phiếu xuất." });
 
     try {
-        // Lấy thông tin phiếu xuất cơ bản
-        const [phieuXuatRows] = await pool.query(`
-            SELECT px.*, u.hoTen AS tenNguoiThucHien
-            FROM phieuxuat px
-            JOIN users u ON px.nguoiThucHien_id = u.id
-            WHERE px.id = ?
-        `, [id]);
+        const phieuXuatQuery = `
+            SELECT px.*, u.hoTen AS tenNguoiThucHien, u.email AS emailNguoiThucHien
+            FROM phieuxuat px JOIN users u ON px.nguoiThucHien_id = u.id
+            WHERE px.id = ?;
+        `;
+        const [phieuXuatRows] = await pool.query(phieuXuatQuery, [id]);
+        if (phieuXuatRows.length === 0) return res.status(404).json({ error: "Không tìm thấy phiếu xuất." });
+        const phieuXuatDetails = phieuXuatRows[0];
+        try {
+            phieuXuatDetails.danhSachChungTu = phieuXuatDetails.danhSachChungTu ? JSON.parse(phieuXuatDetails.danhSachChungTu) : null;
+        } catch (e) { phieuXuatDetails.danhSachChungTu = null; }
 
-        if (phieuXuatRows.length === 0) {
-            return res.status(404).json({ error: "Không tìm thấy phiếu xuất." });
-        }
-        const phieuXuat = phieuXuatRows[0];
-
-        // Lấy danh sách chi tiết thiết bị đã xuất trong phiếu này
-        const [chiTietRows] = await pool.query(`
+        const chiTietQuery = `
             SELECT
-                pxct.thongtinthietbi_id,
-                ttb.tenThietBi,
-                ttb.thietbi_id -- Lấy cả thietbi_id để tham chiếu
-                -- Thêm các cột khác từ thongtinthietbi nếu cần hiển thị
-            FROM phieuxuat_chitiet pxct
-            JOIN thongtinthietbi ttb ON pxct.thongtinthietbi_id = ttb.id
-            WHERE pxct.phieuxuat_id = ?
-        `, [id]);
+                pxc.thongtinthietbi_id,
+                tttb.ngayMua, tttb.giaTriBanDau, 
+                tb.tenThietBi, tl.theLoai
+            FROM phieuxuat_chitiet pxc
+            JOIN thongtinthietbi tttb ON pxc.thongtinthietbi_id = tttb.id
+            JOIN thietbi tb ON tttb.thietbi_id = tb.id
+            LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            WHERE pxc.phieuxuat_id = ?;
+        `;
+        const [chiTietRows] = await pool.query(chiTietQuery, [id]);
 
-        phieuXuat.chiTietThietBi = chiTietRows; // Gắn danh sách chi tiết vào kết quả
-
-        res.json(phieuXuat);
+        res.status(200).json({ phieuXuat: phieuXuatDetails, chiTiet: chiTietRows });
     } catch (error) {
-        console.error(`Lỗi khi lấy chi tiết phiếu xuất ${id}:`, error);
+        console.error(`Lỗi khi lấy chi tiết phiếu xuất ID ${id}:`, error);
         res.status(500).json({ error: "Lỗi máy chủ khi lấy chi tiết phiếu xuất." });
     }
 };
 
 // Tạo phiếu xuất mới
 exports.createPhieuXuat = async (req, res) => {
-    const nguoiThucHien_id = req.user?.id; // Lấy ID từ token 
-    const { lyDoXuat, ghiChu, giaTriThanhLy, danhSachThietBiIds } = req.body; // danhSachThietBiIds là mảng các thongtinthietbi_id
+    const { lyDoXuat, ghiChu, giaTriThanhLy, selectedDeviceIds, danhSachChungTu } = req.body;
+    const nguoiThucHien_id = req.user?.id;
 
     // --- Validation ---
-    if (!nguoiThucHien_id) {
-        return res.status(401).json({ error: "Người dùng chưa được xác thực." });
-    }
-    if (!lyDoXuat) {
-        return res.status(400).json({ error: "Vui lòng cung cấp lý do xuất." });
-    }
-    if (!Array.isArray(danhSachThietBiIds) || danhSachThietBiIds.length === 0) {
-        return res.status(400).json({ error: "Vui lòng chọn ít nhất một thiết bị để xuất." });
-    }
-    // --- Kết thúc Validation ---
+    if (!nguoiThucHien_id) return res.status(401).json({ error: "Không thể xác định người tạo phiếu." });
+    const validLyDo = ['thanh_ly', 'mat_mat', 'xuat_tra', 'dieu_chuyen'];
+    if (!lyDoXuat || !validLyDo.includes(lyDoXuat)) return res.status(400).json({ error: "Lý do xuất kho không hợp lệ." });
+    if (!Array.isArray(selectedDeviceIds) || selectedDeviceIds.length === 0) return res.status(400).json({ error: "Vui lòng chọn ít nhất một thiết bị để xuất." });
+    const giaTriParsed = giaTriThanhLy ? parseFloat(giaTriThanhLy) : null;
+    if (giaTriThanhLy && (isNaN(giaTriParsed) || giaTriParsed < 0)) return res.status(400).json({ error: "Giá trị thanh lý không hợp lệ." });
 
-    const connection = await pool.getConnection();
+    let connection;
     try {
+        connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // 1. Kiểm tra trạng thái các thiết bị sắp xuất (phải là 'cho_thanh_ly' hoặc trạng thái hợp lệ khác nếu bạn muốn)
-        const placeholders = danhSachThietBiIds.map(() => '?').join(',');
-        const [devicesToCheck] = await connection.query(
-            `SELECT id, tinhTrang, phong_id, thietbi_id FROM thongtinthietbi WHERE id IN (${placeholders})`,
-            danhSachThietBiIds
-        );
+        // --- Kiểm tra lại điều kiện các thiết bị được chọn ---
+        const placeholders = selectedDeviceIds.map(() => '?').join(',');
+        const checkQuery = `SELECT id, tinhTrang, phong_id FROM thongtinthietbi WHERE id IN (${placeholders}) FOR UPDATE;`;
+        const [devicesToCheck] = await connection.query(checkQuery, selectedDeviceIds);
 
-        if (devicesToCheck.length !== danhSachThietBiIds.length) {
-             throw new Error("Một hoặc nhiều ID thiết bị không tồn tại.");
+        if (devicesToCheck.length !== selectedDeviceIds.length) throw new Error("Một số thiết bị được chọn không tồn tại hoặc đã bị xóa.");
+
+        const allowedStates = ['con_bao_hanh', 'het_bao_hanh', 'cho_thanh_ly'];
+        for (const device of devicesToCheck) {
+            if (device.phong_id !== null) throw new Error(`Thiết bị ID ${device.id} đang thuộc phòng, không thể xuất.`);
+            if (!allowedStates.includes(device.tinhTrang)) throw new Error(`Thiết bị ID ${device.id} đang ở trạng thái '${getTinhTrangLabel(device.tinhTrang)}', không thể xuất.`);
+        }
+        // --- Hết kiểm tra ---
+
+        // 1. Tạo phiếu xuất
+        const phieuXuatQuery = `INSERT INTO phieuxuat (ngayXuat, nguoiThucHien_id, lyDoXuat, ghiChu, giaTriThanhLy, danhSachChungTu) VALUES (NOW(), ?, ?, ?, ?, ?)`;
+        const [phieuXuatResult] = await connection.query(phieuXuatQuery, [nguoiThucHien_id, lyDoXuat, ghiChu || null, giaTriParsed, danhSachChungTu ? JSON.stringify(danhSachChungTu) : null]);
+        const newPhieuXuatId = phieuXuatResult.insertId;
+        if (!newPhieuXuatId) throw new Error("Không thể tạo phiếu xuất.");
+        console.log(`Created phieuxuat ID: ${newPhieuXuatId}`);
+
+        // 2. Tạo chi tiết và Cập nhật TTTB
+        const chiTietValues = [];
+        const updatePromises = [];
+        for (const deviceId of selectedDeviceIds) {
+            chiTietValues.push([newPhieuXuatId, deviceId]);
+            const updateQuery = "UPDATE thongtinthietbi SET tinhTrang = 'da_thanh_ly' WHERE id = ? AND tinhTrang IN (?)";
+            updatePromises.push(connection.query(updateQuery, [deviceId, allowedStates]));
         }
 
-        const invalidStatusDevices = devicesToCheck.filter(d => d.tinhTrang !== 'cho_thanh_ly'); // Hoặc các trạng thái hợp lệ khác
-        if (invalidStatusDevices.length > 0) {
-            const invalidIds = invalidStatusDevices.map(d => d.id).join(', ');
-            throw new Error(`Các thiết bị sau không ở trạng thái hợp lệ để xuất: ${invalidIds}`);
+        if (chiTietValues.length > 0) {
+            const chiTietQuery = `INSERT INTO phieuxuat_chitiet (phieuxuat_id, thongtinthietbi_id) VALUES ?`;
+            const [chiTietResult] = await connection.query(chiTietQuery, [chiTietValues]);
+            if (chiTietResult.affectedRows !== selectedDeviceIds.length) throw new Error("Lỗi khi ghi chi tiết phiếu xuất.");
         }
 
-        // 2. Tạo bản ghi trong bảng `phieuxuat`
-        const [phieuXuatResult] = await connection.query(
-            `INSERT INTO phieuxuat (nguoiThucHien_id, lyDoXuat, ghiChu, giaTriThanhLy, ngayXuat)
-             VALUES (?, ?, ?, ?, NOW())`,
-            [nguoiThucHien_id, lyDoXuat, ghiChu || null, giaTriThanhLy || null]
-        );
-        const phieuXuatId = phieuXuatResult.insertId;
-
-        // 3. Tạo các bản ghi trong `phieuxuat_chitiet`
-        const chiTietValues = danhSachThietBiIds.map(tttbId => [phieuXuatId, tttbId]);
-        await connection.query(
-            `INSERT INTO phieuxuat_chitiet (phieuxuat_id, thongtinthietbi_id) VALUES ?`,
-            [chiTietValues]
-        );
-
-        // 4. Cập nhật trạng thái `thongtinthietbi` thành 'da_thanh_ly'
-        await connection.query(
-            `UPDATE thongtinthietbi SET tinhTrang = 'da_thanh_ly', phong_id = NULL, nguoiDuocCap = NULL WHERE id IN (${placeholders})`,
-            danhSachThietBiIds
-        );
-
-        // 5. Gỡ các thiết bị này khỏi phòng trong `phong_thietbi`
-        await connection.query(
-            `DELETE FROM phong_thietbi WHERE thongtinthietbi_id IN (${placeholders})`,
-            danhSachThietBiIds
-        );
-
-        // 6. (Quan trọng) Cập nhật lại `tonKho` (tổng nhập) trong bảng `thietbi`
-        // Lấy danh sách thietbi_id và số lượng tương ứng cần giảm
-         const countsToDecrease = devicesToCheck.reduce((acc, device) => {
-            acc[device.thietbi_id] = (acc[device.thietbi_id] || 0) + 1;
-            return acc;
-        }, {});
-
-        for (const thietBiId in countsToDecrease) {
-            await connection.query(
-                "UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?",
-                [countsToDecrease[thietBiId], thietBiId]
-            );
-             // // Nếu muốn giảm cả tồn kho
-             // await connection.query(
-             //     "UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?",
-             //     [countsToDecrease[thietBiId], thietBiId]
-             // );
-        }
+        const updateResults = await Promise.all(updatePromises);
+        let totalAffectedRows = 0;
+        updateResults.forEach(([result], index) => {
+            if (result.affectedRows !== 1) throw new Error(`Không thể cập nhật trạng thái cho thiết bị ID ${selectedDeviceIds[index]}. Trạng thái có thể đã thay đổi.`);
+            totalAffectedRows += result.affectedRows;
+        });
+        if (totalAffectedRows !== selectedDeviceIds.length) throw new Error("Số lượng thiết bị được cập nhật trạng thái không khớp.");
 
         await connection.commit();
-        res.status(201).json({ message: "Tạo phiếu xuất thành công!", phieuXuatId: phieuXuatId });
+        console.log(`Transaction committed for phieuxuat ID: ${newPhieuXuatId}`);
+
+        res.status(201).json({
+            message: `Tạo phiếu xuất ID ${newPhieuXuatId} thành công cho ${selectedDeviceIds.length} thiết bị.`,
+            phieuXuatId: newPhieuXuatId
+        });
 
     } catch (error) {
-        await connection.rollback();
+        if (connection) await connection.rollback();
         console.error("Lỗi khi tạo phiếu xuất:", error);
-        res.status(500).json({ error: `Lỗi máy chủ khi tạo phiếu xuất: ${error.message}` });
+        res.status(error.message.includes("không thể xuất") || error.message.includes("không khớp") || error.message.includes("không tồn tại") ? 400 : 500)
+           .json({ error: error.message || "Lỗi máy chủ khi tạo phiếu xuất." });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 

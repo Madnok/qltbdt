@@ -8,7 +8,8 @@ router.use(verifyToken); // Yêu cầu đăng nhập cho tất cả route phiế
 
 // Chỉ Admin mới được tạo, xem, xóa phiếu xuất (Ví dụ)
 router.get("/", requireRole(['admin']), phieuxuatController.getAllPhieuXuat);
-router.get("/:id", requireRole(['admin']), phieuxuatController.getPhieuXuatById);
+router.get('/eligible-devices', phieuxuatController.getEligibleDevicesForExport);
+router.get('/:id',requireRole(['admin']), phieuxuatController.getPhieuXuatDetails); // Route lấy chi tiết phiếu xuất
 router.post("/", requireRole(['admin']), phieuxuatController.createPhieuXuat);
 // router.delete("/:id", requireRole(['admin']), phieuxuatController.deletePhieuXuat);
 router.post('/:id/chungtu', verifyToken, requireRole(['admin']),docUpload.array('chungTuFiles', 5), phieuxuatController.uploadChungTuXuat);

@@ -5,7 +5,6 @@ export const categoryLabels = {
     TheLoai: "Thể Loại",
     ThietBi: "Thiết Bị",
     ViPham: "Vi Phạm",
-    ThongTinThietBi: "Thông Tin Thiết Bị",
     Nhap: "Ghi Nhập",
     Xuat: "Ghi Xuất"
 };
@@ -13,8 +12,7 @@ export const categoryLabels = {
 export const categories = [
     { name: "Phòng", icon: "fas fa-door-open", key: "Phong" },
     { name: "Thể Loại", icon: "fas fa-tags", key: "TheLoai" },
-    { name: "Thiết Bị", icon: "fas fa-laptop", key: "ThietBi" },
-    { name: "Thông Tin Thiết Bị", icon: "fas fa-info-circle", key: "ThongTinThietBi" },
+    { name: "Tra Cứu Thông Tin Thiết Bị", icon: "fas fa-laptop", key: "ThietBi" },
     { name: "Vi Phạm", icon: "fas fa-exclamation-triangle", key: "ViPham" },
 ];
 

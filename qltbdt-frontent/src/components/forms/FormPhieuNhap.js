@@ -38,11 +38,11 @@ const FormPhieuNhap = ({ onClose, refreshData, onAddThietBi, setCurrentThietBi }
     
     const getNextId = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/tttb/next-id`, { withCredentials: true }); // Gọi API
-            return response.data.nextId; // Trả về nextId từ API
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/tttb/next-id`, { withCredentials: true });
+            return response.data.nextId;
         } catch (error) {
             console.error("Lỗi lấy nextId:", error);
-            return null; // Trả về null nếu lỗi
+            return null;
         }
     };
     

@@ -5,8 +5,8 @@ const api = axios.create({
   baseURL: `${process.env.REACT_APP_API_URL}`|| 'http://localhost:5000/api',
   withCredentials: true,
 });
-// https://qltbdt-backend.fly.dev
-// Interceptor để xử lý lỗi tập trung (tùy chọn)
+
+// Interceptor để xử lý lỗi tập trung 
 api.interceptors.response.use(
   response => response,
   error => {
@@ -160,8 +160,46 @@ export const updateUserStatus = (userId, newStatus) => {
 };
 // ============================================================================================ //
 
-export const getThietBi = () =>
-  api.get('/thietbi');
+// lấy tất cả Loại Thiết Bị
+export const getThietBi = async () => {
+  try {
+    console.log("API Request: /thietbi?limit=9999 (Fetching all)");
+    const response = await api.get("/thietbi?limit=9999");
+    return response;
+  } catch (error) {
+    console.error("Lỗi khi gọi API getThietBi (fetch all):", error);
+    throw error;
+  }
+};
+
+// Tạo Loại Thiết Bị mới
+export const createThietBi = async (thietBiData) => {
+  try {
+    // Không cần gửi ID, backend sẽ tự tạo
+    // Đảm bảo thietBiData chứa các trường cần thiết: theloai_id, tenThietBi, moTa, donGia
+    const response = await api.post("/thietbi", thietBiData);
+    return response.data; // Trả về dữ liệu thiết bị vừa tạo (nếu có)
+  } catch (error) {
+    console.error("Lỗi khi tạo Loại Thiết Bị:", error.response?.data || error.message);
+    throw error; // Ném lỗi để component xử lý
+  }
+};
+
+export const deleteThietBi = (id) => api.delete(`/thietbi/${id}`);
+
+export const getTTTBByMaThietBi = (maThietBi) => api.get(`/tttb/thietbi/${maThietBi}`);
+
+// Lấy chi tiết một TTTB theo ID của nó
+export const getTTTBById = async (tttbId) => {
+  try {
+    console.log(`API Request: /tttb/${tttbId}`);
+    const response = await api.get(`/tttb/${tttbId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi lấy chi tiết TTTB ID ${tttbId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
 
 // ============================================================================================ //
 
@@ -225,7 +263,6 @@ export const addPhongAPI = async (phongData) => {
   }
 };
 
-
 export const updatePhongAPI = async ({ id, ...phongData }) => {
   const { data } = await api.put(`/phong/${id}`, phongData);
   return data;
@@ -269,6 +306,7 @@ export const fetchPhongTableData = async () => {
       throw error;
   }
 };
+
 //============================================================================================ //
 
 // ========= CÁC HÀM API CHO Thể loại và Thiết bị =========================================== //
@@ -329,6 +367,7 @@ export const fetchMyScheduleInternal = () => {
 
 
 // ============ CÁC HÀMAPI cho Lịch Trực & Phân Công ===================================== //
+
 // ** GÁN Nhân Viên VÀO Phòng**
 export const fetchNhanVienList = async () => {
   try {
@@ -386,8 +425,11 @@ export const fetchAssignedRoomsForEmployee = async (employeeId) => {
 };
 export const addAssignedRoomsForEmployee = (employeeId, phongIdsArray) => api.post(`/user/${employeeId}/phong-phutrach`, { phongIds: phongIdsArray });
 export const removeAssignedRoomsForEmployee = (employeeId, phongIdsArray) => api.delete(`/user/${employeeId}/phong-phutrach`, { data: { phongIds: phongIdsArray } });
+// ========= kết thúc api Lịch Trực & Phân Công ============================================================================================================================
 
-// **Lịch Trực**
+
+// ========= API lịch trực ==================================================================
+
 export const fetchAllLichTruc = async ({ queryKey }) => {
   const params = queryKey[1]; // Lấy phần tử thứ 2 làm params
   const { data } = await api.get('/lichtruc', { params });
@@ -419,7 +461,9 @@ export const saveBulkLichTrucChangesAPI = async (bulkData) => {
   return data;
 };
 
-// ========= API BÁO HỎNG (Bổ sung/Sửa đổi) ================================
+// ========= Kết thúc api lịch trực ========================================================
+
+// ========= API BÁO HỎNG ==================================================================
 
 // Fetch danh sách báo hỏng (thay thế fetchThongTinBaoHongAPI cũ nếu có)
 export const fetchBaoHongListAPI = async () => {
@@ -476,8 +520,6 @@ export const deleteBulkBaohongAPI = async (baoHongIdsArray) => {
 };
 
 // Gán hàng loạt báo hỏng cho một nhân viên (Bulk Assign)
-// Giả định backend có route POST /api/baohong/bulk-assign nhận body { ids: [...], nhanvien_id: ... }
-// Backend cũng nên tự động chuyển trạng thái các báo hỏng này thành 'Đã Duyệt'
 export const assignBulkBaohongAPI = async ({ baoHongIdsArray, nhanVienId }) => {
   if (!Array.isArray(baoHongIdsArray) || baoHongIdsArray.length === 0 || !nhanVienId) {
     throw new Error("Thiếu IDs báo hỏng hoặc ID nhân viên để gán hàng loạt.");
@@ -518,24 +560,8 @@ export const fetchAssignedBaoHongAPI = async (filters = {}) => {
   }
 };
 
-// === (TÙY CHỌN) API lấy tất cả Users (Nếu cần hiển thị tên người báo cáo) ===
-// export const fetchAllUsersList = async () => {
-//   try {
-//     const response = await api.get("/users"); // Giả sử có API này
-//     if (!Array.isArray(response.data)) {
-//       console.error("API /api/users did not return an array!", response.data);
-//       return [];
-//     }
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error fetching all users list:", error.response?.data || error.message);
-//     throw error;
-//   }
-// };
-
-// ==========================================================================
-
 // ========= CÁC HÀM API CHO BẢO TRÌ ==========================================
+
 // Lấy danh sách task đang tiến hành/yêu cầu làm lại của nhân viên
 export const fetchMyTasksAPI = async () => {
   try {
@@ -632,7 +658,7 @@ export const assignTaiSanToPhongAPI = (payload) => {
   return api.post(`/tttb/taisan/${thongtinthietbi_id}/phanbo`, { phong_id });
 };
 
-// === API CHO NHẬP  ===
+// === API CHO NHẬP  ============================================================================================ //
 
 // Lấy chi tiết một phiếu nhập bằng ID
 export const getPhieuNhapByIdAPI = async (id) => {
@@ -646,7 +672,7 @@ export const getPhieuNhapByIdAPI = async (id) => {
   }
 };
 
-// API lấy danh sách TẤT CẢ phiếu nhập
+// Lấy danh sách TẤT CẢ phiếu nhập
 export const getAllPhieuNhapAPI = async (params = {}) => {
   try {
     const { data } = await api.get(`/nhap`, { params });
@@ -657,7 +683,7 @@ export const getAllPhieuNhapAPI = async (params = {}) => {
   }
 };
 
-// API để upload chứng từ cho phiếu nhập
+// Upload chứng từ cho phiếu nhập
 export const uploadChungTuNhap = async (phieuNhapId, formData) => {
   if (!phieuNhapId) throw new Error("ID Phiếu nhập là bắt buộc để upload chứng từ.");
   try {
@@ -669,34 +695,34 @@ export const uploadChungTuNhap = async (phieuNhapId, formData) => {
   }
 };
 
-// === API CHO XUẤT === //
+// === API CHO XUẤT ======================================================================================================== //
 
-export const getAllPhieuXuatAPI = () => {
-  return api.get('/phieuxuat');
+export const fetchEligibleDevicesForExportAPI = async () => {
+  const response = await api.get('/xuat/eligible-devices');
+  return response.data;
 };
 
-export const getPhieuXuatByIdAPI = async (id) => {
-  if (!id) throw new Error("ID Phiếu xuất không hợp lệ khi gọi API");
-  try {
-    const { data } = await api.get(`/phieuxuat/${id}`);
-    return data; // Trả về dữ liệu chi tiết từ API
-  } catch (error) {
-    console.error(`Lỗi lấy chi tiết phiếu nhập ${id}:`, error.response?.data || error.message);
-    throw error;
-  }
+export const createPhieuXuatAPI = async (payload) => {
+  const response = await api.post('/xuat', payload);
+  return response.data;
 };
 
-export const createPhieuXuatAPI = (data) => {
-  // data là { lyDoXuat, ghiChu, giaTriThanhLy, danhSachThietBiIds }
-  return api.post('/phieuxuat', data);
+export const fetchPhieuXuatListAPI = async () => { 
+  const response = await api.get('/xuat');
+  return response.data;
+};
+
+export const fetchPhieuXuatDetailsAPI = async (phieuXuatId) => { 
+  const response = await api.get(`/xuat/${phieuXuatId}`);
+  return response.data;
 };
 
 // Upload chứng từ cho Phiếu Xuất 
 export const uploadChungTuXuatAPI = async (phieuXuatId, formData) => {
-  // Đảm bảo backend có route POST /api/phieuxuat/:id/chungtu
+  // Đảm bảo backend có route POST /api/xuat/:id/chungtu
   if (!phieuXuatId) throw new Error("ID Phiếu xuất không hợp lệ khi gọi API upload");
   try {
-    const { data } = await api.post(`/phieuxuat/${phieuXuatId}/chungtu`, formData);
+    const { data } = await api.post(`/xuat/${phieuXuatId}/chungtu`, formData);
     return data;
   } catch (error) {
     console.error(`Lỗi upload chứng từ phiếu xuất ${phieuXuatId}:`, error.response?.data || error.message);

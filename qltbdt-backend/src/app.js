@@ -60,7 +60,7 @@ app.use("/api/nhap", nhapRoutes);
 app.use("/api/baohong", baohongRoutes);
 app.use("/api/lichtruc", lichTrucRoutes);
 app.use("/api/baotri", baotriRoutes);
-app.use("/api/phieuxuat", phieuxuatRoutes);
+app.use("/api/xuat", phieuxuatRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
