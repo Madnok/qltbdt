@@ -6,7 +6,7 @@ import { formatDate } from '../../utils/helpers';
 import { updateTinhTrangTaiSanAPI } from '../../api';
 import { toast } from 'react-toastify';
 import FormPhanBo from './FormPhanBo';
-import FormXuatTaiSan from './FormXuatTaiSan';
+import FormPhieuXuat from '../forms/FormPhieuXuat'; // dùng cái này thay thế.
 
 const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) => {
     const [selectedIds, setSelectedIds] = useState(new Set());
@@ -70,10 +70,6 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
         return data.filter(item => selectedIds.has(item.id));
     }, [data, selectedIds]);
 
-    const canCreateExport = useMemo(() => {
-        return selectedItems.length > 0 && selectedItems.every(item => item.tinhTrang === 'cho_thanh_ly');
-    }, [selectedItems]);
-
     const canAssign = useMemo(() => {
         return selectedItems.length > 0 && selectedItems.every(item => item.phong_id === null);
     }, [selectedItems]);
@@ -91,7 +87,10 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
         if (idsToUpdate.length === 0) return;
 
         const itemsToActuallyUpdate = selectedItems.filter(item =>
-            item.tinhTrang !== 'cho_thanh_ly' && item.tinhTrang !== 'da_thanh_ly'
+            item.tinhTrang !== 'cho_thanh_ly'
+            && item.tinhTrang !== 'da_thanh_ly'
+            && item.tinhTrang !== 'dang_bao_hanh'
+            && item.tinhTrang !== 'da_bao_hanh'
         );
         const actualIdsToUpdate = itemsToActuallyUpdate.map(item => item.id);
 
@@ -123,6 +122,8 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
         setIsXuatModalOpen(true);
     };
 
+    const hasDaThanhLySelected = selectedItems.some(item => item.tinhTrang === 'da_thanh_ly');
+
     const renderTinhTrang = (tinhTrang) => {
         const label = getTinhTrangLabel(tinhTrang);
         switch (tinhTrang) {
@@ -131,7 +132,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
             case 'dang_bao_hanh': return <span className="inline-flex items-center text-blue-600"><FaWrench className="mr-1" /> {label}</span>;
             case 'da_bao_hanh': return <span className="inline-flex items-center text-purple-600"><FaWrench className="mr-1" /> {label}</span>;
             case 'cho_thanh_ly': return <span className="inline-flex items-center text-yellow-600"><FaClock className="mr-1" /> {label}</span>;
-            case 'da_thanh_ly': return <span className="inline-flex items-center text-gray-500"><FaTrashAlt className="mr-1" /> {label}</span>;
+            case 'da_thanh_ly': return <span className="inline-flex items-center text-gray-600"><FaTrashAlt className="mr-1" /> {label}</span>;
             default: return label;
         }
     };
@@ -142,26 +143,43 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                 <button
                     onClick={handleMarkForDisposal}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50"
-                    disabled={selectedIds.size === 0 || updateStatusMutation.isPending}
-                    >
+                    disabled={selectedIds.size === 0 || updateStatusMutation.isPending || hasDaThanhLySelected || !canAssign}
+                    title={
+                        selectedIds.size === 0
+                            ? "Bạn cần chọn ít nhất một thiết bị để thực hiện."
+                            : hasDaThanhLySelected
+                                ? "Danh sách có thiết bị đã thanh lý, không thể chuyển trạng thái."
+                                : !canAssign
+                                    ? "Chỉ có thể thanh lý thiết bị chưa phân bổ vào phòng."
+                                    : updateStatusMutation.isPending
+                                        ? "Hệ thống đang xử lý yêu cầu trước đó..."
+                                        : "Chuyển thiết bị được chọn sang trạng thái chờ thanh lý."
+                    }
+                >
                     <FaClock className="mr-1.5 h-4 w-4" />
                     {updateStatusMutation.isPending ? '...' : `Chờ Thanh Lý (${selectedIds.size})`}
                 </button>
                 <button
                     onClick={handleAssignToRoom}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 disabled:opacity-50"
-                    disabled={selectedIds.size === 0 || !canAssign || updateStatusMutation.isPending}
+                    disabled={selectedIds.size === 0 || !canAssign || updateStatusMutation.isPending || hasDaThanhLySelected}
+                    title={
+                        selectedIds.size === 0 ? "Vui lòng chọn thiết bị" :
+                            hasDaThanhLySelected ? "Không thể phân bổ thiết bị đã thanh lý" :
+                                !canAssign ? "Thiết bị trong số đã chọn đã được gán vào phòng" :
+                                    updateStatusMutation.isPending ? "Đang xử lý tác vụ khác..." :
+                                        "Phân bổ thiết bị đã chọn vào phòng"
+                    }
                 >
                     <FaShareSquare className="mr-1.5 h-4 w-4" />
-                    Phân bổ ({selectedItems.filter(i => i.phong_id === null).length})
+                    Phân bổ ({selectedItems.filter(i => i.phong_id === null && i.tinhTrang !== 'da_thanh_ly').length})
                 </button>
                 <button
                     onClick={handleCreateExportSlip}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 disabled:opacity-50"
-                    disabled={selectedIds.size === 0 || !canCreateExport || updateStatusMutation.isPending}
                 >
                     <FaPaperPlane className="mr-1.5 h-4 w-4" />
-                    Tạo Phiếu Xuất ({selectedItems.filter(i => i.tinhTrang === 'cho_thanh_ly').length})
+                    Tạo Phiếu Xuất
                 </button>
             </div>
 
@@ -180,7 +198,6 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                                 />
                             </th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Mã Định Danh</th>
-                            {/* <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Tên Tài Sản</th> */}
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Loại TB</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Thể Loại</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Vị Trí</th>
@@ -194,7 +211,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                             <tr
                                 key={item.id}
                                 onClick={() => onRowSelect(item)}
-                                className={`hover:bg-gray-50 cursor-pointer ${selectedRowId === item.id ? 'bg-indigo-50' : ''}`} 
+                                className={`hover:bg-gray-50 cursor-pointer ${selectedRowId === item.id ? 'bg-indigo-50' : ''}`}
                             >
                                 <td className="px-4 py-2 text-center whitespace-nowrap">
                                     <input
@@ -206,7 +223,6 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                                     />
                                 </td>
                                 <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{item.id}</td>
-                                {/* <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.tenThietBi}</td> */}
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.tenLoaiThietBi}</td>
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.tenTheLoai}</td>
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.phong_name}</td>
@@ -236,16 +252,19 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
             )}
             {/* Render Modal Xuất Kho */}
             {isXuatModalOpen && (
-                <FormXuatTaiSan
-                    isOpen={isXuatModalOpen}
-                    onClose={() => setIsXuatModalOpen(false)}
-                    // Lọc và chỉ truyền những item có trạng thái 'cho_thanh_ly' vào form
-                    itemsToExport={selectedItems.filter(item => item.tinhTrang === 'cho_thanh_ly')}
-                    triggerRefetch={() => {
-                        triggerRefetch(); // Gọi hàm refetch của cha
-                        setSelectedIds(new Set()); // Xóa lựa chọn sau khi xuất thành công
-                    }}
-                />
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setIsXuatModalOpen(false)}>
+                    <div className="bg-white rounded-lg shadow-xl w-4/5 max-w-5xl max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <FormPhieuXuat
+                            isOpen={isXuatModalOpen}
+                            onClose={() => setIsXuatModalOpen(false)}
+                            onSubmitSuccess={() => {
+                                if (triggerRefetch) triggerRefetch();
+                                setSelectedIds(new Set());
+                                queryClient.invalidateQueries({ queryKey: ['phieuXuatList'] });
+                            }}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, formatCurrency } from '../../utils/helpers';
 import NotFound from '../../pages/NotFound';
 import { getTinhTrangLabel } from '../../utils/constants';
 import { FaCheckCircle, FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaTimes } from 'react-icons/fa';
@@ -33,7 +33,7 @@ const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch }) => {
                     <FaTimes />
                 </button>
             </div>
-            <h3 className="mb-2 text-lg font-bold">{taiSanData.tenThietBi || 'Chi tiết tài sản'}</h3>
+            <h3 className="mb-2 text-lg font-bold">{taiSanData.tenLoaiThietBi || 'Chi tiết tài sản'}</h3>
             <dl className="space-y-2">
                 <div className="flex">
                     <dt className="w-1/3 font-medium text-gray-500">Mã Định Danh:</dt>
@@ -44,13 +44,13 @@ const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch }) => {
                     <dd className="w-2/3 text-gray-800">{taiSanData.thietbi_id}</dd>
                 </div>
                 <div className="flex">
-                    <dt className="w-1/3 font-medium text-gray-500">Loại thiết bị:</dt>
-                    <dd className="w-2/3 text-gray-800">{taiSanData.tenLoaiThietBi}</dd>
-                </div>
-                <div className="flex">
                     <dt className="w-1/3 font-medium text-gray-500">Thể loại:</dt>
                     <dd className="w-2/3 text-gray-800">{taiSanData.tenTheLoai}</dd>
                 </div>
+                {/* <div className="flex">
+                    <dt className="w-1/3 font-medium text-gray-500">Loại thiết bị:</dt>
+                    <dd className="w-2/3 text-gray-800">{taiSanData.tenLoaiThietBi}</dd>
+                </div> */}
                 <div className="flex">
                     <dt className="w-1/3 font-medium text-gray-500">Trạng thái:</dt>
                     <dd className="w-2/3 text-gray-800">{renderTinhTrang(taiSanData.tinhTrang)}</dd>
@@ -90,9 +90,10 @@ const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch }) => {
                     <dt className="w-1/3 font-medium text-gray-500">Ghi chú:</dt>
                     <dd className="w-2/3 text-gray-800">{taiSanData.ghiChu || 'Không có'}</dd>
                 </div>
-                {/* <p><strong>Ngày mua:</strong> {formatDate(taiSanData.ngayMua)}</p> */}
-                {/* <p><strong>Giá trị ban đầu:</strong> {formatCurrency(taiSanData.giaTriBanDau)}</p> */}
-                {/* Thêm các nút hành động cho item này nếu cần (Vd: Sửa, Đánh dấu TL...) */}
+                <div className="flex">
+                    <dt className="w-1/3 font-medium text-gray-500">Giá Trị:</dt>
+                    <dd className="w-2/3 text-gray-800">{formatCurrency(taiSanData.giaTriBanDau) || '0'}</dd>
+                </div>
             </dl>
         </div>
     );

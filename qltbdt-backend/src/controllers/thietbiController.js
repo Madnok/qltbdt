@@ -45,7 +45,14 @@ exports.getAllThietBi = async (req, res) => {
                 tb.moTa,
                 tb.donGia,
                 tb.tonKho,
-                tl.theLoai AS tenTheLoai, 
+                tl.theLoai AS tenTheLoai,
+                (
+                    --  đếm số lượng TTTB không bị thanh lý
+                    SELECT COUNT(*)
+                    FROM thongtinthietbi tttb
+                    WHERE tttb.thietbi_id = tb.id
+                      AND tttb.tinhTrang != 'da_thanh_ly'
+                ) AS tonKhoHienTai,
                 (
                     SELECT COUNT(*)
                     FROM thongtinthietbi tttb
@@ -54,28 +61,27 @@ exports.getAllThietBi = async (req, res) => {
             FROM
                 thietbi tb
             LEFT JOIN
-                theloai tl ON tb.theloai_id = tl.id -- Join với bảng theloai để lấy tên
-            ${whereString} -- Áp dụng điều kiện lọc
-            ORDER BY tb.id DESC -- Sắp xếp (có thể thay đổi)
-            LIMIT ? OFFSET ? -- Áp dụng phân trang
+                theloai tl ON tb.theloai_id = tl.id 
+            ${whereString} 
+            ORDER BY tb.id DESC 
+            LIMIT ? OFFSET ? 
         `;
-        const queryParams = [...params, limit, offset]; // Thêm limit và offset vào cuối mảng tham số
-        // console.log("Main SQL:", sql, queryParams); // Debug
+        const queryParams = [...params, limit, offset]; 
 
         const [rows] = await pool.query(sql, queryParams);
 
         // 5. Định dạng lại dữ liệu a theloai cho giống cấu trúc include của Sequelize
         const formattedRows = rows.map(row => ({
             ...row,
-            theloai: row.tenTheLoai ? { id: row.theloai_id, theLoai: row.tenTheLoai } : null 
+            theloai: row.tenTheLoai ? { id: row.theloai_id, theLoai: row.tenTheLoai } : null
         }));
 
 
         // 6. Trả về kết quả theo cấu trúc mong đợi của frontend
         res.json({
             data: {
-                rows: formattedRows, 
-                count: totalItems    
+                rows: formattedRows,
+                count: totalItems
             },
             pagination: {
                 page: page,
@@ -254,8 +260,8 @@ exports.getThietBiByTheLoai = async (req, res) => {
         const totalCount = countResult[0].totalCount || 0;
 
         res.json({
-            data: rows,    
-            count: totalCount 
+            data: rows,
+            count: totalCount
         });
 
     } catch (error) {

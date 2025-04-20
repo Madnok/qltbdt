@@ -61,9 +61,9 @@ const NhapXuat = () => {
     return (
         <div className="flex flex-1">
             {/* Phần bên trái */}
-             <div className={`transition-all duration-300 border bg-white ${rightPanelContent ? "w-3/5" : "w-full"} h-[calc(100vh-var(--header-height,80px))]`}>
+            <div className={`transition-all duration-300 border bg-white ${rightPanelContent ? "w-3/5" : "w-full"} h-[calc(100vh-var(--header-height,80px))]`}>
                 <div className="flex flex-col h-full">
-                     <h1 className="p-4 text-2xl font-bold border-b shrink-0">Quản lý Nhập / Xuất</h1>
+                    <h1 className="p-4 text-2xl font-bold border-b shrink-0">Quản lý Nhập / Xuất</h1>
                     {/* Thanh Tabs */}
                     <div className="border-b border-gray-200 shrink-0">
                         <nav className="flex items-center " aria-label="Tabs">
@@ -74,38 +74,38 @@ const NhapXuat = () => {
                     {/* Nội dung Tab */}
                     <div className="flex-grow p-4 overflow-y-auto">
                         {activeTab === 'nhap' && (
-                             <div className="space-y-4">
+                            <div className="space-y-4">
                                 <div className="flex justify-end">
-                                     <button
-                                         onClick={() => setShowFormNhap(true)}
-                                         className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700"
-                                     >
-                                         + Tạo Phiếu Nhập Mới
-                                     </button>
-                                 </div>
+                                    <button
+                                        onClick={() => setShowFormNhap(true)}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700"
+                                    >
+                                        + Tạo Phiếu Nhập Mới
+                                    </button>
+                                </div>
                                 <BangNhap
                                     setSelectedRecord={handleSelectNhapRow}
                                     refreshData={refreshBangNhapKey}
                                     selectedRowId={selectedNhapId}
                                 />
-                             </div>
+                            </div>
                         )}
                         {activeTab === 'xuat' && (
                             <div className="space-y-4">
                                 <div className="flex justify-end">
-                                     <button
-                                         onClick={() => setShowFormXuat(true)}
-                                         className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md shadow-sm hover:bg-purple-700"
-                                     >
-                                         + Tạo Phiếu Xuất Mới
-                                     </button>
-                                 </div>
+                                    <button
+                                        onClick={() => setShowFormXuat(true)}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md shadow-sm hover:bg-purple-700"
+                                    >
+                                        + Tạo Phiếu Xuất Mới
+                                    </button>
+                                </div>
                                 <BangXuat
                                     onRowSelect={handleSelectXuatRow}
                                     selectedRowId={selectedXuatId}
-                                    refreshKey={refreshBangXuatKey} 
+                                    refreshKey={refreshBangXuatKey}
                                 />
-                             </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -113,28 +113,26 @@ const NhapXuat = () => {
 
             {/* Right Panel (Cho chi tiết) - Giữ nguyên */}
             {rightPanelContent && (
-                 <div className="w-2/5 transition-all duration-300 border-l h-[calc(100vh-var(--header-height,80px))]"> {/* Chiều cao tương ứng */}
-                     <RightPanel key={selectedNhapId || selectedXuatId} activeComponent={
+                <div className="w-2/5 transition-all duration-300 border-l h-[calc(100vh-var(--header-height,80px))]"> {/* Chiều cao tương ứng */}
+                    <RightPanel key={selectedNhapId || selectedXuatId} activeComponent={
                         <div className='flex flex-col h-full'>
-                             <div className="flex items-center justify-between p-4 border-b bg-gray-50 shrink-0">
+                            <div className="flex items-center justify-between p-4 border-b bg-gray-50 shrink-0">
                                 <h3 className="text-lg font-semibold text-gray-800">{rightPanelTitle}</h3>
                                 <button onClick={handleCloseRightPanel} className="text-2xl text-gray-400 hover:text-gray-600">&times;</button>
-                             </div>
-                             {/* Cho phép nội dung chi tiết cuộn độc lập */}
-                             <div className="flex-grow overflow-y-auto">
+                            </div>
+                            <div className="flex-grow overflow-y-auto">
                                 {rightPanelContent}
-                             </div>
-                         </div>
-                     } />
-                 </div>
+                            </div>
+                        </div>
+                    } />
+                </div>
             )}
 
-            {/* Modal cho FormNhap */}
+            {/* Modal CHO FORM PHIẾU NHẬP */}
             {showFormNhap && (
-                // Overlay và Content Box giữ nguyên
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60" onClick={() => setShowFormNhap(false)}>
                     <div className="bg-white rounded-lg shadow-xl w-1/2 max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                         <FormNhap
+                        <FormNhap
                             onClose={() => setShowFormNhap(false)}
                             refreshData={triggerRefreshBangNhap}
                         />
@@ -142,13 +140,17 @@ const NhapXuat = () => {
                 </div>
             )}
 
-             {/* THÊM MODAL CHO FORM PHIẾU XUẤT */}
-             {showFormXuat && (
-                 <FormPhieuXuat 
-                    isOpen={showFormXuat}
-                    onClose={() => setShowFormXuat(false)}
-                    onSubmitSuccess={triggerRefreshBangXuat}
-                 />
+            {/* MODAL CHO FORM PHIẾU XUẤT */}
+            {showFormXuat && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowFormXuat(false)}>
+                    <div className="bg-white rounded-lg shadow-xl w-4/5 max-w-5xl max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <FormPhieuXuat
+                            isOpen={showFormXuat}
+                            onClose={() => setShowFormXuat(false)}
+                            onSubmitSuccess={triggerRefreshBangXuat}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

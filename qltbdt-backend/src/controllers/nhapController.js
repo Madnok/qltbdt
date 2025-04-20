@@ -119,13 +119,25 @@ exports.createPhieuNhap = async (req, res) => {
 
         // Duyệt danh sách thiết bị
         for (const item of danhSachThietBi) {
+
+            const [donGiaRows] = await connection.query(
+                "SELECT donGia FROM thietbi WHERE id = ?",
+                [item.thietbi_id]
+            );
+
+            if (donGiaRows.length === 0) {
+                throw new Error(`Không tìm thấy thiết bị với ID ${item.thietbi_id}`);
+            }
+
+            const giaTriBanDau = donGiaRows[0].donGia;
+
             // Lặp lại `n` lần để tạo `n` bản ghi riêng biệt
             for (let i = 0; i < item.soLuong; i++) {
                 await connection.query(
                     `INSERT INTO thongtinthietbi (
-                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc
+                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, giaTriBanDau
                     ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH))`,
-                    [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh]
+                    [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh, giaTriBanDau]
                 );
             }
 

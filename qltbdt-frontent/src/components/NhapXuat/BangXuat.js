@@ -1,18 +1,15 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPhieuXuatListAPI } from '../../api'; 
-import { formatDate, formatCurrency } from '../../utils/helpers';
-// import { toast } from 'react-toastify';
+import { formatCurrency } from '../../utils/helpers';
+import { getTinhTrangLabel } from '../../utils/constants';
 
 const BangXuat = ({ onRowSelect, selectedRowId, refreshKey }) => { 
 
-  // Sử dụng refreshKey trong queryKey để trigger refetch
   const { data: phieuXuatList = [], isLoading, error/*, refetch*/ } = useQuery({
-    // Thêm refreshKey vào queryKey
     queryKey: ['phieuXuatList', refreshKey],
-    // API function lấy danh sách phiếu xuất
     queryFn: fetchPhieuXuatListAPI,
-    staleTime: 5 * 60 * 1000, // Cache 5 phút
+    staleTime: 1 * 60 * 1000, 
     refetchOnWindowFocus: false,
   });
 
@@ -21,17 +18,15 @@ const BangXuat = ({ onRowSelect, selectedRowId, refreshKey }) => {
   //     refetch();
   // }, [refreshKey, refetch]);
 
-
-  // Hàm lấy label cho Lý do xuất (có thể đặt trong constants)
-  const getLyDoXuatLabel = (lyDo) => {
-    switch (lyDo) {
-      case 'thanh_ly': return 'Thanh lý';
-      case 'mat_mat': return 'Báo mất';
-      case 'xuat_tra': return 'Xuất trả NCC';
-      case 'dieu_chuyen': return 'Điều chuyển';
-      default: return lyDo;
-    }
-  }
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
 
   if (isLoading) return <p className="p-4 text-center text-gray-500">Đang tải danh sách phiếu xuất..</p>;
   if (error) return <p className="p-4 text-center text-red-500">Lỗi tải danh sách phiếu xuất: {error.message}</p>;
@@ -68,7 +63,7 @@ const BangXuat = ({ onRowSelect, selectedRowId, refreshKey }) => {
                   <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{formatDate(phieu.ngayXuat)}</td>
                   <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{phieu.tenNguoiThucHien}</td>
                   {/* Sử dụng helper hoặc switch case để hiển thị label lý do */}
-                  <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{getLyDoXuatLabel(phieu.lyDoXuat)}</td>
+                  <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{getTinhTrangLabel(phieu.lyDoXuat)}</td>
                   {/* Hiển thị số lượng TB */}
                   <td className="px-4 py-2 text-sm text-center text-gray-500 whitespace-nowrap">{phieu.soLuongThietBi !== undefined ? phieu.soLuongThietBi : 'N/A'}</td>
                   {/* Hiển thị giá trị thu về */}

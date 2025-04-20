@@ -64,10 +64,22 @@ exports.getPhieuXuatDetails = async (req, res) => {
         const [phieuXuatRows] = await pool.query(phieuXuatQuery, [id]);
         if (phieuXuatRows.length === 0) return res.status(404).json({ error: "Không tìm thấy phiếu xuất." });
         const phieuXuatDetails = phieuXuatRows[0];
-        try {
-            phieuXuatDetails.danhSachChungTu = phieuXuatDetails.danhSachChungTu ? JSON.parse(phieuXuatDetails.danhSachChungTu) : null;
-        } catch (e) { phieuXuatDetails.danhSachChungTu = null; }
 
+        try {
+            // Gán lại giá trị đã parse vào phieuXuatDetails.danhSachChungTu
+            phieuXuatDetails.danhSachChungTu = phieuXuatDetails.danhSachChungTu && typeof phieuXuatDetails.danhSachChungTu === 'string'
+                ? JSON.parse(phieuXuatDetails.danhSachChungTu)
+                : (Array.isArray(phieuXuatDetails.danhSachChungTu) ? phieuXuatDetails.danhSachChungTu : []); // Đảm bảo là mảng hoặc mảng rỗng
+
+            if (!Array.isArray(phieuXuatDetails.danhSachChungTu)) {
+                 phieuXuatDetails.danhSachChungTu = [];
+            }
+
+        } catch (e) {
+            console.error(`Error parsing danhSachChungTu for phieuxuat ID ${id}:`, e);
+            phieuXuatDetails.danhSachChungTu = [];
+        }
+        
         const chiTietQuery = `
             SELECT
                 pxc.thongtinthietbi_id,

@@ -189,7 +189,7 @@ const FormPhong = ({ onClose, refreshData }) => {
         <div className="flex flex-col h-full bg-white border-l shadow-md">
             {/* Header và Tabs */}
             <div className="flex items-center justify-between p-4 bg-white border-b">
-                <h2 className="text-lg font-semibold">Quản lý Phòng & Thiết bị</h2>
+                <h2 className="text-lg font-semibold">Thêm Phòng & Thiết Bị Vào Phòng</h2>
                 <button className="flex items-center justify-center w-10 h-10 transition rounded-full hover:bg-gray-300" onClick={onClose}>
                     <i className="text-lg text-black fas fa-times"></i>
                 </button>

@@ -290,7 +290,12 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         // Xử lý thêm tên phòng đầy đủ
         const finalData = rows.map(item => ({
             ...item,
-            phong_name: item.toa ? `${item.toa}${item.tang}.${item.soPhong}` : 'Chưa phân bổ' // Hoặc 'Kho'
+            phong_name:
+                item.tinhTrang === "da_thanh_ly"
+                    ? "Đã thanh lý"
+                    : item.toa
+                        ? `${item.toa}${item.tang}.${item.soPhong}`
+                        : "Trong Kho"
         }));
 
         // --- Trả về response với dữ liệu và thông tin phân trang ---
@@ -336,9 +341,14 @@ exports.getTTTBByMaThietBi = async (req, res) => {
          // Xử lý thêm tên phòng đầy đủ nếu cần
          const finalData = rows.map(item => ({
             ...item,
-            phong_name: item.toa && item.tang && item.soPhong
-                ? `${item.toa}${item.tang}.${item.soPhong}`
-                : (item.phong_id === null ? 'Trong Kho' : 'N/A'),
+            phong_name:
+                item.tinhTrang === "da_thanh_ly"
+                    ? "Đã Thanh Lý"
+                    : item.toa && item.tang && item.soPhong
+                        ? `${item.toa}${item.tang}.${item.soPhong}`
+                        : item.phong_id === null
+                            ? "Trong Kho"
+                            : "N/A",
         }));
         
 
@@ -411,7 +421,7 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
 
         await connection.beginTransaction();
 
-        const [rows] = await connection.query('SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE', [thongTinThietBiId]);
+        const [rows] = await connection.query('SELECT phong_id, tinhTrang FROM thongtinthietbi WHERE id = ? FOR UPDATE', [thongTinThietBiId]);
         if (rows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ error: `Không tìm thấy tài sản với ID ${thongTinThietBiId}.` });
@@ -421,6 +431,11 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         if (currentTaiSan.phong_id !== null) {
             await connection.rollback();
             return res.status(400).json({ error: `Tài sản ID ${thongTinThietBiId} đã được gán cho phòng khác rồi.` });
+        }
+
+        if (currentTaiSan.tinhTrang === 'da_thanh_ly') {
+            await connection.rollback();
+            return res.status(400).json({ error: `Không thể phân bổ tài sản đã thanh lý (ID: ${thongTinThietBiId}) vào phòng.` });
         }
 
         const [updateResult] = await connection.query(
