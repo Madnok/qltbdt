@@ -13,6 +13,28 @@ router.get("/", verifyToken,async (req, res) => {
     }
 });
 
+// Lấy danh sách tất cả thể loại kèm số lượng thiết bị mỗi thể loại
+router.get("/theloaicount", verifyToken, async (req, res) => {
+    const db = await pool.getConnection();
+    try {
+        const sql = `
+            SELECT tl.id, tl.theLoai, COUNT(tb.id) AS thietBiCount
+            FROM theloai tl
+            LEFT JOIN thietbi tb ON tl.id = tb.theloai_id
+            GROUP BY tl.id, tl.theLoai
+            ORDER BY tl.theLoai ASC;
+        `;
+
+        const [rows] = await db.query(sql);
+        res.json(rows); // Trả về mảng [{ id, theLoai, thietBiCount }]
+    } catch (error) {
+        console.error("Lỗi getAllTheLoaiWithCount:", error);
+        res.status(500).json({ error: "Lỗi máy chủ khi lấy thể loại và số lượng thiết bị." });
+    } finally {
+        db.release();
+    }
+});
+
 // Lấy chi tiết thể loại và danh sách thiết bị theo ID thể loại
 router.get("/:id",verifyToken, async (req, res) => {
     const { id } = req.params;
@@ -40,7 +62,6 @@ router.put("/:id", verifyToken, async (req, res) => {
 });
 // API Thêm thể loại
 router.post("/",verifyToken,  async (req, res) => {
-    console.log("Request body từ frontend:", req.body); // Kiểm tra dữ liệu nhận được
     const { theLoai } = req.body;
 
     if (!theLoai) {
@@ -48,7 +69,7 @@ router.post("/",verifyToken,  async (req, res) => {
     }
 
     try {
-        await pool.query("INSERT INTO theloai (theLoai) VALUES (?)", [theLoai]); // Kiểm tra tên bảng/cột đúng chưa
+        await pool.query("INSERT INTO theloai (theLoai) VALUES (?)", [theLoai]);
         res.status(201).json({ message: "Thêm thể loại thành công!" });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -78,30 +99,6 @@ router.delete("/:id",verifyToken,  async (req, res) => {
     }
 });
 
-router.get("/theloai/:id",verifyToken,  async (req, res) => {
-    const db = await pool.getConnection();
-    try {
-        const { id } = req.params;
 
-        // Lấy danh sách thiết bị theo thể loại
-        const dsThietBi = await db.query(
-            `SELECT tb.id, tb.tenThietBi, 
-                    COALESCE(tt.soLuong, 0) - COALESCE(ptb.totalUsed, 0) AS tonKho
-             FROM thietbi tb
-             LEFT JOIN thongtinthietbi tt ON tb.id = tt.thietbi_id
-             LEFT JOIN (
-                SELECT thietbi_id, SUM(soLuong) AS totalUsed FROM phong_thietbi GROUP BY thietbi_id
-             ) ptb ON tb.id = ptb.thietbi_id
-             WHERE tb.theloai_id = ?`,
-            [id]
-        );
-
-        res.json({ dsThietBi });
-    } catch (error) {
-        res.status(500).json({ error: "Lỗi tải danh sách thiết bị" });
-    } finally {
-        db.release();
-    }
-});
 
 module.exports = router;

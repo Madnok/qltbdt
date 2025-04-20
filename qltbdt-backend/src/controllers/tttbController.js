@@ -11,19 +11,101 @@ exports.getAllThongTinThietBi = async (req, res) => {
     }
 };
 
-// Lấy chi tiết tttb theo ID
+// Lấy chi tiết tttb theo ID với đầy đủ thông tin join
 exports.getThongTinThietBiById = async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // Lấy ID của TTTB cần xem
+
+    // Kiểm tra ID hợp lệ
+    if (isNaN(parseInt(id))) {
+        return res.status(400).json({ error: "Mã Thông Tin Thiết Bị không hợp lệ." });
+    }
+
     try {
-        const [rows] = await pool.query("SELECT * FROM thongtinthietbi WHERE id = ?", [id]);
+        // Câu lệnh SQL với JOINs để lấy thông tin chi tiết
+        const sql = `
+            SELECT
+                -- Thông tin chính từ TTTB
+                tttb.id, tttb.tinhTrang, tttb.nguoiDuocCap,
+                tttb.ngayBaoHanhKetThuc, tttb.ngayDuKienTra,
+                tttb.ngayMua, tttb.giaTriBanDau,
+                tttb.thietbi_id, tttb.phong_id, tttb.phieunhap_id,
+
+                -- Thông tin từ bảng Phong (p)
+                p.toa AS phong_toa, p.tang AS phong_tang, p.soPhong AS phong_soPhong,
+
+                -- Thông tin từ bảng ThietBi (tb) - Loại Thiết Bị
+                tb.tenThietBi, tb.moTa AS thietbi_moTa, tb.donGia AS thietbi_donGia,
+                tb.theloai_id,
+
+                -- Thông tin từ bảng TheLoai (tl)
+                tl.theLoai AS theloai_ten,
+
+                -- Thông tin từ bảng PhieuNhap (pn)
+                pn.truongHopNhap AS phieunhap_truongHopNhap, pn.danhSachChungTu AS phieunhap_danhSachChungTu,
+                pn.ngayTao AS phieunhap_ngayTao
+
+            FROM thongtinthietbi tttb
+            LEFT JOIN phong p ON tttb.phong_id = p.id
+            LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id  -- INNER JOIN nếu thietbi_id luôn phải có
+            LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            LEFT JOIN phieunhap pn ON tttb.phieunhap_id = pn.id
+            WHERE tttb.id = ?
+        `;
+
+        const [rows] = await pool.query(sql, [id]);
 
         if (rows.length === 0) {
-            return res.status(404).json({ error: "Không tìm thấy thông tin của thiết bị" });
+            return res.status(404).json({ error: "Không tìm thấy thông tin của thiết bị này (TTTB ID: " + id + ")" });
         }
 
-        res.json(rows[0]);
+        // Lấy dòng dữ liệu đầu tiên (và duy nhất)
+        const rawData = rows[0];
+
+        // Tái cấu trúc dữ liệu thành object JSON mong muốn cho frontend
+        const formattedData = {
+            // Các trường trực tiếp từ tttb
+            id: rawData.id,
+            tinhTrang: rawData.tinhTrang,
+            nguoiDuocCap: rawData.nguoiDuocCap,
+            ngayBaoHanhKetThuc: rawData.ngayBaoHanhKetThuc,
+            ngayDuKienTra: rawData.ngayDuKienTra,
+            ngayMua: rawData.ngayMua,           // Lấy từ tttb nếu có
+            giaTriBanDau: rawData.giaTriBanDau, // Lấy từ tttb nếu có
+
+            // Tính toán phong_name
+            phong_name: rawData.phong_toa && rawData.phong_tang && rawData.phong_soPhong
+                      ? `${rawData.phong_toa}${rawData.phong_tang}.${rawData.phong_soPhong}`
+                      : (rawData.phong_id === null ? 'Trong Kho' : 'N/A'), 
+
+            // Ngày nhập kho từ phiếu nhập
+            ngayNhapKho: rawData.phieunhap_ngayTao,
+
+            // Object lồng nhau cho Loại Thiết Bị
+            thietBi: {
+                id: rawData.thietbi_id,
+                tenThietBi: rawData.tenThietBi,
+                moTa: rawData.thietbi_moTa,
+                donGia: rawData.thietbi_donGia,
+                theLoai: {
+                    id: rawData.theloai_id,
+                    theLoai: rawData.theloai_ten
+                }
+            },
+
+             // Object lồng nhau cho Phiếu Nhập 
+             phieuNhap: rawData.phieunhap_id ? {
+                id: rawData.phieunhap_id,
+                truongHopNhap: rawData.phieunhap_truongHopNhap,
+                danhSachChungTu: rawData.phieunhap_danhSachChungTu,
+                ngayTao: rawData.phieunhap_ngayTao 
+             } : null 
+        };
+
+        res.json(formattedData);
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Lỗi khi lấy chi tiết TTTB:", error);
+        res.status(500).json({ error: "Lỗi máy chủ nội bộ: " + error.message });
     }
 };
 
@@ -59,152 +141,6 @@ exports.getListPhong = async (req, res) => {
         res.json(phongList);
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
-};
-
-// Thêm mới một thông tin thiết bị
-exports.createThongTinThietBi = async (req, res) => {
-    const { thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, soLuong, thoiGianBaoHanh } = req.body;
-
-    if (!thietbi_id || !soLuong) {
-        return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin thiết bị, bao gồm số lượng" });
-    }
-
-    try {
-        // Lấy tên thiết bị từ bảng thietbi
-        const [thietbiRows] = await pool.query("SELECT tenThietBi FROM thietbi WHERE id = ?", [thietbi_id]);
-        if (thietbiRows.length === 0) {
-            return res.status(400).json({ error: "Thiết bị không tồn tại" });
-        }
-
-        const tenThietBi = thietbiRows[0].tenThietBi;
-
-        // Tính ngày hết hạn bảo hành
-        const ngayBaoHanhKetThuc = thoiGianBaoHanh
-            ? new Date(new Date().setMonth(new Date().getMonth() + thoiGianBaoHanh))
-            : null;
-
-        // Thêm thiết bị vào bảng thongtinthietbi
-        await pool.query(
-            `INSERT INTO thongtinthietbi (
-                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, soLuong, thoiGianBaoHanh, ngayBaoHanhKetThuc
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [thietbi_id, phong_id || null, nguoiDuocCap || null, phieunhap_id, tinhTrang || 'con_bao_hanh', tenThietBi, soLuong, thoiGianBaoHanh || null, ngayBaoHanhKetThuc]
-        );
-
-        // Cập nhật tồn kho
-        await pool.query(
-            "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-            [soLuong, thietbi_id]
-        );
-
-        res.status(201).json({ message: "Thêm thông tin thiết bị thành công!" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-
-exports.createMultipleThongTinThietBi = async (req, res) => {
-    const { danhSachThietBi } = req.body;
-
-    if (!Array.isArray(danhSachThietBi) || danhSachThietBi.length === 0) {
-        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ" });
-    }
-
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        const values = danhSachThietBi.map(tb => {
-            const ngayHienTai = new Date();
-
-            // Tính ngày hết hạn bảo hành nếu có thời gian bảo hành
-            const ngayBaoHanhKetThuc = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0
-                ? new Date(ngayHienTai.setMonth(ngayHienTai.getMonth() + tb.thoiGianBaoHanh))
-                : null;
-
-            // Xác định tình trạng bảo hành
-            const tinhTrang = tb.thoiGianBaoHanh && tb.thoiGianBaoHanh > 0 ? 'con_bao_hanh' : 'het_bao_hanh';
-
-            return [
-                tb.thietbi_id,
-                tb.phong_id || null,
-                tb.nguoiDuocCap || null,
-                tb.phieunhap_id,
-                tinhTrang,
-                tb.tenThietBi,
-                tb.soLuong || 0, // Số lượng thiết bị
-                tb.thoiGianBaoHanh || null,
-                ngayBaoHanhKetThuc
-            ];
-        });
-
-        // Thêm nhiều bản ghi vào bảng `thongtinthietbi`
-        await connection.query(
-            `INSERT INTO thongtinthietbi (
-                thietbi_id, phong_id, nguoiDuocCap, phieunhap_id, tinhTrang, tenThietBi, soLuong, thoiGianBaoHanh, ngayBaoHanhKetThuc
-            ) VALUES ${values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}`,
-            values.flat()
-        );
-
-        // Cập nhật tồn kho trong bảng `thietbi`
-        for (const tb of danhSachThietBi) {
-            await connection.query(
-                "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-                [tb.soLuong || 0, tb.thietbi_id]
-            );
-        }
-
-        await connection.commit();
-        res.status(201).json({ message: "Thêm nhiều thiết bị thành công!" });
-    } catch (error) {
-        await connection.rollback();
-        res.status(500).json({ error: error.message });
-    } finally {
-        connection.release();
-    }
-};
-
-
-
-// Cập nhật thông tin thiết bị
-exports.updateThongTinThietBi = async (req, res) => {
-    const { id } = req.params;
-    const { thietbi_id, phong_id, nguoiDuocCap, tinhTrang } = req.body;
-    try {
-        await pool.query(
-            "UPDATE thongtinthietbi SET thietbi_id = ?, phong_id = ?, nguoiDuocCap = ?, tinhTrang = ? WHERE id = ?",
-            [thietbi_id, phong_id || null, nguoiDuocCap || null, tinhTrang || 'chua_dung', id]
-        );
-        res.json({ message: "Cập nhật thông tin thiết bị thành công!" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Xóa thông tin thiết bị khỏi phòng (set phong_id = NULL)
-exports.deleteThongTinThietBi = async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        // Lấy thông tin số lượng và thietbi_id trước khi xóa
-        const [rows] = await pool.query("SELECT soLuong, thietbi_id FROM thongtinthietbi WHERE id = ?", [id]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị để cập nhật" });
-        }
-
-        const { soLuong, thietbi_id } = rows[0];
-
-        // Cập nhật tồn kho
-        await pool.query("UPDATE thietbi SET tonKho = tonKho - ? WHERE id = ?", [soLuong, thietbi_id]);
-
-        // Xóa thiết bị khỏi bảng thongtinthietbi
-        const [result] = await pool.query("DELETE FROM thongtinthietbi WHERE id = ?", [id]);
-
-        res.json({ message: `Xóa thông tin thiết bị ID ${id} thành công!` });
-    } catch (error) {
-        res.status(500).json({ error: "Lỗi xóa thông tin thiết bị" });
     }
 };
 
@@ -375,6 +311,43 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
     }
 };
 
+exports.getTTTBByMaThietBi = async (req, res) => {
+    const { maThietBi } = req.params; // Lấy ID loại thiết bị từ URL
+    if (isNaN(parseInt(maThietBi))) {
+         return res.status(400).json({ error: "Mã loại thiết bị không hợp lệ." });
+    }
+    try {
+        // Query lấy TTTB theo thietbi_id, join thêm thông tin cần thiết
+        const [rows] = await pool.query(
+           `SELECT
+                tttb.id, tttb.tinhTrang, tttb.phong_id, tttb.nguoiDuocCap,
+                tttb.ngayBaoHanhKetThuc, tttb.ngayDuKienTra,
+                tttb.thietbi_id, tttb.phieunhap_id, tttb.ngayMua, tttb.giaTriBanDau,
+                p.toa, p.tang, p.soPhong, -- Lấy thông tin phòng
+                pn.ngayTao AS ngayNhapKho -- Lấy ngày nhập từ phiếu nhập
+            FROM thongtinthietbi tttb
+            LEFT JOIN phong p ON tttb.phong_id = p.id
+            LEFT JOIN phieunhap pn ON tttb.phieunhap_id = pn.id
+            WHERE tttb.thietbi_id = ?
+            ORDER BY tttb.id DESC`,
+            [parseInt(maThietBi)]
+         );
+
+         // Xử lý thêm tên phòng đầy đủ nếu cần
+         const finalData = rows.map(item => ({
+            ...item,
+            phong_name: item.toa && item.tang && item.soPhong
+                ? `${item.toa}${item.tang}.${item.soPhong}`
+                : (item.phong_id === null ? 'Trong Kho' : 'N/A'),
+        }));
+        
+
+        res.json(finalData); // Trả về mảng các TTTB thuộc loại này
+    } catch (error) {
+        console.error("Lỗi lấy TTTB theo Mã Loại Thiết Bị:", error);
+        res.status(500).json({ error: "Lỗi máy chủ khi lấy chi tiết thiết bị." });
+    }
+};
 
 exports.updateTinhTrangTaiSan = async (req, res) => {
     const { id } = req.params;

@@ -7,7 +7,7 @@ import Pagination from '../layout/Pagination';
 
 const ITEMS_PER_PAGE_NHAP = 15;
 
-const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId, onAddPhieuNhap }) => {
+const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId }) => {
     const [currentPage, setCurrentPage] = useState(1);
 
     const { data: allPhieuNhap = [], isLoading, error } = useQuery({
@@ -47,13 +47,7 @@ const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId, onAddPhieuNha
     return (
         <div className="p-2 bg-white">
             <div className="flex items-center justify-between mt-4 mb-2">
-                <h2 className="text-xl font-semibold">Danh sách Phiếu Nhập</h2>
-                <button
-                    onClick={onAddPhieuNhap}
-                    className="px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                    Tạo Phiếu Nhập
-                </button>
+                <h2 className="text-xl text-green-700 font-semibold">Danh sách Phiếu Nhập</h2>
             </div>
             <div className="overflow-x-auto border border-gray-200 rounded-md">
                 <table className="min-w-full divide-y divide-gray-200">
