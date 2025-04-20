@@ -617,7 +617,7 @@ const ThongTinBaoHong = () => {
                                                                 onClick={() => handleDelete(item.id)}
                                                                 className={` ${(item.trangThai === 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành' )? 'text-red-600 hover:text-red-900' : 'text-gray-400 cursor-not-allowed'} ${(deleteMutation.isPending && deleteMutation.variables === item.id) ? 'opacity-50' : ''} `}
                                                                 title={item.trangThai === 'Chờ Duyệt' ? "Xóa báo hỏng" : "Không thể xóa khi đang xử lý hoặc đã hoàn thành"}
-                                                                disabled={!(item.trangThai == 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành') || (deleteMutation.isPending && deleteMutation.variables === item.id)}
+                                                                disabled={!(item.trangThai === 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành') || (deleteMutation.isPending && deleteMutation.variables === item.id)}
                                                             >
                                                                 <FaTrashAlt />
                                                             </button>

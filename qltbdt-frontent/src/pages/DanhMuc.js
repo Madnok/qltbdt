@@ -5,8 +5,6 @@ import Phong from "../components/DanhMuc/Phong";
 import TheLoai from "../components/DanhMuc/TheLoai";
 import ThietBi from "../components/DanhMuc/ThietBi";
 import ViPham from "../components/DanhMuc/ViPham";
-import ChiTietTheLoai from "../components/DanhMuc/ChiTiet/ChiTietTheLoai";
-import FormTheLoai from "../components/forms/FormTheLoai";
 import FormThietBi from "../components/forms/FormThietBi";
 import RightPanel from "../components/layout/RightPanel";
 import FormPhong from "../components/forms/FormPhong";
@@ -14,13 +12,13 @@ import LeftPanel from "../components/layout/LeftPanel";
 
 const DanhMuc = () => {
     const { refresh, handleRefresh } = useRefresh();
-    const { selectedRecord, activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
+    const { activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
     const [selectedCategory, setSelectedCategory] = useState(null);
 
     // Object ánh xạ key danh mục đến component
     const componentsMap = {
         Phong: <Phong refresh={refresh} />,
-        TheLoai: <TheLoai setSelectedRecord={(record) => handleOpenRightPanel("ChiTietTheLoai", record)} refresh={refresh} />,
+        TheLoai: <TheLoai refresh={refresh} />,
         ThietBi: <ThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietThietBi", record)} refresh={refresh} />,
         ViPham: <ViPham setSelectedRecord={(record) => handleOpenRightPanel("ChiTietViPham", record)} />,
     };
@@ -30,16 +28,12 @@ const DanhMuc = () => {
         switch (activeRightPanel) {
             case "FormPhong":
                 return <FormPhong onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
-            case "ChiTietTheLoai":
-                return <ChiTietTheLoai record={selectedRecord} onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
-            case "FormTheLoai":
-                return <FormTheLoai onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
             case "FormThietBi":
                 return <FormThietBi onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
             default:
                 return null;
         }
-    }, [activeRightPanel, selectedRecord, handleCloseRightPanel, handleRefresh]);
+    }, [activeRightPanel, handleCloseRightPanel, handleRefresh]);
 
     // Xác định component nào hiển thị trên Left Panel
     const leftPanelComponent = selectedCategory ? componentsMap[selectedCategory] : (
@@ -76,28 +70,14 @@ const DanhMuc = () => {
                     </h2>
 
                     <div className="flex items-center space-x-2">
-                        {/* Nút Sort */}
-                        <button className="flex items-center justify-center w-10 h-10 transition rounded-full hover:bg-gray-300">
-                            <i className="text-lg text-gray-500 fas fa-filter"></i>
-                        </button>
-
-                        {/* Nút Thêm - Ẩn nếu danh mục là "ThietBi" */}
-                        {selectedCategory && selectedCategory !== "ThietBi" && (
-                            selectedCategory === "Phong" ? (
-                                <button
-                                    onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
-                                    className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
-                                >
-                                    <i className="mr-2 fas fa-plus"></i> Phòng & Thiết Bị
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
-                                    className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
-                                >
-                                    <i className="mr-2 fas fa-plus"></i> Thêm {categoryLabels[selectedCategory] || selectedCategory}
-                                </button>
-                            )
+                        {/* Nút Thêm - Chỉ hiển thị nếu là Phòng */}
+                        {selectedCategory === "Phong" && (
+                            <button
+                                onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
+                                className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
+                            >
+                                <i className="mr-2 fas fa-plus"></i> Phòng & Thiết Bị
+                            </button>
                         )}
                     </div>
                 </div>

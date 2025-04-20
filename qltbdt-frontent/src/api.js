@@ -201,6 +201,14 @@ export const getTTTBById = async (tttbId) => {
   }
 };
 
+// Lấy danh sách Thiết Bị theo thể loại ID //
+export const fetchThietBiByTheLoai = async (theLoaiId) => {
+  if (!theLoaiId) return [];
+  console.log(`API Request: /thietbi/by-theloai?theloai_id=${theLoaiId}`);
+  const response = await api.get(`/thietbi/by-theloai?theloai_id=${theLoaiId}`);
+  return response.data || [];
+};
+
 // ============================================================================================ //
 
 // ======== CÁC HÀM API CHO PHÒNG ============================================================= //
@@ -309,13 +317,42 @@ export const fetchPhongTableData = async () => {
 
 //============================================================================================ //
 
-// ========= CÁC HÀM API CHO Thể loại và Thiết bị =========================================== //
+// ========= CÁC HÀM API CHO Thể loại ======================================================== //
+/** Lấy danh sách TẤT CẢ thể loại */
 export const fetchTheLoaiList = async () => {
   const { data } = await api.get("/theloai");
   return data;
 };
 
-// ========================================================================================= //
+export const fetchTheLoaiListWithCount = async () => {
+  const { data } = await api.get("/theloai/theloaicount");
+  return data;
+};
+
+/** Tạo thể loại mới */
+export const createTheLoai = async (theLoaiData) => {
+  // theLoaiData dự kiến là { theLoai: "Tên thể loại mới" }
+  console.log("API Request: POST /theloai", theLoaiData);
+  const response = await api.post("/theloai", theLoaiData);
+  return response.data; // Trả về thể loại vừa tạo (nếu có)
+};
+
+/** Cập nhật thể loại */
+export const updateTheLoai = async ({ id, ...theLoaiData }) => {
+  // theLoaiData dự kiến là { theLoai: "Tên đã cập nhật" }
+  console.log(`API Request: PUT /theloai/${id}`, theLoaiData);
+  const response = await api.put(`/theloai/${id}`, theLoaiData);
+  return response.data; // Trả về thể loại đã cập nhật (nếu có)
+};
+
+/** Xóa thể loại */
+export const deleteTheLoai = async (id) => {
+  console.log(`API Request: DELETE /theloai/${id}`);
+  const response = await api.delete(`/theloai/${id}`);
+  return response.data; // Thường trả về confirmation hoặc status
+};
+
+// ======================== End API Thể loại ================================================================= //
 
 
 // ======== CÁC HÀM API CHO PHÂN CA ======================================================== //

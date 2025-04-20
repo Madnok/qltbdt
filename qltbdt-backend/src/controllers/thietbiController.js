@@ -230,3 +230,37 @@ exports.getThongTinThietBi = async (req, res) => {
     }
 };
 
+// Lấy thông tin thiết bị theo thể loại
+exports.getThietBiByTheLoai = async (req, res) => {
+    const theLoaiId = req.query.theloai_id;
+
+    if (!theLoaiId || isNaN(parseInt(theLoaiId))) {
+        return res.status(400).json({ error: "Mã thể loại không hợp lệ hoặc bị thiếu." });
+    }
+
+    try {
+        const listSql = `
+            SELECT
+                tb.id,
+                tb.tenThietBi
+            FROM thietbi tb
+            WHERE tb.theloai_id = ?
+            ORDER BY tb.tenThietBi ASC
+        `;
+        const [rows] = await pool.query(listSql, [parseInt(theLoaiId)]);
+
+        const countSql = 'SELECT COUNT(*) AS totalCount FROM thietbi WHERE theloai_id = ?';
+        const [countResult] = await pool.query(countSql, [parseInt(theLoaiId)]);
+        const totalCount = countResult[0].totalCount || 0;
+
+        res.json({
+            data: rows,    
+            count: totalCount 
+        });
+
+    } catch (error) {
+        console.error("Lỗi lấy Thiết Bị theo Thể Loại:", error);
+        res.status(500).json({ error: "Lỗi máy chủ khi lấy danh sách thiết bị." });
+    }
+};
+
