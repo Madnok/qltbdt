@@ -1,118 +1,3 @@
-// import { useEffect, useState } from "react";
-// import axios from "axios";
-// import { useFormattedPrice } from "../../utils/helpers";
-
-// const ThietBi = ({ setSelectedRecord, refresh }) => {
-//     const formatPrice = useFormattedPrice();
-//     const [data, setData] = useState([]);
-//     const [currentPage, setCurrentPage] = useState(1);
-//     const itemsPerPage = 10; // Giới hạn 10 dòng mỗi trang
-
-//     // Hàm tải dữ liệu
-//     const fetchData = async () => {
-//         try {
-//             // Gọi API lấy danh sách thiết bị
-//             const thietBiResponse = await axios.get(`${process.env.REACT_APP_API_URL}/thietbi`,{withCredentials: true});
-
-//             // Cập nhật state `data` với dữ liệu từ API
-//             setData(thietBiResponse.data);
-//         } catch (error) {
-//             console.error("Lỗi tải dữ liệu:", error);
-//         }
-//     };
-
-//     useEffect(() => {
-//         fetchData();
-//     }, [refresh]);
-
-//     const selectRecord = (record) => {
-//         setSelectedRecord(record);
-//     };
-
-//     // Tính toán dữ liệu cho trang hiện tại
-//     const indexOfLastItem = currentPage * itemsPerPage;
-//     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-//     const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
-
-//     // Xử lý chuyển trang
-//     const totalPages = Math.ceil(data.length / itemsPerPage);
-//     const goToPage = (pageNumber) => {
-//         if (pageNumber >= 1 && pageNumber <= totalPages) {
-//             setCurrentPage(pageNumber);
-//         }
-//     };
-
-//     return (
-//         <div className="w-full overflow-auto">
-//             <div className="max-h-full overflow-x-auto overflow-y-auto border">
-//                 <table className="w-full border min-w-[600px]">
-//                     <thead>
-//                         <tr className="bg-gray-200">
-//                             <th className="px-4 py-2 border-b ">STT</th>
-//                             <th className="px-4 py-2 border-b">ID</th>
-//                             <th className="px-4 py-2 border-b">Tên Thiết Bị</th>
-//                             <th className="px-4 py-2 border-b">Mô Tả</th>
-//                             <th className="px-4 py-2 border-b">Tồn Kho</th>
-//                             <th className="px-4 py-2 border-b">Đơn Giá</th>
-//                         </tr>
-//                     </thead>
-//                     <tbody>
-//                         {currentItems.map((record, index) => (
-//                             <tr
-//                                 key={record.id}
-//                                 className="text-center cursor-pointer hover:bg-gray-100"
-//                                 onClick={() => selectRecord(record)}
-//                             >
-//                                 <td className="p-2 border">{indexOfFirstItem + index + 1}</td>
-//                                 <td className="p-2 border">TB{record.id}</td>
-//                                 <td className="p-2 border">{record.tenThietBi}</td>
-//                                 <td className="p-2 border">{record.moTa}</td>
-//                                 <td className="p-2 border"><strong className="font-bold text-red-500">{record.tonKho}</strong></td>
-//                                 <td className="p-2 border">{formatPrice(record.donGia)}</td>
-//                             </tr>
-//                         ))}
-//                     </tbody>
-
-//                 </table>
-//             </div>
-
-//             {/* Phân trang */}
-//             {totalPages > 1 && (
-//                 <div className="flex justify-center my-4 space-x-2 ">
-//                     {currentPage > 1 && (
-//                         <button
-//                             className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-//                             onClick={() => goToPage(currentPage - 1)}
-//                         >
-//                             ← Trước
-//                         </button>
-//                     )}
-//                     {[...Array(totalPages)].map((_, i) => (
-//                         <button
-//                             key={i}
-//                             className={`px-4 py-2 border rounded ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-//                             onClick={() => goToPage(i + 1)}
-//                         >
-//                             {i + 1}
-//                         </button>
-//                     ))}
-//                     {currentPage < totalPages && (
-//                         <button
-//                             className="px-4 py-2 bg-gray-200 border rounded hover:bg-gray-300"
-//                             onClick={() => goToPage(currentPage + 1)}
-//                         >
-//                             Sau →
-//                         </button>
-//                     )}
-//                 </div>
-//             )}
-
-//         </div>
-//     );
-// };
-
-// export default ThietBi;
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaPlus,
@@ -136,8 +21,8 @@ import { getTinhTrangLabel } from '../../utils/constants';
 // --- Layout Components ---
 import Pagination from '../layout/Pagination';
 import Popup from '../layout/Popup';
-import FormThietBi from '../forms/FormThietBi'; // Import form mới
-import ChiTietThongTinThietBi from '../DanhMuc/ChiTiet/ChiTietThongTinThietBi'; // Import modal chi tiết mới
+import FormThietBi from '../forms/FormThietBi';
+import ChiTietThongTinThietBi from '../DanhMuc/ChiTiet/ChiTietThongTinThietBi'; 
 
 
 // --- Constants ---
@@ -561,10 +446,10 @@ function ThietBi() {
                                                         </td>
                                                         {/* Mã Loại */}
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">{tb.id}</td>
-                                                        {/* Tồn kho - Giả sử API trả về trường 'tonKho' */}
+                                                        {/* Tồn kho - Giả sử API trả về trường 'tonKhoHienTai' */}
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-center align-top">
                                                             {/* Hiển thị số lượng tồn kho */}
-                                                            {typeof tb.tonKho === 'number' ? tb.tonKho : <span className='text-gray-400'>N/A</span>}
+                                                            {typeof tb.tonKhoHienTai === 'number' ? tb.tonKhoHienTai : <span className='text-gray-400'>N/A</span>}
                                                         </td>
                                                         {/* Hành động */}
                                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2 align-top">

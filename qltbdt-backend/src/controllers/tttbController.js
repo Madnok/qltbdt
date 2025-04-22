@@ -74,8 +74,8 @@ exports.getThongTinThietBiById = async (req, res) => {
 
             // Tính toán phong_name
             phong_name: rawData.phong_toa && rawData.phong_tang && rawData.phong_soPhong
-                      ? `${rawData.phong_toa}${rawData.phong_tang}.${rawData.phong_soPhong}`
-                      : (rawData.phong_id === null ? 'Trong Kho' : 'N/A'), 
+                ? `${rawData.phong_toa}${rawData.phong_tang}.${rawData.phong_soPhong}`
+                : (rawData.phong_id === null ? 'Trong Kho' : 'N/A'),
 
             // Ngày nhập kho từ phiếu nhập
             ngayNhapKho: rawData.phieunhap_ngayTao,
@@ -92,13 +92,13 @@ exports.getThongTinThietBiById = async (req, res) => {
                 }
             },
 
-             // Object lồng nhau cho Phiếu Nhập 
-             phieuNhap: rawData.phieunhap_id ? {
+            // Object lồng nhau cho Phiếu Nhập 
+            phieuNhap: rawData.phieunhap_id ? {
                 id: rawData.phieunhap_id,
                 truongHopNhap: rawData.phieunhap_truongHopNhap,
                 danhSachChungTu: rawData.phieunhap_danhSachChungTu,
-                ngayTao: rawData.phieunhap_ngayTao 
-             } : null 
+                ngayTao: rawData.phieunhap_ngayTao
+            } : null
         };
 
         res.json(formattedData);
@@ -178,16 +178,6 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 };
 
-// Lấy danh sách thể loại (không trùng)
-exports.getTheLoaiList = async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT DISTINCT theLoai FROM theloai");
-        res.json(rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
 // Lấy danh sách thiết bị theo thể loại
 exports.getThietBiByTheLoai = async (req, res) => {
     const { theLoai } = req.params;
@@ -239,6 +229,18 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
             whereClause += " AND ttb.thietbi_id = ?";
             params.push(parseInt(thietBiId));
         }
+        if (req.query.keyword) {
+            whereClause += `
+                AND (
+                    LOWER(tb.tenThietBi) LIKE ? OR
+                    LOWER(tl.theLoai) LIKE ? OR
+                    LOWER(CONCAT(p.toa, p.tang, p.soPhong)) LIKE ? OR
+                    ttb.id LIKE ?
+                )
+            `;
+            const keyword = `%${req.query.keyword.toLowerCase()}%`;
+            params.push(keyword, keyword, keyword, keyword);
+        }
         // --- Kết thúc xây dựng WHERE ---
 
 
@@ -247,6 +249,8 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
             SELECT COUNT(ttb.id) AS total
             FROM thongtinthietbi ttb
             LEFT JOIN thietbi tb ON ttb.thietbi_id = tb.id
+            LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            LEFT JOIN phong p ON ttb.phong_id = p.id
             ${whereClause}
         `;
         const [countResult] = await pool.query(countQuery, params);
@@ -290,7 +294,12 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         // Xử lý thêm tên phòng đầy đủ
         const finalData = rows.map(item => ({
             ...item,
-            phong_name: item.toa ? `${item.toa}${item.tang}.${item.soPhong}` : 'Chưa phân bổ' // Hoặc 'Kho'
+            phong_name:
+                item.tinhTrang === "da_thanh_ly"
+                    ? "Đã thanh lý"
+                    : item.toa
+                        ? `${item.toa}${item.tang}.${item.soPhong}`
+                        : "Trong Kho"
         }));
 
         // --- Trả về response với dữ liệu và thông tin phân trang ---
@@ -311,36 +320,66 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
     }
 };
 
+// Lấy danh sách thiết bị hợp lệ có thể phân bổ vào phòng
+exports.getTaiSanPhanBoHopLe = async (req, res) => {
+    try {
+        const query = `
+            SELECT
+                ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.ngayBaoHanhKetThuc,
+                ttb.thietbi_id, tb.tenThietBi AS tenLoaiThietBi,
+                tb.theloai_id, tl.theLoai AS tenTheLoai,
+                ttb.ngayMua, ttb.giaTriBanDau
+            FROM thongtinthietbi ttb
+            LEFT JOIN thietbi tb ON ttb.thietbi_id = tb.id
+            LEFT JOIN theloai tl ON tb.theloai_id = tl.id
+            WHERE ttb.phong_id IS NULL
+              AND ttb.tinhTrang IN ('con_bao_hanh', 'het_bao_hanh')
+            ORDER BY ttb.id DESC
+        `;
+
+        const [rows] = await pool.query(query);
+        res.status(200).json({ data: rows });
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách tài sản có thể phân bổ:", error);
+        res.status(500).json({ error: "Lỗi máy chủ khi truy vấn thiết bị hợp lệ để phân bổ." });
+    }
+};
+
 exports.getTTTBByMaThietBi = async (req, res) => {
     const { maThietBi } = req.params; // Lấy ID loại thiết bị từ URL
     if (isNaN(parseInt(maThietBi))) {
-         return res.status(400).json({ error: "Mã loại thiết bị không hợp lệ." });
+        return res.status(400).json({ error: "Mã loại thiết bị không hợp lệ." });
     }
     try {
         // Query lấy TTTB theo thietbi_id, join thêm thông tin cần thiết
         const [rows] = await pool.query(
-           `SELECT
+            `SELECT
                 tttb.id, tttb.tinhTrang, tttb.phong_id, tttb.nguoiDuocCap,
                 tttb.ngayBaoHanhKetThuc, tttb.ngayDuKienTra,
                 tttb.thietbi_id, tttb.phieunhap_id, tttb.ngayMua, tttb.giaTriBanDau,
                 p.toa, p.tang, p.soPhong, -- Lấy thông tin phòng
-                pn.ngayTao AS ngayNhapKho -- Lấy ngày nhập từ phiếu nhập
+                pn.ngayTao AS ngayNhapKho, pn.nguoiTao, pn.truongHopNhap -- Lấy ngày nhập từ phiếu nhập
             FROM thongtinthietbi tttb
             LEFT JOIN phong p ON tttb.phong_id = p.id
             LEFT JOIN phieunhap pn ON tttb.phieunhap_id = pn.id
             WHERE tttb.thietbi_id = ?
             ORDER BY tttb.id DESC`,
             [parseInt(maThietBi)]
-         );
+        );
 
-         // Xử lý thêm tên phòng đầy đủ nếu cần
-         const finalData = rows.map(item => ({
+        // Xử lý thêm tên phòng đầy đủ nếu cần
+        const finalData = rows.map(item => ({
             ...item,
-            phong_name: item.toa && item.tang && item.soPhong
-                ? `${item.toa}${item.tang}.${item.soPhong}`
-                : (item.phong_id === null ? 'Trong Kho' : 'N/A'),
+            phong_name:
+                item.tinhTrang === "da_thanh_ly"
+                    ? "Đã Thanh Lý"
+                    : item.toa && item.tang && item.soPhong
+                        ? `${item.toa}${item.tang}.${item.soPhong}`
+                        : item.phong_id === null
+                            ? "Trong Kho"
+                            : "N/A",
         }));
-        
+
 
         res.json(finalData); // Trả về mảng các TTTB thuộc loại này
     } catch (error) {
@@ -404,23 +443,23 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
     if (!phong_id || isNaN(parseInt(phong_id, 10))) return res.status(400).json({ error: "ID phòng không hợp lệ hoặc bị thiếu." });
     const phongIdInt = parseInt(phong_id, 10);
 
-
     let connection;
     try {
-        const connection = await pool.getConnection();
-
+        connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        const [rows] = await connection.query('SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE', [thongTinThietBiId]);
+        const [rows] = await connection.query(`
+            SELECT phong_id, tinhTrang 
+            FROM thongtinthietbi 
+            WHERE id = ? 
+              AND phong_id IS NULL 
+              AND tinhTrang IN ('con_bao_hanh', 'het_bao_hanh') 
+            FOR UPDATE
+        `, [thongTinThietBiId]);
+
         if (rows.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ error: `Không tìm thấy tài sản với ID ${thongTinThietBiId}.` });
-        }
-        const currentTaiSan = rows[0];
-
-        if (currentTaiSan.phong_id !== null) {
-            await connection.rollback();
-            return res.status(400).json({ error: `Tài sản ID ${thongTinThietBiId} đã được gán cho phòng khác rồi.` });
+            return res.status(400).json({ error: `Thiết bị không hợp lệ để phân bổ (đã có phòng hoặc tình trạng không hợp lệ).` });
         }
 
         const [updateResult] = await connection.query(
@@ -434,42 +473,31 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         }
 
         await connection.commit();
-        console.log(`[phanBoTaiSan] Committed transaction for TTTB ID ${thongTinThietBiId} to Phong ID ${phongIdInt}.`);
-
         res.status(200).json({ message: `Đã phân bổ tài sản ID ${thongTinThietBiId} vào phòng ID ${phongIdInt} thành công.` });
-        console.log(`[phanBoTaiSan] Sent HTTP 200 OK for TTTB ID ${thongTinThietBiId}.`);
 
+        // --- SOCKET THÔNG BÁO ---
         setImmediate(async () => {
             let socketConnection = null;
             try {
                 socketConnection = await pool.getConnection();
 
-                // Lấy thông tin cần thiết
                 const [deviceInfo] = await socketConnection.query("SELECT tb.tenThietBi FROM thietbi tb JOIN thongtinthietbi tttb ON tb.id = tttb.thietbi_id WHERE tttb.id = ?", [thongTinThietBiId]);
                 const [roomInfo] = await socketConnection.query("SELECT CONCAT(toa, tang, '.', soPhong) as tenPhong FROM phong WHERE id = ?", [phongIdInt]);
-                const [targetUsers] = await socketConnection.query(
-                    "SELECT id FROM users WHERE tinhTrang = 'on'"
-                );
+                const [targetUsers] = await socketConnection.query("SELECT id FROM users WHERE tinhTrang = 'on'");
 
-                if (targetUsers.length > 0) {
-                    const eventData = {
-                        message: `Tài sản '${deviceInfo[0]?.tenThietBi || `ID ${thongTinThietBiId}`}' đã được phân bổ vào phòng '${roomInfo[0]?.tenPhong || `ID ${phongIdInt}`}'.`,
-                        thongTinThietBiId: thongTinThietBiId,
-                        phongId: phongIdInt,
-                    };
-                    const eventName = 'asset_assigned_to_room';
-                    console.log(`[phanBoTaiSan - Socket Task] Triển khai '${eventName}' đến ${targetUsers.length} users qua emitToUser.`);
+                const eventData = {
+                    message: `Tài sản '${deviceInfo[0]?.tenThietBi || `ID ${thongTinThietBiId}`}' đã được phân bổ vào phòng '${roomInfo[0]?.tenPhong || `ID ${phongIdInt}`}'.`,
+                    thongTinThietBiId,
+                    phongId: phongIdInt,
+                };
+                const eventName = 'asset_assigned_to_room';
 
-                    // Lặp và gửi tới từng user ID
-                    for (const user of targetUsers) {
-                        emitToUser(user.id, eventName, eventData); // Dùng hàm đã có từ socket.js
-                    }
-                } else {
-                    console.log("[phanBoTaiSan - Socket Task] No target users found to notify.");
+                for (const user of targetUsers) {
+                    emitToUser(user.id, eventName, eventData);
                 }
 
-            } catch (socketOrDbError) {
-                console.error("[phanBoTaiSan - Socket Task] Error:", socketOrDbError);
+            } catch (err) {
+                console.error("[phanBoTaiSan - Socket Task] Error:", err);
             } finally {
                 if (socketConnection) socketConnection.release();
             }
@@ -483,6 +511,6 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         }
     } finally {
         if (connection) connection.release();
-        console.log(`[phanBoTaiSan] Main connection released for TTTB ID ${thongTinThietBiId}.`);
     }
 };
+

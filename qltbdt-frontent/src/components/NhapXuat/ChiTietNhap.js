@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation/*, useQueryClient */ } from '@tanstack/react-query';
-import { getPhieuNhapByIdAPI, uploadChungTuNhap } from '../../api';
+import { getPhieuNhapByIdAPI, uploadChungTuNhapAPI } from '../../api';
 import { formatCurrency } from '../../utils/helpers';
 import { getTinhTrangLabel } from "../../utils/constants";
 import { toast } from 'react-toastify';
@@ -26,7 +26,7 @@ const ChiTietNhap = ({ phieuNhapId, onClose }) => {
 
     // --- Mutation Upload Chứng Từ ---
     const uploadMutation = useMutation({
-        mutationFn: (formData) => uploadChungTuNhap(phieuNhapId, formData),
+        mutationFn: (formData) => uploadChungTuNhapAPI(phieuNhapId, formData),
         onSuccess: (data) => {
             toast.success(data.message || "Upload chứng từ thành công!");
             setSelectedFiles(null);

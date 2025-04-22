@@ -91,58 +91,131 @@ exports.getHoTenByUserId = async (req, res) => {
 
 // Tạo phiếu nhập với trường hợp nhập (muaMoi hoặc taiTro)
 exports.createPhieuNhap = async (req, res) => {
-    const { userId, truongHopNhap, ngayTao, danhSachThietBi } = req.body;
+    // Lấy dữ liệu từ body theo cấu trúc payload mới từ FormNhap gộp
+    const { truongHopNhap, ghiChu, chiTietItems } = req.body;
+    const user_id = req.user?.id; // Lấy ID người dùng đã xác thực
 
-    if (!["muaMoi", "taiTro"].includes(truongHopNhap)) {
-        return res.status(400).json({ error: "Trường hợp nhập không hợp lệ!" });
+    // --- Validation Đầu vào ---
+    if (!user_id) {
+        return res.status(401).json({ error: "Yêu cầu xác thực người dùng." });
     }
-    if (!Array.isArray(danhSachThietBi) || danhSachThietBi.length === 0) {
-        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ!" });
+    const validTruongHop = ['taiTro', 'muaMoi'];
+    if (!truongHopNhap || !validTruongHop.includes(truongHopNhap)) {
+        return res.status(400).json({ error: "Trường hợp nhập không hợp lệ." });
+    }
+    if (!Array.isArray(chiTietItems) || chiTietItems.length === 0) {
+        return res.status(400).json({ error: "Yêu cầu ít nhất một chi tiết thiết bị." });
     }
 
-    const connection = await db.getConnection();
+    let connection;
     try {
+        connection = await db.getConnection();
         await connection.beginTransaction();
 
-        // Lấy họ tên người tạo từ userId
-        const [userRows] = await connection.query("SELECT hoTen FROM users WHERE id = ?", [userId]);
+        // 1. Lấy họ tên người tạo từ user_id
+        const [userRows] = await connection.query("SELECT hoTen FROM users WHERE id = ?", [user_id]);
         if (userRows.length === 0) throw new Error("Người dùng không tồn tại!");
         const nguoiTao = userRows[0].hoTen;
 
-        // Chèn vào bảng `phieunhap`
-        const [phieuNhapResult] = await connection.query(
-            "INSERT INTO phieunhap (user_id, nguoiTao, truongHopNhap, ngayTao) VALUES (?, ?, ?, ?)",
-            [userId, nguoiTao, truongHopNhap, ngayTao]
-        );
-        const phieuNhapId = phieuNhapResult.insertId;
-        if (!phieuNhapId) throw new Error("Không thể tạo phiếu nhập!");
+        // 2. Chèn vào bảng `phieunhap`
+        const phieuNhapQuery = `
+            INSERT INTO phieunhap (user_id, nguoiTao, ngayTao, truongHopNhap, ghiChu, danhSachChungTu)
+            VALUES (?, ?, NOW(), ?, ?, NULL) -- ngayTao dùng NOW(), danhSachChungTu sẽ update sau
+        `;
+        const phieuNhapParams = [user_id, nguoiTao, truongHopNhap, ghiChu || null];
+        const [phieuNhapResult] = await connection.query(phieuNhapQuery, phieuNhapParams);
+        const newPhieuNhapId = phieuNhapResult.insertId;
 
-        // Duyệt danh sách thiết bị
-        for (const item of danhSachThietBi) {
-            // Lặp lại `n` lần để tạo `n` bản ghi riêng biệt
-            for (let i = 0; i < item.soLuong; i++) {
-                await connection.query(
-                    `INSERT INTO thongtinthietbi (
-                        thietbi_id, phieunhap_id, tenThietBi, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc
-                    ) VALUES (?, ?, ?, 'con_bao_hanh', ?, DATE_ADD(CURDATE(), INTERVAL ? MONTH))`,
-                    [item.thietbi_id, phieuNhapId, item.tenThietBi, item.thoiGianBaoHanh, item.thoiGianBaoHanh]
-                );
+        if (!newPhieuNhapId) {
+            throw new Error("Không thể tạo phiếu nhập!");
+        }
+        console.log(`[createPhieuNhapWithDetails] Created phieunhap ID: ${newPhieuNhapId}`);
+
+        // 3. Duyệt danh sách chi tiết thiết bị và chèn vào `thongtinthietbi`
+        const insertTTTBPromises = [];
+        let totalTTTBCreated = 0;
+
+        for (const item of chiTietItems) {
+            // --- Validation cho từng item chi tiết ---
+            if (!item.thietbi_id || isNaN(parseInt(item.thietbi_id))) throw new Error("Dữ liệu chi tiết thiếu hoặc sai ID Loại Thiết Bị.");
+            const soLuongNum = parseInt(item.soLuong, 10);
+            if (isNaN(soLuongNum) || soLuongNum < 1) throw new Error(`Số lượng không hợp lệ cho thiết bị ID ${item.thietbi_id}.`);
+            const giaTriBanDauNum = parseFloat(item.giaTriBanDau);
+            if (isNaN(giaTriBanDauNum) || giaTriBanDauNum < 0) throw new Error(`Giá trị ban đầu không hợp lệ cho thiết bị ID ${item.thietbi_id}.`);
+            const thoiGianBHNum = parseInt(item.thoiGianBaoHanh, 10);
+            if (isNaN(thoiGianBHNum) || thoiGianBHNum < 0) throw new Error(`Thời gian bảo hành không hợp lệ cho thiết bị ID ${item.thietbi_id}.`);
+            // Parse ngày mua, cho phép null
+            let ngayMuaParsed = null;
+            if (item.ngayMua) {
+                // Thêm validation ngày hợp lệ nếu cần
+                 try {
+                     ngayMuaParsed = new Date(item.ngayMua).toISOString().slice(0, 10); // Format YYYY-MM-DD
+                 } catch (dateError) {
+                     throw new Error(`Ngày mua không hợp lệ cho thiết bị ID ${item.thietbi_id}.`);
+                 }
             }
 
-            // Cập nhật tồn kho trong bảng `thietbi`
-            await connection.query(
-                "UPDATE thietbi SET tonKho = tonKho + ? WHERE id = ?",
-                [item.soLuong, item.thietbi_id]
-            );
-        }
+            // Lấy tenThietBi từ bảng thietbi
+            const [thietBiInfo] = await connection.query("SELECT tenThietBi FROM thietbi WHERE id = ?", [item.thietbi_id]);
+            if (thietBiInfo.length === 0) throw new Error(`Không tìm thấy loại thiết bị với ID ${item.thietbi_id}.`);
+            const tenThietBi = thietBiInfo[0].tenThietBi;
 
+            // Lặp lại `soLuongNum` lần để tạo bản ghi TTTB
+            for (let i = 0; i < soLuongNum; i++) {
+                // Tính ngày kết thúc bảo hành
+                let ngayKetThucBH = null;
+                if (ngayMuaParsed && thoiGianBHNum > 0) {
+                    try {
+                        let endDate = new Date(ngayMuaParsed);
+                        endDate.setMonth(endDate.getMonth() + thoiGianBHNum);
+                        ngayKetThucBH = endDate.toISOString().slice(0, 10);
+                    } catch(dateCalcError) {
+                        console.error("Error calculating warranty end date:", dateCalcError);
+                    }
+                }
+
+                // Query INSERT cho thongtinthietbi
+                const insertTTTBQuery = `
+                    INSERT INTO thongtinthietbi
+                    (thietbi_id, phieunhap_id, ngayMua, giaTriBanDau, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, tenThietBi)
+                    VALUES (?, ?, ?, ?, 'con_bao_hanh', ?, ?, ?)
+                `;
+
+                const tttbParams = [
+                    item.thietbi_id,
+                    newPhieuNhapId,
+                    ngayMuaParsed,
+                    giaTriBanDauNum,
+                    thoiGianBHNum,
+                    ngayKetThucBH,
+                    tenThietBi 
+                ];
+                insertTTTBPromises.push(connection.query(insertTTTBQuery, tttbParams));
+                totalTTTBCreated++;
+            }
+        } 
+
+        // Thực thi tất cả các lệnh INSERT TTTB
+        await Promise.all(insertTTTBPromises);
+        console.log(`[createPhieuNhapWithDetails] Inserted ${totalTTTBCreated} thongtinthietbi records.`);
+
+        // 4. Commit transaction
         await connection.commit();
-        res.json({ message: "Tạo phiếu nhập thành công!", phieunhapId: phieuNhapId });
+        console.log(`[createPhieuNhapWithDetails] Transaction committed for PhieuNhap ID ${newPhieuNhapId}.`);
+
+        // 5. Trả về kết quả thành công 
+        res.status(201).json({
+            message: `Tạo phiếu nhập và ${totalTTTBCreated} chi tiết thiết bị thành công!`,
+            phieuNhapId: newPhieuNhapId 
+        });
+
     } catch (error) {
-        await connection.rollback();
-        res.status(500).json({ error: error.message });
+        if (connection) await connection.rollback();
+        console.error("Lỗi khi tạo phiếu nhập và chi tiết:", error);
+        res.status(error.message.includes("không tồn tại") ? 404 : (error.message.includes("không hợp lệ") ? 400 : 500))
+           .json({ error: error.message || "Lỗi máy chủ khi xử lý phiếu nhập." });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 
@@ -174,57 +247,61 @@ exports.getThietBiInPhieuNhap = async (req, res) => {
 };
 
 // Hàm upload chứng từ cho Phiếu Nhập
-exports.uploadChungTuNhap = async (req, res) => {
-    const { id } = req.params;
-    const files = req.files;
+exports.uploadChungTuNhapAPI = async (req, res) => {
+     const { phieuNhapId } = req.params;
+     const files = req.files; 
 
+     if (!phieuNhapId || isNaN(parseInt(phieuNhapId))) return res.status(400).json({ error: "ID phiếu nhập không hợp lệ." });
+     if (!files || files.length === 0) return res.status(400).json({ error: "Không có file nào được tải lên." });
 
-    if (!files || files.length === 0) {
-        return res.status(400).json({ error: 'Không có file nào được chọn.' });
-    }
+     let connection;
+     try {
+         connection = await db.getConnection();
+         await connection.beginTransaction();
 
+         // Lấy danh sách chứng từ hiện có
+         const [pnCheck] = await connection.query("SELECT danhSachChungTu FROM phieunhap WHERE id = ? FOR UPDATE", [phieuNhapId]);
+         if (pnCheck.length === 0) throw new Error(`Phiếu nhập ID ${phieuNhapId} không tồn tại.`);
 
-    try {
-        const [phieuCheck] = await db.query("SELECT danhSachChungTu FROM phieunhap WHERE id = ?", [id]);
-        if (phieuCheck.length === 0) {
-            return res.status(404).json({ error: 'Phiếu nhập không tồn tại.' });
-        }
+         let existingChungTu = [];
+         try {
+             existingChungTu = pnCheck[0].danhSachChungTu ? JSON.parse(pnCheck[0].danhSachChungTu) : [];
+             if (!Array.isArray(existingChungTu)) existingChungTu = [];
+         } catch (e) { existingChungTu = []; }
 
+         if (existingChungTu.length >= 5) {
+             throw new Error("Đã đạt số lượng chứng từ tối đa (5 file).");
+         }
 
-        const uploadedUrls = files.map(file => file.path);
-
-
-        let existingUrls = [];
-        if (phieuCheck[0].danhSachChungTu) {
+         // Upload file mới lên Cloudinary
+         const uploadPromises = files.map(async file => {
+            const filePath = file.path;
             try {
-                if (typeof phieuCheck[0].danhSachChungTu === 'string') {
-                    existingUrls = JSON.parse(phieuCheck[0].danhSachChungTu);
-                } else if (Array.isArray(phieuCheck[0].danhSachChungTu)) {
-                    existingUrls = phieuCheck[0].danhSachChungTu;
-                } else {
-                    existingUrls = [];
-                }
-            } catch (parseError) {
-                console.error("Lỗi parse JSON danhSachChungTu cũ:", parseError);
-                existingUrls = [];
+                const result = await cloudinary.uploader.upload(filePath, {
+                    folder: 'nhapxuat_documents',
+                    resource_type: 'auto'
+                });
+                return result;
+            } finally {
             }
-        }
-        const newUrlList = [...existingUrls, ...uploadedUrls];
-        await db.query(
-            "UPDATE phieunhap SET danhSachChungTu = ? WHERE id = ?",
-            [JSON.stringify(newUrlList), id]
-        );
-
-
-        res.status(200).json({
-            message: `Đã upload thành công ${uploadedUrls.length} chứng từ.`,
-            danhSachChungTu: newUrlList
         });
 
+         const uploadResults = await Promise.all(uploadPromises);
+         const newUrls = uploadResults.map(result => result.secure_url);
 
-    } catch (error) {
-        console.error("Lỗi upload chứng từ phiếu nhập:", error);
-        res.status(500).json({ error: error.message || 'Lỗi máy chủ khi upload chứng từ.' });
-    }
+         // Cập nhật danh sách trong DB
+         const updatedChungTuList = [...existingChungTu, ...newUrls].slice(0, 5); // Giới hạn 5 file
+         await connection.query("UPDATE phieunhap SET danhSachChungTu = ? WHERE id = ?", [JSON.stringify(updatedChungTuList), phieuNhapId]);
+
+         await connection.commit();
+         res.status(200).json({ message: `Đã upload thành công ${newUrls.length} chứng từ.`, fileUrls: updatedChungTuList });
+
+     } catch (error) {
+         if (connection) await connection.rollback();
+         console.error(`Lỗi khi upload chứng từ cho phiếu nhập ID ${phieuNhapId}:`, error);
+         res.status(500).json({ error: error.message || "Lỗi máy chủ khi upload chứng từ." });
+     } finally {
+         if (connection) connection.release();
+     }
 };
 

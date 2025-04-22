@@ -82,3 +82,16 @@ export const getTinhTrangLabel = (tinhTrang) => {
             return tinhTrang;
     }
 };
+
+export const TINH_TRANG_OPTIONS = [
+    { value: "con_bao_hanh", label: "Còn Bảo Hành" },
+    { value: "het_bao_hanh", label: "Hết Bảo Hành" },
+    { value: "dang_bao_hanh", label: "Đang Bảo Hành" },
+    { value: "da_bao_hanh", label: "Đã Bảo Hành" },
+    { value: "cho_thanh_ly", label: "Chờ Thanh Lý" },
+    { value: "de_xuat_thanh_ly", label: "Đề Xuất Thanh Lý" },
+    { value: "da_thanh_ly", label: "Đã Thanh Lý" },
+    { value: "mat_mat", label: "Mất Mát" },
+    { value: "xuat_tra", label: "Xuất Trả" },
+    { value: "dieu_chuyen", label: "Điều Chuyển" }
+  ];

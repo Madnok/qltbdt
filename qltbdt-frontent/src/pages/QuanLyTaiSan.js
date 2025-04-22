@@ -6,7 +6,6 @@ import ChiTietTaiSan from '../components/QuanLyTaiSan/ChiTietTaiSan';
 import RightPanel from '../components/layout/RightPanel';
 import { getAllTaiSanAPI } from '../api';
 import Pagination from '../components/layout/Pagination.js';
-import { FaSortUp, FaSortDown } from 'react-icons/fa';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -16,18 +15,15 @@ const QuanLyTaiSan = () => {
     const [showRightPanel, setShowRightPanel] = useState(false);
     const [selectedTaiSanData, setSelectedTaiSanData] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortParams, setSortParams] = useState({ sortBy: 'id', order: 'desc' });
 
     // Cập nhật useQuery để gửi tham số pagination và sort
     const { data: apiResponse, isLoading, error, refetch, isPreviousData } = useQuery({
-        queryKey: ['taiSan', filterParams, currentPage, ITEMS_PER_PAGE, sortParams],
+        queryKey: ['taiSan', filterParams, currentPage, ITEMS_PER_PAGE],
         queryKeyHashFn: JSON.stringify,
         queryFn: () => getAllTaiSanAPI({
             ...filterParams,
             page: currentPage,
             limit: ITEMS_PER_PAGE,
-            sortBy: sortParams.sortBy,
-            order: sortParams.order
         }).then(res => res.data),
         keepPreviousData: true,
         staleTime: 5 * 60 * 1000
@@ -98,11 +94,6 @@ const QuanLyTaiSan = () => {
         setCurrentPage(page);
     };
 
-    const handleSort = (newOrder) => {
-        setSortParams({ sortBy: 'id', order: newOrder });
-        setCurrentPage(1);
-    };
-
     return (
         <div className="flex flex-1 bg-white">
             {/* Phần bên trái (Danh sách và bộ lọc) */}
@@ -110,32 +101,6 @@ const QuanLyTaiSan = () => {
                 <div className="flex flex-col h-[450] p-4">
                     <h1 className="mb-4 text-2xl font-bold">Quản Lý Tài Sản</h1>
                     <BoLocTaiSan onFilterChange={handleFilterChange} />
-
-                    {/* Thêm khu vực Sắp xếp và Thông tin phân trang */}
-                    <div className="flex flex-col items-center justify-between gap-2 mt-6 sm:flex-row">
-                        {/* Nút sắp xếp */}
-                        <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-600">Sắp xếp theo ID:</span>
-                            <button
-                                onClick={() => handleSort('asc')}
-                                disabled={sortParams.order === 'asc'}
-                                className={`p-1 rounded ${sortParams.order === 'asc' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-100'}`}
-                                aria-label="Sắp xếp tăng dần"
-                            >
-                                <FaSortUp className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => handleSort('desc')}
-                                disabled={sortParams.order === 'desc'}
-                                className={`p-1 rounded ${sortParams.order === 'desc' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-100'}`}
-                                aria-label="Sắp xếp giảm dần"
-                            >
-                                <FaSortDown className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                    </div>
-
 
                     <div className={`flex-grow mt-2 overflow-y-auto ${isPreviousData ? 'opacity-60' : ''}`}>
                         {isLoading && currentPage === 1}

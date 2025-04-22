@@ -5,7 +5,6 @@ import Phong from "../components/DanhMuc/Phong";
 import TheLoai from "../components/DanhMuc/TheLoai";
 import ThietBi from "../components/DanhMuc/ThietBi";
 import ViPham from "../components/DanhMuc/ViPham";
-import FormThietBi from "../components/forms/FormThietBi";
 import RightPanel from "../components/layout/RightPanel";
 import FormPhong from "../components/forms/FormPhong";
 import LeftPanel from "../components/layout/LeftPanel";
@@ -19,8 +18,8 @@ const DanhMuc = () => {
     const componentsMap = {
         Phong: <Phong refresh={refresh} />,
         TheLoai: <TheLoai refresh={refresh} />,
-        ThietBi: <ThietBi setSelectedRecord={(record) => handleOpenRightPanel("ChiTietThietBi", record)} refresh={refresh} />,
-        ViPham: <ViPham setSelectedRecord={(record) => handleOpenRightPanel("ChiTietViPham", record)} />,
+        ThietBi: <ThietBi refresh={refresh} />,
+        ViPham: <ViPham />,
     };
 
     // Xác định component nào hiển thị trên Right Panel
@@ -28,8 +27,6 @@ const DanhMuc = () => {
         switch (activeRightPanel) {
             case "FormPhong":
                 return <FormPhong onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
-            case "FormThietBi":
-                return <FormThietBi onClose={handleCloseRightPanel} refreshData={handleRefresh} />;
             default:
                 return null;
         }
@@ -74,7 +71,7 @@ const DanhMuc = () => {
                         {selectedCategory === "Phong" && (
                             <button
                                 onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
-                                className="flex items-center px-4 py-2 text-white bg-blue-500 rounded"
+                                className="flex items-center px-4 py-2 text-white bg-gray-900 rounded hover:bg-gray-500"
                             >
                                 <i className="mr-2 fas fa-plus"></i> Phòng & Thiết Bị
                             </button>

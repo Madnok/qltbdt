@@ -7,7 +7,7 @@ import { FaSpinner } from "react-icons/fa";
 import {
     fetchPhongList,
     addPhongAPI,
-    getAllTaiSanAPI,
+    getTaiSanPhanBoHopLeAPI,
     assignTaiSanToPhongAPI
 } from "../../api"; 
 
@@ -33,7 +33,7 @@ const FormPhong = ({ onClose, refreshData }) => {
     // Lấy danh sách tài sản có sẵn ('trong_kho')
     const { data: availableAssetsData, isLoading: isLoadingAvailableAssets, error: errorAvailableAssets } = useQuery({
         queryKey: ['availableAssetsForAssignment', 'unassigned'],
-        queryFn: () => getAllTaiSanAPI({ phongId: 'null', limit: 2000 }), 
+        queryFn: () => getTaiSanPhanBoHopLeAPI({ phongId: 'null', limit: 2000 }), 
         staleTime: 0, 
         enabled: activeTab === 'themThietBi', 
         select: (response) => response.data 
@@ -189,7 +189,7 @@ const FormPhong = ({ onClose, refreshData }) => {
         <div className="flex flex-col h-full bg-white border-l shadow-md">
             {/* Header và Tabs */}
             <div className="flex items-center justify-between p-4 bg-white border-b">
-                <h2 className="text-lg font-semibold">Quản lý Phòng & Thiết bị</h2>
+                <h2 className="text-lg font-semibold">Thêm Phòng & Thiết Bị Vào Phòng</h2>
                 <button className="flex items-center justify-center w-10 h-10 transition rounded-full hover:bg-gray-300" onClick={onClose}>
                     <i className="text-lg text-black fas fa-times"></i>
                 </button>
