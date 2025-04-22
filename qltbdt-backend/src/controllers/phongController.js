@@ -115,6 +115,35 @@ exports.getListPhong = async (req, res) => {
     }
 };
 
+//  Lấy danh sách phòng có tài sản
+exports.getListPhongCoTaiSan = async (req, res) => {
+    try {
+        const sql = `
+            SELECT p.id, p.toa, p.tang, p.soPhong, p.chucNang
+            FROM phong p
+            WHERE EXISTS (
+                SELECT 1
+                FROM thongtinthietbi tttb
+                WHERE tttb.phong_id = p.id
+            )
+            ORDER BY p.toa, p.tang, p.soPhong;
+        `;
+
+        const [rows] = await pool.query(sql);
+
+        const phongList = rows.map(p => ({
+            id: p.id,
+            phong: `${p.toa}${p.tang}.${p.soPhong}`,
+            chucNang: p.chucNang
+        }));
+
+        res.json(phongList);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách phòng có tài sản:", error);
+        res.status(500).json({ error: "Lỗi truy vấn cơ sở dữ liệu: " + error.message });
+    }
+};
+
 // Lấy Danh Sách Thiết Bị Trong Phòng
 exports.getThietBiTrongPhong = async (req, res) => {
     const phongIdParam = req.params.id || req.params.phong_id; // Lấy ID phòng từ URL
@@ -160,7 +189,7 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 };
 
-// Xóa thiết bị khỏi phòng và cập nhật tồn kho
+// Xóa thiết bị khỏi phòng
 exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
     const { phong_id, thongtinthietbi_id } = req.body;
 
@@ -224,3 +253,40 @@ exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
     }
 };
 
+// Xóa NHIỀU thiết bị khỏi phòng
+exports.thuHoiNhieuTaiSanKhoiPhong = async (req, res) => {
+    const list = req.body.list;
+    if (!Array.isArray(list) || list.length === 0) {
+        return res.status(400).json({ error: "Danh sách thiết bị không hợp lệ." });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        for (const item of list) {
+            const { thongtinthietbi_id, phong_id } = item;
+
+            const [rows] = await connection.query(
+                "SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE",
+                [thongtinthietbi_id]
+            );
+
+            if (!rows.length || rows[0].phong_id !== phong_id) continue;
+
+            await connection.query(
+                "UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?",
+                [thongtinthietbi_id]
+            );
+        }
+
+        await connection.commit();
+        res.json({ message: `Đã gỡ ${list.length} thiết bị khỏi phòng.` });
+    } catch (err) {
+        await connection.rollback();
+        console.error("Lỗi thu hồi nhiều thiết bị:", err);
+        res.status(500).json({ error: "Lỗi thu hồi nhiều thiết bị." });
+    } finally {
+        connection.release();
+    }
+};

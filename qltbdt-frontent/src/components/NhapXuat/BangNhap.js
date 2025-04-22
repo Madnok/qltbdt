@@ -57,7 +57,8 @@ const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId }) => {
                             <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">IDPN</th>
                             <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Ngày tạo</th>
                             <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Người tạo</th>
-                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Trường hợp</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Ghi chú</th>
+                            <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-green-700 uppercase">Trường hợp nhập</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -71,6 +72,7 @@ const BangNhap = ({ setSelectedRecord, refreshData, selectedRowId }) => {
                                 <td className="px-4 py-2 font-medium text-green-600 whitespace-nowrap">PN{record.id}</td>
                                 <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{formatDate(record.ngayTao)}</td>
                                 <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{record.nguoiTao}</td>
+                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{record.ghiChu && record.ghiChu.trim() !== "" ? record.ghiChu : "-"}</td>
                                 <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{getTinhTrangLabel(record.truongHopNhap)}</td>
                             </tr>
                         )}

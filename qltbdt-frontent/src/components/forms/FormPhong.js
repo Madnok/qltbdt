@@ -7,7 +7,7 @@ import { FaSpinner } from "react-icons/fa";
 import {
     fetchPhongList,
     addPhongAPI,
-    getAllTaiSanAPI,
+    getTaiSanPhanBoHopLeAPI,
     assignTaiSanToPhongAPI
 } from "../../api"; 
 
@@ -33,7 +33,7 @@ const FormPhong = ({ onClose, refreshData }) => {
     // Lấy danh sách tài sản có sẵn ('trong_kho')
     const { data: availableAssetsData, isLoading: isLoadingAvailableAssets, error: errorAvailableAssets } = useQuery({
         queryKey: ['availableAssetsForAssignment', 'unassigned'],
-        queryFn: () => getAllTaiSanAPI({ phongId: 'null', limit: 2000 }), 
+        queryFn: () => getTaiSanPhanBoHopLeAPI({ phongId: 'null', limit: 2000 }), 
         staleTime: 0, 
         enabled: activeTab === 'themThietBi', 
         select: (response) => response.data 

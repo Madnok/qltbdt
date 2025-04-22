@@ -217,6 +217,19 @@ export const fetchPhongList = async () => {
   const phongList = await api.get("/phong/phonglist", config);
   return phongList.data;
 }
+
+// lấy phòng có tài sản
+export const fetchPhongCoTaiSanList = async () => {
+  const config = { withCredentials: true };
+  try {
+      const response = await api.get("/phong/phonglistassets", config);
+      return response.data; 
+  } catch (error) {
+      console.error("Lỗi gọi API fetchPhongCoTaiSanList:", error);
+      throw error;
+  }
+}
+
 export const fetchPhongListWithDetails = async () => {
   const config = { withCredentials: true };
   const [phongRes, phongListRes] = await Promise.all([
@@ -291,6 +304,16 @@ export const removeThietBiFromPhongAPI = async (payload) => {
   const { data } = await api.post("/phong/xoathietbi", payload);
   return data;
 };
+
+export const removeMultipleFromPhongAPI = async (deviceList) => {
+  if (!Array.isArray(deviceList) || deviceList.length === 0) {
+    return Promise.reject(new Error("Danh sách thiết bị không hợp lệ."));
+  }
+
+  const { data } = await api.post("/phong/xoa-nhieu-thietbi", { list: deviceList });
+  return data;
+};
+
 
 // Hàm  cho bảng Phong.js, sử dụng useQuery
 export const fetchPhongTableData = async () => {
@@ -678,8 +701,12 @@ export const uploadInvoiceImagesAPI = async (files) => {
 
 // API cho Quản lý Tài sản
 export const getAllTaiSanAPI = (params = {}) => {
-  // params có thể là { trangThai: '...', phongId: '...' }
   return api.get('/tttb/taisan', { params });
+};
+
+// Lấy thiết bị có thể phân bổ vào phòng
+export const getTaiSanPhanBoHopLeAPI = () => {
+  return api.get('/tttb/taisan-phanbo');
 };
 
 export const updateTinhTrangTaiSanAPI = (id, data) => {
@@ -720,8 +747,19 @@ export const getAllPhieuNhapAPI = async (params = {}) => {
   }
 };
 
+export const fetchThietBiListForSelectAPI = async () => {
+  // Lấy danh sách Thiết Bị tinh gọn cho dropdown (bao gồm đơn giá gợi ý)
+  const response = await api.get('/thietbi/for-select');
+  return response.data;
+};
+
+export const createPhieuNhapWithDetailsAPI = async (payload) => {
+  const response = await api.post('/nhap/create-with-details', payload);
+  return response.data; // Backend trả về { message, phieuNhapId }
+};
+
 // Upload chứng từ cho phiếu nhập
-export const uploadChungTuNhap = async (phieuNhapId, formData) => {
+export const uploadChungTuNhapAPI = async (phieuNhapId, formData) => {
   if (!phieuNhapId) throw new Error("ID Phiếu nhập là bắt buộc để upload chứng từ.");
   try {
     const { data } = await api.post(`/nhap/${phieuNhapId}/chungtu`, formData);

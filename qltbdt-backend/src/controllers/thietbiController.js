@@ -113,7 +113,6 @@ exports.getAllThietBiFromPhieuNhap = async (req, res) => {
     }
 };
 
-
 //  Lấy chi tiết thiết bị theo ID lấy cả tên thể loại và id thể loại
 exports.getThietBiById = async (req, res) => {
     const { id } = req.params;
@@ -134,7 +133,6 @@ exports.getThietBiById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 
 // Thêm mới thiết bị
 exports.createThietBi = async (req, res) => {
@@ -207,35 +205,6 @@ exports.deleteThietBi = async (req, res) => {
     }
 };
 
-// Lấy thông tin thiết bị, trừ đi số lượng đã gán vào phòng
-exports.getThongTinThietBi = async (req, res) => {
-    const { thietbi_id } = req.params;
-
-    try {
-        const [result] = await pool.query(
-            `SELECT tttb.id AS thongtinthietbi_id, 
-                    tb.id AS thietbi_id, 
-                    tb.tenThietBi, 
-                    (tb.tonKho - IFNULL(SUM(ptb.soLuong), 0)) AS tonKhoConLai
-             FROM thongtinthietbi tttb
-             JOIN thietbi tb ON tttb.thietbi_id = tb.id
-             LEFT JOIN phong_thietbi ptb ON tb.id = ptb.thietbi_id
-             WHERE tb.id = ?
-             GROUP BY tb.id, tttb.id`,
-            [thietbi_id]
-        );
-
-        if (result.length === 0) {
-            return res.status(404).json({ error: "Không tìm thấy thông tin thiết bị!" });
-        }
-
-        res.json(result[0]);
-    } catch (error) {
-        console.error("Lỗi lấy thông tin thiết bị:", error);
-        res.status(500).json({ error: "Lỗi server!" });
-    }
-};
-
 // Lấy thông tin thiết bị theo thể loại
 exports.getThietBiByTheLoai = async (req, res) => {
     const theLoaiId = req.query.theloai_id;
@@ -267,6 +236,28 @@ exports.getThietBiByTheLoai = async (req, res) => {
     } catch (error) {
         console.error("Lỗi lấy Thiết Bị theo Thể Loại:", error);
         res.status(500).json({ error: "Lỗi máy chủ khi lấy danh sách thiết bị." });
+    }
+};
+
+// Lấy ID, Tên, và Đơn giá của TẤT CẢ thiết bị dùng cho phiếu nhập
+exports.getThietBiForSelect = async (req, res) => {
+    try {
+        // Query đơn giản để lấy ID, Tên, và Đơn giá của TẤT CẢ thiết bị
+        const sql = `
+            SELECT
+                tb.id,
+                tb.tenThietBi,
+                tb.donGia
+            FROM
+                thietbi tb
+            ORDER BY tb.tenThietBi ASC; -- Sắp xếp theo tên cho dễ chọn
+        `;
+        const [rows] = await pool.query(sql);
+        // Trả về trực tiếp mảng dữ liệu
+        res.status(200).json(rows);
+    } catch (error) {
+        console.error("Error fetching thietbi for select:", error);
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách thiết bị', error: error.message });
     }
 };
 

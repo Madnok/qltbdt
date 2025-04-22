@@ -9,8 +9,8 @@ const { verifyToken } = require("../middleware/authMiddleware");
 router.use(verifyToken);
 
 router.get("/", thietBiController.getAllThietBi);
+router.get('/for-select', thietBiController.getThietBiForSelect);
 router.get("/tongsoluongnhap/", thietBiController.getAllThietBiFromPhieuNhap);
-router.get("/thongtin/:thietbi_id", thietBiController.getThongTinThietBi);
 router.get("/by-theloai", thietBiController.getThietBiByTheLoai);
 router.get("/:id", thietBiController.getThietBiById);
 router.post("/", thietBiController.createThietBi);

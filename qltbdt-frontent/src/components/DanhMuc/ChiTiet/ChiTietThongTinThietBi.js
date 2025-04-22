@@ -111,7 +111,7 @@ const ChiTietThongTinThietBi = ({ tttbId, onClose }) => {
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-gray-500">Trường Hợp Nhập</dt>
               <dd className="text-sm text-gray-900">
-                {displayValue(details.truongHopNhap)} 
+                {displayStatus(details.truongHopNhap)} 
                 {details.truongHopNhap}
               </dd>
             </div>
