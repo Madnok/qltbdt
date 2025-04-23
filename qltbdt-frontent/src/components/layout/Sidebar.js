@@ -28,11 +28,11 @@ const Sidebar = ({ isOpen = true, toggleSidebar }) => { // Nhận hàm toggleSid
   const menuItems = [
     { path: "/nguoidung", icon: "fas fa-user", text: "Người Dùng", roles: ["admin", "nhanvien", "nguoidung"] },
     { path: "/nhapxuat", icon: "fas fa-exchange-alt", text: "Nhập Xuất", roles: ["admin"] },
+    { path: "/quanlytaisan", icon: "fas fa-box", text: "Tài Sản", roles: ['admin'] },
     { path: "/danhmuc", icon: "fas fa-list", text: "Danh Mục", roles: ["admin", "nhanvien"] },
-    { path: "/baotri", icon: "fas fa-tools", text: "Bảo Trì", roles: ["nhanvien"] },
     { path: "/lichtruc", icon: "fas fa-calendar-alt", text: "Công Việc", roles: ["admin", "nhanvien"] },
+    { path: "/baotri", icon: "fas fa-tools", text: "Bảo Trì", roles: ["nhanvien"] },
     { path: "/thongke", icon: "fas fa-chart-bar", text: "Thống Kê", roles: ["admin"] },
-    { path: "/quanlytaisan", icon: "fas fa-box", text: "Tài Sản", roles: ['admin', 'nhanvien'] },
   ];
 
   return (

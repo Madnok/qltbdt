@@ -829,5 +829,109 @@ export const getThietBiByTheLoaiAPI = async (theLoaiId) => {
   }
 };
  
+// ============ CÁC HÀM API CHO GÓP Ý (GOPY) =====================================
+
+/**
+ * Gửi góp ý mới
+ */
+export const createGopYAPI = async (gopYData) => {
+  try {
+    const response = await api.post('/gopy', gopYData);
+    return response.data; // Trả về { message, gopyId }
+  } catch (error) {
+    console.error("Lỗi khi gửi góp ý:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Vote (like/dislike) cho góp ý
+ */
+export const handleVoteAPI = async (gopyId, voteType) => {
+  if (!gopyId) throw new Error("Thiếu ID góp ý để vote.");
+  try {
+    const response = await api.post(`/gopy/${gopyId}/vote`, { vote_type: voteType });
+    return response.data; // Trả về { message, likes, dislikes }
+  } catch (error) {
+    console.error(`Lỗi khi vote cho góp ý ${gopyId}:`, error.response?.data || error.message);
+    // Nếu là lỗi 409 (Conflict/Duplicate), có thể không cần ném lỗi ra ngoài mà chỉ trả về data lỗi
+    if (error.response?.status === 409) {
+        return error.response.data; // Trả về { error: "Bạn đã vote..." }
+    }
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách góp ý công khai (phân trang)
+ */
+export const getPublicGopYAPI = async (page = 1, limit = 10) => {
+  try {
+    const response = await api.get(`/gopy/public?page=${page}&limit=${limit}`);
+    return response.data; // Trả về { data: [gopyWithComments...], pagination: {...} }
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách góp ý công khai:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Thêm bình luận vào góp ý (cho admin/nhanvien)
+ */
+export const addCommentAPI = async (gopyId, noiDungBinhLuan) => {
+   if (!gopyId) throw new Error("Thiếu ID góp ý để bình luận.");
+  try {
+    const response = await api.post(`/gopy/${gopyId}/comment`, { noiDungBinhLuan });
+    return response.data; // Trả về { message, comment: {...} }
+  } catch (error) {
+    console.error(`Lỗi khi thêm bình luận cho góp ý ${gopyId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Lấy tất cả góp ý cho Admin xem
+ */
+export const getAllGopYForAdminAPI = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams(filters).toString();
+    const response = await api.get(`/gopy/admin?${params}`);
+    return response.data; // Trả về [gopy...]
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách góp ý cho Admin:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật góp ý (Admin)
+ */
+export const updateGopYAPI = async (gopyId, updateData) => {
+   if (!gopyId) throw new Error("Thiếu ID góp ý để cập nhật.");
+  try {
+    const response = await api.put(`/gopy/${gopyId}`, updateData); // Sửa :id thành gopyId
+    return response.data; // Trả về { message, updatedGopY: {...} }
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật góp ý ${gopyId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Xóa góp ý (Admin)
+ */
+export const deleteGopYAPI = async (gopyId) => {
+  if (!gopyId) throw new Error("Thiếu ID góp ý để xóa.");
+  try {
+    const response = await api.delete(`/gopy/${gopyId}`);
+    return response.data; // Trả về { message, deletedId }
+  } catch (error) {
+    console.error(`Lỗi khi xóa góp ý ${gopyId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+// ======================== End API Góp Ý ================================================================================= //
 
 

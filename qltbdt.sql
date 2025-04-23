@@ -132,6 +132,110 @@ INSERT INTO `baotri` VALUES (25,32,3,173,7,'223e32','Chuyển cho bộ phận kh
 UNLOCK TABLES;
 
 --
+-- Table structure for table `gopy`
+--
+
+DROP TABLE IF EXISTS `gopy`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `gopy` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `loaiGopY` enum('Tính năng','Trải nghiệm người dùng','Hiệu năng / tốc độ','Quy trình sử dụng','Khác') NOT NULL,
+  `noiDung` text NOT NULL,
+  `isAnonymous` tinyint(1) NOT NULL DEFAULT '0',
+  `user_id` int DEFAULT NULL COMMENT 'ID người dùng gửi (nếu đăng nhập)',
+  `hoTenNguoiGui` varchar(100) DEFAULT NULL COMMENT 'Tên người gửi (nếu không ẩn danh)',
+  `ngayGopY` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `trangThai` enum('Mới','Đang xử lý','Đã phản hồi','Đã từ chối') NOT NULL DEFAULT 'Mới',
+  `ghiChuNoiBo` text,
+  `likes` int NOT NULL DEFAULT '0',
+  `dislikes` int NOT NULL DEFAULT '0',
+  `is_publicly_visible` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Admin duyệt cho phép hiển thị công khai hay không',
+  PRIMARY KEY (`id`),
+  KEY `idx_gopy_user` (`user_id`),
+  KEY `idx_gopy_trangthai` (`trangThai`),
+  CONSTRAINT `fk_gopy_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `gopy`
+--
+
+LOCK TABLES `gopy` WRITE;
+/*!40000 ALTER TABLE `gopy` DISABLE KEYS */;
+INSERT INTO `gopy` VALUES (1,'Trải nghiệm người dùng','hơi tệ',0,NULL,'minh hùng','2025-04-22 20:32:42','Đang xử lý','on',2,0,1),(3,'Hiệu năng / tốc độ','fsd',1,NULL,'Ẩn Danh','2025-04-22 22:19:55','Mới',NULL,1,0,1),(4,'Quy trình sử dụng','quy trình hơi khó hiểu cho 1 nhân viên như tôi',0,2,'Phạm Minh Hùng','2025-04-22 22:28:03','Đã phản hồi',NULL,1,0,1);
+/*!40000 ALTER TABLE `gopy` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `gopy_comments`
+--
+
+DROP TABLE IF EXISTS `gopy_comments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `gopy_comments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `gopy_id` int NOT NULL,
+  `user_id` int NOT NULL COMMENT 'ID người bình luận (admin/nhanvien)',
+  `noiDungBinhLuan` text NOT NULL,
+  `thoiGianBinhLuan` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_gopycomments_gopy` (`gopy_id`),
+  KEY `idx_gopycomments_user` (`user_id`),
+  CONSTRAINT `fk_gopycomments_gopy` FOREIGN KEY (`gopy_id`) REFERENCES `gopy` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gopycomments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `gopy_comments`
+--
+
+LOCK TABLES `gopy_comments` WRITE;
+/*!40000 ALTER TABLE `gopy_comments` DISABLE KEYS */;
+INSERT INTO `gopy_comments` VALUES (1,1,2,'tệ ở đâu ạ','2025-04-22 20:44:31'),(2,1,1,'đó là tôi admin','2025-04-22 21:11:04');
+/*!40000 ALTER TABLE `gopy_comments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `gopy_votes`
+--
+
+DROP TABLE IF EXISTS `gopy_votes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `gopy_votes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `gopy_id` int NOT NULL,
+  `user_id` int DEFAULT NULL COMMENT 'ID người dùng nếu đã đăng nhập',
+  `anonymous_voter_id` varchar(36) DEFAULT NULL COMMENT 'UUID định danh người dùng chưa đăng nhập (từ cookie)',
+  `vote_type` enum('like','dislike') NOT NULL,
+  `thoiGianVote` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_gopy_user_vote` (`gopy_id`,`user_id`),
+  UNIQUE KEY `uq_gopy_anon_vote` (`gopy_id`,`anonymous_voter_id`),
+  KEY `idx_gopyvotes_gopy` (`gopy_id`),
+  KEY `idx_gopyvotes_user` (`user_id`),
+  KEY `idx_gopyvotes_anon` (`anonymous_voter_id`),
+  CONSTRAINT `fk_gopyvotes_gopy_new` FOREIGN KEY (`gopy_id`) REFERENCES `gopy` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gopyvotes_user_new` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_voter_id` CHECK (((`user_id` is not null) or (`anonymous_voter_id` is not null)))
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lưu lượt vote (hỗ trợ cả user đăng nhập và ẩn danh)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `gopy_votes`
+--
+
+LOCK TABLES `gopy_votes` WRITE;
+/*!40000 ALTER TABLE `gopy_votes` DISABLE KEYS */;
+INSERT INTO `gopy_votes` VALUES (2,1,NULL,'177f8432-705a-4744-b00b-b6327035612d','like','2025-04-22 21:11:20'),(3,1,NULL,'4fd811f9-ec24-4426-b1e3-0ff0f3075bbd','like','2025-04-22 21:11:21'),(4,3,NULL,'177f8432-705a-4744-b00b-b6327035612d','like','2025-04-22 22:59:15'),(5,4,NULL,'177f8432-705a-4744-b00b-b6327035612d','like','2025-04-22 22:59:16');
+/*!40000 ALTER TABLE `gopy_votes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `lichtruc`
 --
 
@@ -533,4 +637,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-22  9:48:07
+-- Dump completed on 2025-04-23  8:00:32

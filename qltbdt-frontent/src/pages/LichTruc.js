@@ -5,6 +5,7 @@ import PhanCa from "../components/LichTruc/PhanCa";
 import MyScheduleView from "../components/LichTruc/LichNhanVien";
 import { useAuth } from "../context/AuthProvider";
 import ThongTinBaoHong from "../components/LichTruc/ThongTinBaoHong";
+import AdminGopYManagement from "../components/LichTruc/AdminGopYManagement";
 
 const LichTruc = () => {
     const { user, loading } = useAuth();
@@ -18,7 +19,6 @@ const LichTruc = () => {
         return <div className="p-4 text-center text-red-500">Lỗi: Không tìm thấy thông tin người dùng.</div>;
     }
 
-
     // 1. Giao diện cho Admin
     if (user.role === 'admin') {
         return (
@@ -29,10 +29,16 @@ const LichTruc = () => {
                 {/* Tabs Admin */}
                 <div className="flex border-b shrink-0">
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "reports" ? "border-b-2 border-red-500 font-semibold text-red-600" : "text-gray-500 hover:bg-gray-100"}`} // Đổi màu active border
+                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "reports" ? "border-b-2 border-red-500 font-semibold text-red-600" : "text-gray-500 hover:bg-gray-100"}`}
                         onClick={() => setActiveTab("reports")}
                     >
                         Thông Tin Báo Hỏng
+                    </button>
+                    <button
+                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "gopy" ? "border-b-2 border-purple-500 font-semibold text-purple-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setActiveTab("gopy")}
+                    >
+                        Góp Ý Cải Thiện
                     </button>
                     <button
                         className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "schedule" ? "border-b-2 border-green-500 font-semibold text-green-600" : "text-gray-500 hover:bg-gray-100"}`}
@@ -47,17 +53,13 @@ const LichTruc = () => {
                         Phân Công Khu Vực
                     </button>
                 </div>
+
                 {/* Nội dung Tabs Admin */}
                 <div className="flex-grow overflow-auto">
-                    {activeTab === "reports" && (
-                        <ThongTinBaoHong />
-                    )}
-                    {activeTab === "schedule" && (
-                        <PhanCa />
-                    )}
-                    {activeTab === "users" && (
-                        <PhanCongKhuVuc />
-                    )}
+                    {activeTab === "reports" && <ThongTinBaoHong />}
+                    {activeTab === "schedule" && <PhanCa />}
+                    {activeTab === "users" && <PhanCongKhuVuc />}
+                    {activeTab === "gopy" && <AdminGopYManagement />}
                 </div>
             </div>
         );
@@ -77,9 +79,10 @@ const LichTruc = () => {
     }
 
     return (
-        <div className="p-4 text-center text-red-500">Vai trò người dùng không được hỗ trợ ('{user.role}').</div>
+        <div className="p-4 text-center text-red-500">
+            Vai trò người dùng không được hỗ trợ ('{user.role}').
+        </div>
     );
 };
 
 export default LichTruc;
-

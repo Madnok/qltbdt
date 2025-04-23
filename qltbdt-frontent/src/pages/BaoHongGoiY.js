@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Footer from "../components/layout/Footer";
 import BaoHong from "../components/BaoHongGopY/BaoHong";
 import GopY from "../components/BaoHongGopY/GopY";
+import PublicGopYBoard from '../components/BaoHongGopY/PublicGopYBoard';
 import Header from "../components/layout/Header";
 import ScrollToTopButton from '../components/layout/ScrollToTopButton';
 
@@ -25,6 +26,7 @@ const BaoHongGoiY = () => {
     const gopYRef = useRef(null);
     const gioiThieuRef = useRef(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const publicBoardRef = useRef(null);
 
     const scrollToSection = (ref) => {
         const headerElement = document.querySelector('header'); // Lấy header để tính chiều cao
@@ -154,6 +156,15 @@ const BaoHongGoiY = () => {
                         className="col-span-1 md:col-span-2 bg-white  rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 scroll-mt-16"
                     >
                         <GopY />
+                    </div>
+
+                    {/* Phần Bảng Góp Ý Công Khai */}
+                    <div
+                        ref={publicBoardRef} // Gán ref
+                        id="public-gopy-board-section"
+                        className="col-span-1 md:col-span-2 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 scroll-mt-16 mt-6 lg:mt-8" // Thêm khoảng cách mt
+                    >
+                        <PublicGopYBoard />
                     </div>
                 </div>
             </div>

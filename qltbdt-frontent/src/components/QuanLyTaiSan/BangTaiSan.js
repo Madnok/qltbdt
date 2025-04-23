@@ -141,12 +141,11 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
             toast.success(`Đã cập nhật trạng thái "${targetLabel}" thành công cho ${actualIdsToUpdate.length} mục!`);
             // Invalidate query sau khi tất cả thành công
             queryClient.invalidateQueries({ queryKey: ['taiSan'] });
-            if (triggerRefetch) triggerRefetch(); // Hoặc dùng triggerRefetch nếu có
-            setSelectedIds(new Set()); // Xóa lựa chọn sau khi thành công
+            if (triggerRefetch) triggerRefetch();
+            setSelectedIds(new Set());
 
         } catch (error) {
             console.error("Có lỗi xảy ra trong quá trình cập nhật hàng loạt.", error);
-            // Lỗi đã được hiển thị bởi onError của mutation, có thể thêm toast chung nếu muốn
             toast.error("Cập nhật trạng thái hàng loạt thất bại.");
         }
     };

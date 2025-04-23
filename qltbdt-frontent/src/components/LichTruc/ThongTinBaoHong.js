@@ -362,7 +362,7 @@ const ThongTinBaoHong = () => {
                 <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border-b"> {/* Cho phép wrap và thêm gap */}
                     <h2 className="text-xl font-semibold">Thông Tin Báo Hỏng</h2>
                     {/* Thanh tìm kiếm */}
-                    <div className="relative flex-grow max-w-xs">
+                    <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <input
                             type="text"
                             name="searchTerm"

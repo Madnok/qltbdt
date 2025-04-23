@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const anonymousIdMiddleware = require("./middleware/anonymousIdMiddleware")
 const helmet = require("helmet");
 
 // Import routes
@@ -15,6 +16,7 @@ const baohongRoutes = require("./routes/baohongRoutes");
 const lichTrucRoutes = require("./routes/lichtrucRoutes");
 const baotriRoutes = require("./routes/baotriRoutes");
 const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
+const gopyRoutes = require("./routes/gopyRoutes");
 
 const app = express();
 
@@ -46,6 +48,7 @@ app.options("*", cors(corsOptions));
 app.use(helmet()); 
 app.use(express.json());
 app.use(cookieParser()); 
+app.use(anonymousIdMiddleware);
 app.use(express.urlencoded({ extended: true })); 
 
 
@@ -61,6 +64,7 @@ app.use("/api/baohong", baohongRoutes);
 app.use("/api/lichtruc", lichTrucRoutes);
 app.use("/api/baotri", baotriRoutes);
 app.use("/api/xuat", phieuxuatRoutes);
+app.use("/api/gopy", gopyRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

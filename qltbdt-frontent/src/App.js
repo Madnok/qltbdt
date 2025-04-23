@@ -32,7 +32,6 @@ function Layout() {
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
           <Route path="/danhmuc" element={<DanhMuc />} />
           <Route path="/lichtruc" element={<LichTruc />} />
-          <Route path="/quanlytaisan" element={<QuanLyTaiSan />} />
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}>
@@ -43,6 +42,7 @@ function Layout() {
           <Route path="/nhapxuat" element={<NhapXuat />} />
           <Route path="/thongke" element={<ThongKe />} />
           <Route path="/thongtinbaohong" element={<ThongTinBaoHong />} />
+          <Route path="/quanlytaisan" element={<QuanLyTaiSan />} />
         </Route>
       </Route>
 

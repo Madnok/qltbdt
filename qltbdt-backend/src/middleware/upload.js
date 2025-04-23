@@ -49,7 +49,7 @@ const fileFilterDocs = (req, file, cb) => {
 
 // Sử dụng CloudinaryStorage cho docUpload
 const docUpload = multer({
-    storage: chungTuStorageCloudinary, // <-- Thay đổi ở ĐÂY
+    storage: chungTuStorageCloudinary, 
     fileFilter: fileFilterDocs,
     limits: { fileSize: 1024 * 1024 * 10 }
 });
