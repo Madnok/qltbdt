@@ -287,14 +287,14 @@ const BaoHong = () => {
                 Báo Hỏng
             </h2>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2"> {/* Changed to md:grid-cols-2 */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Form Báo Hỏng */}
                 <form className="p-4 space-y-2 border rounded-lg" onSubmit={handleSubmitBaoHong}>
                     {/* Vị Trí */}
                     <label className="block text-sm font-medium text-card-foreground">
                         Vị Trí <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4"> {/* Adjusted grid for smaller screens */}
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                         {/* Cơ Sở */}
                         <div>
                             <label className="block text-xs">Cơ Sở</label>
@@ -345,7 +345,7 @@ const BaoHong = () => {
                         <label className="block mb-1 text-sm font-medium text-card-foreground">
                             Mức Độ Hỏng Hóc <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex flex-wrap gap-4"> {/* Use flex-wrap for responsiveness */}
+                        <div className="flex flex-wrap gap-4">
                             {["Nhẹ", "Vừa", "Nặng"].map(level => (
                                 <label key={level} className="flex items-center">
                                     <input type="radio" name="damageLevel" value={level} checked={damageForm.damageLevel === level} onChange={(e) => setDamageForm({ ...damageForm, damageLevel: e.target.value })} className="mr-2" />
@@ -455,20 +455,27 @@ const BaoHong = () => {
                                                             <tbody>
                                                                 {group.devices.map(tb => {
                                                                     const reportStatus = tb.trangThaiBaoHongHienTai;
-                                                                    const activeReportStatuses = ['Chờ Duyệt', 'Đã Duyệt', 'Đang Tiến Hành', 'Không Thể Hoàn Thành', 'Yêu Cầu Làm Lại'];
+                                                                    const activeReportStatuses = ['Chờ Duyệt', 'Đã Duyệt', 'Đang Tiến Hành', 'Không Thể Hoàn Thành', 'Yêu Cầu Làm Lại', 'Chờ Xem Xét', 'Chờ Hoàn Tất Bảo Hành'];
                                                                     const isAlreadyReported = reportStatus && activeReportStatuses.includes(reportStatus);
+                                                                    const isThanhLy = ['cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly'].includes(tb.tinhTrang);
+
+                                                                    const isDisabled = isAlreadyReported || isThanhLy;
+
                                                                     return (
                                                                         <tr key={tb.thongtinthietbi_id} className="hover:bg-gray-100">
                                                                             <td className="px-3 py-1 text-center border">
                                                                                 <input
                                                                                     type="checkbox"
-                                                                                    disabled={isAlreadyReported}
-                                                                                    className={`w-4 h-4 ${isAlreadyReported ? 'cursor-not-allowed opacity-50' : ''}`}
-                                                                                    checked={!isAlreadyReported && selectedDevices.some(d => d.thongtinthietbi_id === tb.thongtinthietbi_id)}
-                                                                                    onChange={e => !isAlreadyReported && handleDeviceSelect(e, tb.thietbi_id, tb.thongtinthietbi_id)}
+                                                                                    disabled={isDisabled}
+                                                                                    className={`w-4 h-4 ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                                                                    checked={!isDisabled && selectedDevices.some(d => d.thongtinthietbi_id === tb.thongtinthietbi_id)}
+                                                                                    onChange={e => !isDisabled && handleDeviceSelect(e, tb.thietbi_id, tb.thongtinthietbi_id)}
                                                                                 />
                                                                                 {isAlreadyReported && (
                                                                                     <span className="ml-1 text-xs text-yellow-600" title={`Trạng thái báo hỏng: ${reportStatus}`}>({reportStatus})</span>
+                                                                                )}
+                                                                                {isThanhLy && (
+                                                                                    <span className="ml-1 text-xs text-red-600" title="Thiết bị đang chờ thanh lý"> (Thanh lý)</span>
                                                                                 )}
                                                                             </td>
                                                                             <td className="px-3 py-1 text-xs border">{tb.thongtinthietbi_id}</td>

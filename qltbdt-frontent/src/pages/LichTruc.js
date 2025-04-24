@@ -6,10 +6,13 @@ import MyScheduleView from "../components/LichTruc/LichNhanVien";
 import { useAuth } from "../context/AuthProvider";
 import ThongTinBaoHong from "../components/LichTruc/ThongTinBaoHong";
 import AdminGopYManagement from "../components/LichTruc/AdminGopYManagement";
+import LichBaoDuongAdmin from "../components/LichTruc/LichBaoDuongAdmin";
+import LichBaoDuongNhanVien from "../components/LichTruc/LichBaoDuongNhanVien";
 
 const LichTruc = () => {
     const { user, loading } = useAuth();
-    const [activeTab, setActiveTab] = useState("reports");
+    const [adminActiveTab, setAdminActiveTab] = useState("reports"); // Mặc định cho admin
+    const [nhanVienActiveTab, setNhanVienActiveTab] = useState("mySchedule"); // Mặc định cho nhân viên
 
     if (loading) {
         return <div className="p-4 text-center">Đang tải thông tin người dùng...</div>;
@@ -29,26 +32,33 @@ const LichTruc = () => {
                 {/* Tabs Admin */}
                 <div className="flex border-b shrink-0">
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "reports" ? "border-b-2 border-red-500 font-semibold text-red-600" : "text-gray-500 hover:bg-gray-100"}`}
-                        onClick={() => setActiveTab("reports")}
+                        className={`p-3 px-4 text-sm text-center flex-1 ${adminActiveTab === "reports" ? "border-b-2 border-red-500 font-semibold text-red-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setAdminActiveTab("reports")}
                     >
                         Thông Tin Báo Hỏng
                     </button>
+                    {/* Tab Bảo Dưỡng Định Kỳ MỚI */}
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "gopy" ? "border-b-2 border-purple-500 font-semibold text-purple-600" : "text-gray-500 hover:bg-gray-100"}`}
-                        onClick={() => setActiveTab("gopy")}
+                        className={`p-3 px-4 text-sm text-center flex-1 ${adminActiveTab === "maintenance" ? "border-b-2 border-yellow-500 font-semibold text-yellow-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setAdminActiveTab("maintenance")}
+                    >
+                        Lịch Bảo Dưỡng
+                    </button>
+                    <button
+                        className={`p-3 px-4 text-sm text-center flex-1 ${adminActiveTab === "gopy" ? "border-b-2 border-purple-500 font-semibold text-purple-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setAdminActiveTab("gopy")}
                     >
                         Góp Ý Cải Thiện
                     </button>
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "schedule" ? "border-b-2 border-green-500 font-semibold text-green-600" : "text-gray-500 hover:bg-gray-100"}`}
-                        onClick={() => setActiveTab("schedule")}
+                        className={`p-3 px-4 text-sm text-center flex-1 ${adminActiveTab === "schedule" ? "border-b-2 border-green-500 font-semibold text-green-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setAdminActiveTab("schedule")}
                     >
                         Phân Ca Làm Việc
                     </button>
                     <button
-                        className={`p-3 px-4 text-sm text-center flex-1 ${activeTab === "users" ? "border-b-2 border-blue-500 font-semibold text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
-                        onClick={() => setActiveTab("users")}
+                        className={`p-3 px-4 text-sm text-center flex-1 ${adminActiveTab === "users" ? "border-b-2 border-blue-500 font-semibold text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+                        onClick={() => setAdminActiveTab("users")}
                     >
                         Phân Công Khu Vực
                     </button>
@@ -56,10 +66,11 @@ const LichTruc = () => {
 
                 {/* Nội dung Tabs Admin */}
                 <div className="flex-grow overflow-auto">
-                    {activeTab === "reports" && <ThongTinBaoHong />}
-                    {activeTab === "schedule" && <PhanCa />}
-                    {activeTab === "users" && <PhanCongKhuVuc />}
-                    {activeTab === "gopy" && <AdminGopYManagement />}
+                    {adminActiveTab === "reports" && <ThongTinBaoHong />}
+                    {adminActiveTab === "maintenance" && <LichBaoDuongAdmin />} 
+                    {adminActiveTab === "schedule" && <PhanCa />}
+                    {adminActiveTab === "users" && <PhanCongKhuVuc />}
+                    {adminActiveTab === "gopy" && <AdminGopYManagement />}
                 </div>
             </div>
         );
@@ -68,12 +79,30 @@ const LichTruc = () => {
     // 2. Giao diện cho Nhân viên
     if (user.role === 'nhanvien') {
         return (
-            <div className="flex flex-col h-full bg-white border-2">
-                <div className="flex items-center justify-between p-4 border-b ">
-                    <h2 className="text-xl font-semibold">Quản Lý Công Việc</h2>
+            <div className="flex flex-col h-full bg-white border">
+                 <div className="flex items-center justify-between p-4 border-b ">
+                    <h2 className="text-xl font-semibold">Công Việc Của Tôi</h2>
                 </div>
-                <MyScheduleView />
-                {/* <RightPanel /> */}
+                 {/* Tabs NhanVien */}
+                 <div className="flex border-b shrink-0">
+                     <button
+                         className={`p-3 px-4 text-sm text-center flex-1 ${nhanVienActiveTab === "mySchedule" ? "border-b-2 border-cyan-500 font-semibold text-cyan-600" : "text-gray-500 hover:bg-gray-100"}`}
+                         onClick={() => setNhanVienActiveTab("mySchedule")}
+                     >
+                         Lịch Trực Cá Nhân
+                     </button>
+                     <button
+                         className={`p-3 px-4 text-sm text-center flex-1 ${nhanVienActiveTab === "myMaintenance" ? "border-b-2 border-orange-500 font-semibold text-orange-600" : "text-gray-500 hover:bg-gray-100"}`}
+                         onClick={() => setNhanVienActiveTab("myMaintenance")}
+                     >
+                         Việc Bảo Dưỡng
+                     </button>
+                 </div>
+                 {/* Nội dung Tabs NhanVien */}
+                 <div className="flex-grow overflow-auto">
+                     {nhanVienActiveTab === "mySchedule" && <MyScheduleView />}
+                     {nhanVienActiveTab === "myMaintenance" && <LichBaoDuongNhanVien />}
+                 </div>
             </div>
         );
     }

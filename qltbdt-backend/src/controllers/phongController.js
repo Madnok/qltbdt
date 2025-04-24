@@ -159,7 +159,6 @@ exports.getThietBiTrongPhong = async (req, res) => {
     }
 
     try {
-        // Query ĐÚNG: Lấy từ thongtinthietbi
         const query = `
             SELECT tttb.id AS thongtinthietbi_id, tttb.tinhTrang, tb.tenThietBi AS tenLoaiThietBi, tl.theLoai AS tenTheLoai, bh_latest.trangThai AS trangThaiBaoHongHienTai
              FROM thongtinthietbi tttb

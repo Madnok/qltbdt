@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `qltbdt` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `qltbdt`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Win64 (x86_64)
 --
 -- Host: localhost    Database: qltbdt
@@ -52,7 +50,7 @@ CREATE TABLE `baohong` (
   CONSTRAINT `baohong_ibfk_3` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`),
   CONSTRAINT `baohong_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `baohong_ibfk_5` FOREIGN KEY (`nhanvien_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -61,29 +59,9 @@ CREATE TABLE `baohong` (
 
 LOCK TABLES `baohong` WRITE;
 /*!40000 ALTER TABLE `baohong` DISABLE KEYS */;
-INSERT INTO `baohong` VALUES (32,NULL,173,7,NULL,'Vừa','Đèn phòng bị chập chờn, lúc lên lúc không',NULL,NULL,1,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744482408/baohong_images/xc5nbfukyplz46scb3ea.png','2025-04-12 18:26:48','Các Loại Thiết Bị',3,'2025-04-15 12:50:24','Hoàn Thành'),(34,NULL,NULL,1,NULL,'Nhẹ','Test Chờ duyệt',NULL,NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657205/baohong_images/e5vo77jzfxwlwwhfusob.png','2025-04-14 19:00:03','Hạ Tầng',NULL,NULL,'Chờ Duyệt'),(35,NULL,NULL,18,NULL,'Vừa','Test Không thể hoàn thành ','chịu thui',NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657295/baohong_images/rgx9filp3vl8nrulgh9w.png','2025-04-14 19:01:33','Hạ Tầng',20,'2025-04-15 12:44:14','Không Thể Hoàn Thành'),(36,NULL,251,7,NULL,'Nặng','Gãy 4 chân',NULL,NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657359/baohong_images/wdjp8vau36k1x13qhhld.png','2025-04-14 19:02:37','Các Loại Thiết Bị',3,NULL,'Đang Tiến Hành'),(37,NULL,NULL,4,NULL,'Nhẹ','Test Đã Duyệt',NULL,NULL,0,NULL,'2025-04-14 19:04:40','Hạ Tầng',2,NULL,'Đã Duyệt'),(39,25,247,9,NULL,'Nhẹ','ghế gãy',NULL,NULL,0,NULL,'2025-04-15 13:12:14','Các Loại Thiết Bị',3,NULL,'Đang Tiến Hành'),(41,4,161,1,NULL,'Vừa','hỏng hoài z',NULL,NULL,1,NULL,'2025-04-16 16:47:56','Các Loại Thiết Bị',2,NULL,'Chờ Hoàn Tất Bảo Hành'),(44,NULL,NULL,41,NULL,'Vừa','fill trang 1',NULL,NULL,0,NULL,'2025-04-16 19:43:42','Hạ Tầng',NULL,NULL,'Chờ Duyệt'),(46,4,163,3,NULL,'Vừa','hỏng dây micro',NULL,NULL,0,NULL,'2025-04-16 19:45:22','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(47,4,164,3,NULL,'Vừa','hỏng dây micro',NULL,NULL,0,NULL,'2025-04-16 19:45:22','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(48,7,173,7,NULL,'Nặng','bóng đèn chập chờn',NULL,NULL,0,NULL,'2025-04-16 19:46:31','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt');
+INSERT INTO `baohong` VALUES (32,NULL,173,7,NULL,'Vừa','Đèn phòng bị chập chờn, lúc lên lúc không',NULL,NULL,1,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744482408/baohong_images/xc5nbfukyplz46scb3ea.png','2025-04-12 18:26:48','Các Loại Thiết Bị',3,'2025-04-15 12:50:24','Hoàn Thành'),(34,NULL,NULL,1,NULL,'Nhẹ','Test Chờ duyệt',NULL,NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657205/baohong_images/e5vo77jzfxwlwwhfusob.png','2025-04-14 19:00:03','Hạ Tầng',NULL,NULL,'Chờ Duyệt'),(35,NULL,NULL,18,NULL,'Vừa','Test Không thể hoàn thành ','chịu thui',NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657295/baohong_images/rgx9filp3vl8nrulgh9w.png','2025-04-14 19:01:33','Hạ Tầng',20,'2025-04-15 12:44:14','Không Thể Hoàn Thành'),(36,NULL,251,7,NULL,'Nặng','Gãy 4 chân',NULL,NULL,0,'https://res.cloudinary.com/dqs9zvox3/image/upload/v1744657359/baohong_images/wdjp8vau36k1x13qhhld.png','2025-04-14 19:02:37','Các Loại Thiết Bị',3,NULL,'Đang Tiến Hành'),(37,NULL,NULL,4,NULL,'Nhẹ','Test Đã Duyệt',NULL,NULL,0,NULL,'2025-04-14 19:04:40','Hạ Tầng',2,NULL,'Đã Duyệt'),(39,25,247,9,NULL,'Nhẹ','ghế gãy',NULL,NULL,0,NULL,'2025-04-15 13:12:14','Các Loại Thiết Bị',3,NULL,'Đang Tiến Hành'),(41,4,161,1,NULL,'Vừa','hỏng hoài z',NULL,NULL,1,NULL,'2025-04-16 16:47:56','Các Loại Thiết Bị',2,NULL,'Chờ Hoàn Tất Bảo Hành'),(44,NULL,NULL,41,NULL,'Vừa','fill trang 1',NULL,NULL,0,NULL,'2025-04-16 19:43:42','Hạ Tầng',NULL,NULL,'Chờ Duyệt'),(46,4,163,3,NULL,'Vừa','hỏng dây micro',NULL,NULL,0,NULL,'2025-04-16 19:45:22','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(47,4,164,3,NULL,'Vừa','hỏng dây micro',NULL,NULL,0,NULL,'2025-04-16 19:45:22','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(48,7,173,7,NULL,'Nặng','bóng đèn chập chờn',NULL,NULL,0,NULL,'2025-04-16 19:46:31','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(51,22,205,1,NULL,'Nặng','qwd',NULL,NULL,0,NULL,'2025-04-23 22:10:37','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt'),(52,4,162,2,NULL,'Vừa','hỏng',NULL,NULL,0,NULL,'2025-04-24 00:39:29','Các Loại Thiết Bị',NULL,NULL,'Chờ Duyệt');
 /*!40000 ALTER TABLE `baohong` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_baohong_check_moTa_update` BEFORE UPDATE ON `baohong` FOR EACH ROW BEGIN
-    IF NEW.loaithiethai IN ('Kết Cấu', 'Khác') AND (NEW.moTa IS NULL OR NEW.moTa = '') THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Mô tả bắt buộc khi loại thiệt hại là Kết Cấu hoặc Khác.';
-    END IF;
-END */;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `baotri`
@@ -109,16 +87,19 @@ CREATE TABLE `baotri` (
   `hinhAnhHongHocUrls` json DEFAULT NULL COMMENT 'Mảng URL ảnh xác nhận tình trạng hỏng hóc (trước xử lý)',
   `thoiGian` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian ghi log',
   `ngayDuKienTra` date DEFAULT NULL COMMENT 'Ngày dự kiến nhận lại thiết bị từ bảo hành',
+  `lichbaoduong_id` int DEFAULT NULL COMMENT 'ID lịch bảo dưỡng định kỳ liên quan',
   PRIMARY KEY (`id`),
   KEY `idx_baotri_baohong` (`baohong_id`),
   KEY `idx_baotri_nhanvien` (`nhanvien_id`),
   KEY `idx_baotri_thongtinthietbi` (`thongtinthietbi_id`),
   KEY `idx_baotri_phong` (`phong_id`),
+  KEY `idx_baotri_lichbaoduong` (`lichbaoduong_id`),
   CONSTRAINT `fk_baotri_baohong` FOREIGN KEY (`baohong_id`) REFERENCES `baohong` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_baotri_lichbaoduong` FOREIGN KEY (`lichbaoduong_id`) REFERENCES `lichbaoduong` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_baotri_nhanvien` FOREIGN KEY (`nhanvien_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_baotri_phong` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`),
   CONSTRAINT `fk_baotri_thongtinthietbi` FOREIGN KEY (`thongtinthietbi_id`) REFERENCES `thongtinthietbi` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lưu log các hoạt động bảo trì/sửa chữa';
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lưu log các hoạt động bảo trì/sửa chữa';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,7 +108,7 @@ CREATE TABLE `baotri` (
 
 LOCK TABLES `baotri` WRITE;
 /*!40000 ALTER TABLE `baotri` DISABLE KEYS */;
-INSERT INTO `baotri` VALUES (25,32,3,173,7,'223e32','Chuyển cho bộ phận khác','Bàn Giao Cho Bộ Phận Khác',NULL,0,NULL,NULL,NULL,NULL,'2025-04-13 21:31:17',NULL),(37,NULL,2,160,2,'gửi bảo hành','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-15 12:46:22','2025-04-20'),(38,32,3,173,7,'tháo ra vệ sinh rồi gắn lại','Đã sửa chữa xong','Tự Sửa Chữa',NULL,0,NULL,NULL,NULL,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744721427/baotri_invoices/f5eokt49yeoefjhrazqb.png\"]','2025-04-15 12:50:24',NULL),(39,39,3,247,9,'đem đi qua cho phòng bảo vệ','Chuyển cho bộ phận khác','Bàn Giao Cho Bộ Phận Khác',NULL,0,NULL,NULL,NULL,NULL,'2025-04-15 13:14:44',NULL),(40,NULL,3,161,1,'gg','Đã sửa chữa xong','Tự Sửa Chữa',NULL,1,'10k nước mía',10000,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744821899/baotri_invoices/sqyp1rlgkyah3p56cpmx.png\"]','[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744821899/baotri_invoices/cvn3btxizjwxarswhgqf.png\"]','2025-04-16 16:44:59',NULL),(41,41,2,161,1,'gửi bh','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:50:13','2025-12-12'),(42,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:50:56',NULL),(43,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Vẫn còn lỗi.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:51:28',NULL),(44,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:51:56',NULL),(45,NULL,2,160,2,'Nhận thiết bị ID 160 từ bảo hành về. (Báo hỏng gốc ID: 38) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 18:58:50',NULL),(46,NULL,2,160,2,'12 34','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-18 19:56:36',NULL),(47,NULL,2,160,2,'Nhận thiết bị ID 160 từ bảo hành về. (Báo hỏng gốc ID: 38) - Tình trạng ghi nhận: Vẫn còn lỗi.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-18 19:57:05',NULL),(48,NULL,1,160,2,'Lưu trữ log từ báo hỏng ID 38 (Trạng thái cuối: Hoàn Thành) đã bị xóa bởi Admin ID 1. Mô tả gốc: gãy micrô. Ghi chú xử lý cuối: Không có. Ghi chú Admin cuối: Không có.','Đã sửa chữa xong','Khác','Log lưu trữ tự động khi xóa báo hỏng.',0,NULL,NULL,NULL,NULL,'2025-04-18 20:03:39',NULL),(49,NULL,2,160,2,'tự sửa k thành công','Đề xuất thanh lý','Khác','không sửa được nữa',0,NULL,NULL,NULL,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1745006864/baotri_invoices/em7d1ekd1bvxcs40v46q.jpg\"]','2025-04-18 20:07:40',NULL),(50,NULL,1,160,2,'Lưu trữ log từ báo hỏng ID 49 (Trạng thái cuối: Hoàn Thành) đã bị xóa bởi Admin ID 1. Mô tả gốc: hỏng again . Ghi chú xử lý cuối: Không có. Ghi chú Admin cuối: Không có.','Đã sửa chữa xong','Khác','Log lưu trữ tự động khi xóa báo hỏng.',0,NULL,NULL,NULL,NULL,'2025-04-18 20:08:41',NULL);
+INSERT INTO `baotri` VALUES (25,32,3,173,7,'223e32','Chuyển cho bộ phận khác','Bàn Giao Cho Bộ Phận Khác',NULL,0,NULL,NULL,NULL,NULL,'2025-04-13 21:31:17',NULL,NULL),(37,NULL,2,160,2,'gửi bảo hành','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-15 12:46:22','2025-04-20',NULL),(38,32,3,173,7,'tháo ra vệ sinh rồi gắn lại','Đã sửa chữa xong','Tự Sửa Chữa',NULL,0,NULL,NULL,NULL,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744721427/baotri_invoices/f5eokt49yeoefjhrazqb.png\"]','2025-04-15 12:50:24',NULL,NULL),(39,39,3,247,9,'đem đi qua cho phòng bảo vệ','Chuyển cho bộ phận khác','Bàn Giao Cho Bộ Phận Khác',NULL,0,NULL,NULL,NULL,NULL,'2025-04-15 13:14:44',NULL,NULL),(40,NULL,3,161,1,'gg','Đã sửa chữa xong','Tự Sửa Chữa',NULL,1,'10k nước mía',10000,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744821899/baotri_invoices/sqyp1rlgkyah3p56cpmx.png\"]','[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1744821899/baotri_invoices/cvn3btxizjwxarswhgqf.png\"]','2025-04-16 16:44:59',NULL,NULL),(41,41,2,161,1,'gửi bh','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:50:13','2025-12-12',NULL),(42,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:50:56',NULL,NULL),(43,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Vẫn còn lỗi.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:51:28',NULL,NULL),(44,41,2,161,1,'Nhận thiết bị ID 161 từ bảo hành về. (Báo hỏng gốc ID: 41) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 16:51:56',NULL,NULL),(45,NULL,2,160,2,'Nhận thiết bị ID 160 từ bảo hành về. (Báo hỏng gốc ID: 38) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-16 18:58:50',NULL,NULL),(46,NULL,2,160,2,'12 34','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-18 19:56:36',NULL,NULL),(47,NULL,2,160,2,'Nhận thiết bị ID 160 từ bảo hành về. (Báo hỏng gốc ID: 38) - Tình trạng ghi nhận: Vẫn còn lỗi.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-18 19:57:05',NULL,NULL),(48,NULL,1,160,2,'Lưu trữ log từ báo hỏng ID 38 (Trạng thái cuối: Hoàn Thành) đã bị xóa bởi Admin ID 1. Mô tả gốc: gãy micrô. Ghi chú xử lý cuối: Không có. Ghi chú Admin cuối: Không có.','Đã sửa chữa xong','Khác','Log lưu trữ tự động khi xóa báo hỏng.',0,NULL,NULL,NULL,NULL,'2025-04-18 20:03:39',NULL,NULL),(49,NULL,2,160,2,'tự sửa k thành công','Đề xuất thanh lý','Khác','không sửa được nữa',0,NULL,NULL,NULL,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1745006864/baotri_invoices/em7d1ekd1bvxcs40v46q.jpg\"]','2025-04-18 20:07:40',NULL,NULL),(50,NULL,1,160,2,'Lưu trữ log từ báo hỏng ID 49 (Trạng thái cuối: Hoàn Thành) đã bị xóa bởi Admin ID 1. Mô tả gốc: hỏng again . Ghi chú xử lý cuối: Không có. Ghi chú Admin cuối: Không có.','Đã sửa chữa xong','Khác','Log lưu trữ tự động khi xóa báo hỏng.',0,NULL,NULL,NULL,NULL,'2025-04-18 20:08:41',NULL,NULL),(51,NULL,2,207,6,'12 12 123 tralalero tralala','Đã sửa chữa xong','Tự Sửa Chữa',NULL,0,NULL,NULL,NULL,'[\"https://res.cloudinary.com/dqs9zvox3/image/upload/v1745433162/baotri_invoices/kai741q4c560goknymmr.jpg\"]','2025-04-23 18:32:43',NULL,NULL),(52,NULL,2,207,6,'gửi bh','Đã gửi bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-23 18:34:05','2025-04-26',NULL),(53,NULL,2,207,6,'Nhận thiết bị ID 207 từ bảo hành về. (Báo hỏng gốc ID: 50) - Tình trạng ghi nhận: Hoạt động tốt.','Đã nhận từ bảo hành','Bảo hành',NULL,0,NULL,NULL,NULL,NULL,'2025-04-23 18:34:54',NULL,NULL),(54,NULL,1,207,6,'Lưu trữ log từ báo hỏng ID 50 (Trạng thái cuối: Hoàn Thành) đã bị xóa bởi Admin ID 1. Mô tả gốc: gãy làm 2 . Ghi chú xử lý cuối: Không có. Ghi chú Admin cuối: Không có.','Đã sửa chữa xong','Khác','Log lưu trữ tự động khi xóa báo hỏng.',0,NULL,NULL,NULL,NULL,'2025-04-23 18:35:36',NULL,NULL);
 /*!40000 ALTER TABLE `baotri` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -236,6 +217,47 @@ INSERT INTO `gopy_votes` VALUES (2,1,NULL,'177f8432-705a-4744-b00b-b6327035612d'
 UNLOCK TABLES;
 
 --
+-- Table structure for table `lichbaoduong`
+--
+
+DROP TABLE IF EXISTS `lichbaoduong`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `lichbaoduong` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `thongtinthietbi_id` int NOT NULL COMMENT 'ID của thông tin thiết bị cần bảo dưỡng',
+  `nhanvien_id` int DEFAULT NULL COMMENT 'ID nhân viên được giao xử lý (có thể null ban đầu, chờ gán)',
+  `phong_id` int NOT NULL COMMENT 'ID phòng chứa thiết bị',
+  `ngay_baotri` date NOT NULL COMMENT 'Ngày dự kiến bảo dưỡng',
+  `mo_ta` text COLLATE utf8mb4_unicode_ci COMMENT 'Mô tả công việc bảo dưỡng',
+  `trang_thai` enum('Chờ xử lý','Đang tiến hành','Hoàn thành','Hủy','Chờ Hoàn Tất Bảo Hành') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Chờ xử lý',
+  `nguoi_tao_id` int DEFAULT NULL COMMENT 'ID người tạo lịch (Admin)',
+  `ngay_tao` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ngày tạo lịch',
+  `ngay_cap_nhat` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Ngày cập nhật cuối cùng',
+  `coLogBaoTri` tinyint(1) DEFAULT '0' COMMENT 'Đã có log bảo trì liên quan hay chưa',
+  PRIMARY KEY (`id`),
+  KEY `thongtinthietbi_id` (`thongtinthietbi_id`),
+  KEY `nhanvien_id` (`nhanvien_id`),
+  KEY `phong_id` (`phong_id`),
+  KEY `nguoi_tao_id` (`nguoi_tao_id`),
+  CONSTRAINT `lichbaoduong_ibfk_1` FOREIGN KEY (`thongtinthietbi_id`) REFERENCES `thongtinthietbi` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `lichbaoduong_ibfk_2` FOREIGN KEY (`nhanvien_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `lichbaoduong_ibfk_3` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `lichbaoduong_ibfk_4` FOREIGN KEY (`nguoi_tao_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `lichbaoduong`
+--
+
+LOCK TABLES `lichbaoduong` WRITE;
+/*!40000 ALTER TABLE `lichbaoduong` DISABLE KEYS */;
+INSERT INTO `lichbaoduong` VALUES (22,155,3,4,'2025-04-24','Bảo dưỡng định kỳ phòng A6.5','Chờ xử lý',1,'2025-04-24 00:41:57','2025-04-24 00:41:57',0),(23,156,3,4,'2025-04-24','Bảo dưỡng định kỳ phòng A6.5','Chờ xử lý',1,'2025-04-24 00:41:57','2025-04-24 00:41:57',0),(24,157,3,4,'2025-04-24','Bảo dưỡng định kỳ phòng A6.5','Chờ xử lý',1,'2025-04-24 00:41:57','2025-04-24 00:41:57',0),(25,206,2,1,'2025-04-25','Bảo dưỡng định kỳ phòng A1.1','Chờ xử lý',1,'2025-04-24 01:10:19','2025-04-24 01:10:19',0),(26,177,2,1,'2025-04-25','Bảo dưỡng định kỳ phòng A1.1','Chờ xử lý',1,'2025-04-24 01:10:19','2025-04-24 01:10:19',0),(27,178,2,1,'2025-04-25','Bảo dưỡng định kỳ phòng A1.1','Chờ xử lý',1,'2025-04-24 01:10:19','2025-04-24 01:10:19',0),(28,207,3,6,'2025-04-24','go','Chờ xử lý',1,'2025-04-24 01:10:19','2025-04-24 01:10:19',0);
+/*!40000 ALTER TABLE `lichbaoduong` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `lichtruc`
 --
 
@@ -259,7 +281,7 @@ CREATE TABLE `lichtruc` (
   KEY `idx_start_time` (`start_time`),
   CONSTRAINT `lichtruc_ibfk_1` FOREIGN KEY (`nhanvien_id`) REFERENCES `users` (`id`),
   CONSTRAINT `lichtruc_ibfk_2` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -268,7 +290,7 @@ CREATE TABLE `lichtruc` (
 
 LOCK TABLES `lichtruc` WRITE;
 /*!40000 ALTER TABLE `lichtruc` DISABLE KEYS */;
-INSERT INTO `lichtruc` VALUES (7,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-03 01:00:00','2025-04-03 08:00:00','Đang Chờ',0,''),(17,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-04 08:00:00','2025-04-04 15:00:00','Đang Chờ',0,NULL),(18,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-05 08:00:00','2025-04-05 15:00:00','Đang Chờ',0,NULL),(19,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-06 08:00:00','2025-04-06 15:00:00','Đang Chờ',0,NULL),(20,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-07 08:00:00','2025-04-07 15:00:00','Đang Chờ',0,NULL),(21,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-08 08:00:00','2025-04-08 15:00:00','Đang Chờ',0,NULL),(22,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-09 08:00:00','2025-04-09 15:00:00','Đang Chờ',0,NULL),(23,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-10 08:00:00','2025-04-10 15:00:00','Đang Chờ',0,NULL),(24,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-11 08:00:00','2025-04-11 15:00:00','Đang Chờ',0,NULL),(25,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-12 08:00:00','2025-04-12 15:00:00','Đang Chờ',0,NULL),(26,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-13 08:00:00','2025-04-13 15:00:00','Đang Chờ',0,NULL),(27,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-04 08:00:00','2025-04-04 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(28,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-05 08:00:00','2025-04-05 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(29,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-06 08:00:00','2025-04-06 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(30,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-05 01:00:00','2025-04-05 08:00:00','Đang Chờ',0,NULL),(31,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-06 01:00:00','2025-04-06 08:00:00','Đang Chờ',0,NULL),(32,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-12 01:00:00','2025-04-12 08:00:00','Đang Chờ',0,NULL),(33,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-13 01:00:00','2025-04-13 08:00:00','Đang Chờ',0,NULL),(34,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-15 01:00:00','2025-04-15 08:00:00','Đang Chờ',0,NULL),(35,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-16 01:00:00','2025-04-16 08:00:00','Đang Chờ',0,NULL),(36,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-17 01:00:00','2025-04-17 08:00:00','Đang Chờ',0,NULL),(37,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-18 01:00:00','2025-04-18 08:00:00','Đang Chờ',0,NULL),(38,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-19 01:00:00','2025-04-19 08:00:00','Đang Chờ',0,NULL),(39,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-20 01:00:00','2025-04-20 08:00:00','Đang Chờ',0,NULL),(40,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-15 08:00:00','2025-04-15 15:00:00','Đang Chờ',0,NULL),(41,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-16 08:00:00','2025-04-16 15:00:00','Đang Chờ',0,NULL),(42,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-17 08:00:00','2025-04-17 15:00:00','Đang Chờ',0,NULL),(43,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-18 08:00:00','2025-04-18 15:00:00','Đang Chờ',0,NULL),(44,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-19 08:00:00','2025-04-19 15:00:00','Đang Chờ',0,NULL),(45,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-20 08:00:00','2025-04-20 15:00:00','Đang Chờ',0,NULL),(46,20,'Nhân Văn Viên ',NULL,'Ca Chiều','2025-04-15 08:00:00','2025-04-15 15:00:00','Đang Chờ',0,NULL),(47,20,'Nhân Văn Viên ',NULL,'Ca Chiều','2025-04-16 08:00:00','2025-04-16 15:00:00','Đang Chờ',0,NULL),(48,20,'Nhân Văn Viên ',NULL,'Ca Sáng','2025-04-15 01:00:00','2025-04-15 08:00:00','Đang Chờ',0,NULL),(49,20,'Nhân Văn Viên ',NULL,'Ca Sáng','2025-04-16 01:00:00','2025-04-16 08:00:00','Đang Chờ',0,NULL);
+INSERT INTO `lichtruc` VALUES (7,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-03 01:00:00','2025-04-03 08:00:00','Đang Chờ',0,''),(17,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-04 08:00:00','2025-04-04 15:00:00','Đang Chờ',0,NULL),(18,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-05 08:00:00','2025-04-05 15:00:00','Đang Chờ',0,NULL),(19,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-06 08:00:00','2025-04-06 15:00:00','Đang Chờ',0,NULL),(20,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-07 08:00:00','2025-04-07 15:00:00','Đang Chờ',0,NULL),(21,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-08 08:00:00','2025-04-08 15:00:00','Đang Chờ',0,NULL),(22,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-09 08:00:00','2025-04-09 15:00:00','Đang Chờ',0,NULL),(23,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-10 08:00:00','2025-04-10 15:00:00','Đang Chờ',0,NULL),(24,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-11 08:00:00','2025-04-11 15:00:00','Đang Chờ',0,NULL),(25,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-12 08:00:00','2025-04-12 15:00:00','Đang Chờ',0,NULL),(26,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-13 08:00:00','2025-04-13 15:00:00','Đang Chờ',0,NULL),(27,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-04 08:00:00','2025-04-04 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(28,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-05 08:00:00','2025-04-05 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(29,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-06 08:00:00','2025-04-06 15:00:00','Đang Chờ',0,'đúp ca nha cưng~~'),(30,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-05 01:00:00','2025-04-05 08:00:00','Đang Chờ',0,NULL),(31,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-06 01:00:00','2025-04-06 08:00:00','Đang Chờ',0,NULL),(32,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-12 01:00:00','2025-04-12 08:00:00','Đang Chờ',0,NULL),(33,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-13 01:00:00','2025-04-13 08:00:00','Đang Chờ',0,NULL),(34,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-15 01:00:00','2025-04-15 08:00:00','Đang Chờ',0,NULL),(35,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-16 01:00:00','2025-04-16 08:00:00','Đang Chờ',0,NULL),(36,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-17 01:00:00','2025-04-17 08:00:00','Đang Chờ',0,NULL),(37,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-18 01:00:00','2025-04-18 08:00:00','Đang Chờ',0,NULL),(38,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-19 01:00:00','2025-04-19 08:00:00','Đang Chờ',0,NULL),(39,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-20 01:00:00','2025-04-20 08:00:00','Đang Chờ',0,NULL),(40,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-15 08:00:00','2025-04-15 15:00:00','Đang Chờ',0,NULL),(41,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-16 08:00:00','2025-04-16 15:00:00','Đang Chờ',0,NULL),(42,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-17 08:00:00','2025-04-17 15:00:00','Đang Chờ',0,NULL),(43,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-18 08:00:00','2025-04-18 15:00:00','Đang Chờ',0,NULL),(44,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-19 08:00:00','2025-04-19 15:00:00','Đang Chờ',0,NULL),(45,2,'Phạm Minh Hùng',NULL,'Ca Chiều','2025-04-20 08:00:00','2025-04-20 15:00:00','Đang Chờ',0,NULL),(46,20,'Nhân Văn Viên ',NULL,'Ca Chiều','2025-04-15 08:00:00','2025-04-15 15:00:00','Đang Chờ',0,NULL),(47,20,'Nhân Văn Viên ',NULL,'Ca Chiều','2025-04-16 08:00:00','2025-04-16 15:00:00','Đang Chờ',0,NULL),(48,20,'Nhân Văn Viên ',NULL,'Ca Sáng','2025-04-15 01:00:00','2025-04-15 08:00:00','Đang Chờ',0,NULL),(49,20,'Nhân Văn Viên ',NULL,'Ca Sáng','2025-04-16 01:00:00','2025-04-16 08:00:00','Đang Chờ',0,NULL),(50,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-24 01:00:00','2025-04-24 08:00:00','Đang Chờ',0,NULL),(51,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-25 01:00:00','2025-04-25 08:00:00','Đang Chờ',0,NULL),(52,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-26 01:00:00','2025-04-26 08:00:00','Đang Chờ',0,NULL),(53,2,'Phạm Minh Hùng',NULL,'Ca Sáng','2025-04-27 01:00:00','2025-04-27 08:00:00','Đang Chờ',0,NULL),(54,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-24 08:00:00','2025-04-24 15:00:00','Đang Chờ',0,NULL),(55,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-25 08:00:00','2025-04-25 15:00:00','Đang Chờ',0,NULL),(56,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-26 08:00:00','2025-04-26 15:00:00','Đang Chờ',0,NULL),(57,3,'Đinh Lê Khải',NULL,'Ca Chiều','2025-04-27 08:00:00','2025-04-27 15:00:00','Đang Chờ',0,NULL);
 /*!40000 ALTER TABLE `lichtruc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -324,7 +346,7 @@ CREATE TABLE `nhanvien_phong_phutrach` (
   KEY `fk_nvpp_phong` (`phong_id`),
   CONSTRAINT `fk_nvpp_nhanvien` FOREIGN KEY (`nhanvien_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_nvpp_phong` FOREIGN KEY (`phong_id`) REFERENCES `phong` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lưu trữ việc phân công phòng cố định cho nhân viên';
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lưu trữ việc phân công phòng cố định cho nhân viên';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -616,17 +638,9 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on',NULL,NULL),(2,'hung1806','$2b$10$CNvZl4yWWejIXICC8zz79.HcKQlRfInP5hBNqNzOyi9oc/MYRO5US','Phạm Minh Hùng','2001-06-18','Nam','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on','b078cc6341009671b365cbd6e3de1ad01eff8f12','2025-04-10 20:53:45'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải','2011-11-09','Nam','012345678','dinhlekhai@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1744286256/avatars/rkn6gnixei00v53bzcc7.jpg','nhanvien','on',NULL,NULL),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-10-08','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740919997/avatars/nbm5heihwzluedfnk2tp.png','nguoidung','on',NULL,NULL),(20,'nhanvien1','$2b$10$rje80jL8dm7QZr2O9rEEceXmVEnDq5QAOQF6A/1fVXPQgVyrn9e9y','Nhân Văn Viên ',NULL,'Khác',NULL,'nv1@gmail.com',NULL,'nhanvien','on',NULL,NULL),(21,'nhanvien2','$2b$10$kNxJBoupO9bC2Z5m9vb31eSnlzp1tpg7NvumJnesqixj.N59OfwPW','Viên Nhân Phan',NULL,'Nữ',NULL,'nv2@mail.com',NULL,'nhanvien','on',NULL,NULL),(22,'nhanvien3','$2b$10$4TgPFoD2rZws3UWf8ij.i.Lk.t.jUP4DnfBchfmNxOwzpVofjZz72','Hoàng Huy Hùng',NULL,'Nam',NULL,'tripleh@mail.com',NULL,'nhanvien','on',NULL,NULL),(23,'nhanvien4','$2b$10$dsLE37W1mPHuvN.pK/cKROALQBy9avOE/5cXOTxkE3h3ZnIhFNnZG','Phùng Văn Từ',NULL,'Nữ',NULL,'pvtu4@mail.com',NULL,'nhanvien','on',NULL,NULL),(24,'nhanvien5','$2b$10$rRYQ9f7EoAusLSkmH9/7t.FLylNCbxOUjsSTyCiUFDCgCLVSrybgi','Nguyễn Phan Lưu Chương',NULL,'Nữ',NULL,'nguyenphanluuchuong1@mail.com',NULL,'nhanvien','on',NULL,NULL),(28,'hungviper','$2b$10$VC6BcPAot/UGgTYdqzj52umDRlBedx.EtnwclJn/POXaBEP6W/UBi','Phạm Minh Tinh','2001-06-17','Nữ','999999999','wildentertainment123@gmail.com',NULL,'nhanvien','on',NULL,NULL);
+INSERT INTO `users` VALUES (1,'admin','$2b$10$yufXko9XShE85gJeSP7sc.PDI42WHtZwhHQzkbKaEjdvRZETJ0ht.','Admin',NULL,'Nam',NULL,NULL,NULL,'admin','on',NULL,NULL),(2,'hung1806','$2b$10$Otg0ehQEBO/48KI4xNJ3R.EXx/ijFu8lRLjIqbMA5yUVyekdTIFSm','Phạm Minh Hùng','2001-06-18','Nam','0589898989','minhhungbackup1806@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740675683/avatars/icmscyq4wqyzpunsav98.jpg','nhanvien','on','b078cc6341009671b365cbd6e3de1ad01eff8f12','2025-04-10 20:53:45'),(3,'khai123','$2b$10$baM6xf68qqvvdI1soFe9fONnEf/dMMjSfSi3xMsH7Fr7E11MPE6b6','Đinh Lê Khải','2011-11-09','Nam','012345678','dinhlekhai@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1744286256/avatars/rkn6gnixei00v53bzcc7.jpg','nhanvien','on',NULL,NULL),(4,'testuser','$2b$10$52lhJF7aT9dmHBbOfofYg.NNXkJQOmljQfXgRc2YccgEo32mXVu0C','Phạm Văn Test','2012-10-08','Khác','0999999999','phamvantet@gmail.com','https://res.cloudinary.com/dqs9zvox3/image/upload/v1740919997/avatars/nbm5heihwzluedfnk2tp.png','nguoidung','on',NULL,NULL),(20,'nhanvien1','$2b$10$rje80jL8dm7QZr2O9rEEceXmVEnDq5QAOQF6A/1fVXPQgVyrn9e9y','Nhân Văn Viên ',NULL,'Khác',NULL,'nv1@gmail.com',NULL,'nhanvien','on',NULL,NULL),(21,'nhanvien2','$2b$10$kNxJBoupO9bC2Z5m9vb31eSnlzp1tpg7NvumJnesqixj.N59OfwPW','Viên Nhân Phan',NULL,'Nữ',NULL,'nv2@mail.com',NULL,'nhanvien','on',NULL,NULL),(22,'nhanvien3','$2b$10$4TgPFoD2rZws3UWf8ij.i.Lk.t.jUP4DnfBchfmNxOwzpVofjZz72','Hoàng Huy Hùng',NULL,'Nam',NULL,'tripleh@mail.com',NULL,'nhanvien','on',NULL,NULL),(23,'nhanvien4','$2b$10$dsLE37W1mPHuvN.pK/cKROALQBy9avOE/5cXOTxkE3h3ZnIhFNnZG','Phùng Văn Từ',NULL,'Nữ',NULL,'pvtu4@mail.com',NULL,'nhanvien','on',NULL,NULL),(24,'nhanvien5','$2b$10$rRYQ9f7EoAusLSkmH9/7t.FLylNCbxOUjsSTyCiUFDCgCLVSrybgi','Nguyễn Phan Lưu Chương',NULL,'Nữ',NULL,'nguyenphanluuchuong1@mail.com',NULL,'nhanvien','on',NULL,NULL),(28,'hungviper','$2b$10$VC6BcPAot/UGgTYdqzj52umDRlBedx.EtnwclJn/POXaBEP6W/UBi','Phạm Minh Tinh','2001-06-17','Nữ','999999999','wildentertainment123@gmail.com',NULL,'nhanvien','on',NULL,NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping events for database 'qltbdt'
---
-
---
--- Dumping routines for database 'qltbdt'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -637,4 +651,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-23  8:00:32
+-- Dump completed on 2025-04-25  0:21:14

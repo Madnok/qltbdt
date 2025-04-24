@@ -668,6 +668,12 @@ export const getBaoHongLogAPI = async (baoHongId) => {
   }
 };
 
+// Lấy log bảo trì theo ID lịch bảo dưỡng
+export const getBaoTriLogsByLichBaoDuongIdAPI = async (lichbaoduongId) => {
+  const { data } = await api.get(`/baotri/log/${lichbaoduongId}`);
+  return data;
+};
+
 // Lấy lịch sử log của một thongtinthietbi_id
 export const fetchBaoTriByThietBiAPI = async (thongtinthietbiId) => {
   if (!thongtinthietbiId) {
@@ -933,5 +939,125 @@ export const deleteGopYAPI = async (gopyId) => {
 
 
 // ======================== End API Góp Ý ================================================================================= //
+
+
+// ========= CÁC HÀM API CHO LỊCH BẢO DƯỠNG ĐỊNH KỲ ======================================= //
+
+/**
+ * Tạo lịch bảo dưỡng định kỳ mới (Admin)
+ */
+export const createLichBaoDuongAPI = async (data) => {
+  try {
+    const response = await api.post('/lichbaoduong', data);
+    toast.success(response.data?.message || "Tạo lịch bảo dưỡng thành công!");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo lịch bảo dưỡng:", error);
+    // Toast lỗi đã được xử lý bởi interceptor
+    throw error;
+  }
+};
+
+/**
+ * Gợi ý danh sách thiết bị để baỏ dưỡng ko trùng với báo hỏng
+ */
+export const fetchThietBiTrongPhongToBaoDuong = async (phongId) => {
+  const { data } = await api.get(`/lichbaoduong/danhsach-thietbi/${phongId}`);
+  return data; // Trả về danh sách thiết bị
+};
+
+/**
+ * Gợi ý nhân viên phù hợp để bảo dưỡng theo phòng và ngày (Admin)
+ */
+export const suggestNhanVienAPI = async (params) => {
+  try {
+    const response = await api.get('/lichbaoduong/suggest-staff', { params });
+    return response.data; // Trả về danh sách nhân viên gợi ý [{ id, hoTen, chucvu, priority }, ...]
+  } catch (error) {
+    console.error("Lỗi khi gợi ý nhân viên:", error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách lịch bảo dưỡng (có phân trang và lọc)
+ */
+export const getLichBaoDuongListAPI = async (params = {}) => {
+  try {
+    const response = await api.get('/lichbaoduong', { params });
+    return response.data; // Trả về { data: [...], pagination: {...} }
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách lịch bảo dưỡng:", error);
+    if (error.response?.status === 404 || error.response?.status === 403) {
+        return { data: [], pagination: { currentPage: 1, limit: params.limit || 10, totalItems: 0, totalPages: 0 } };
+    }
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách công việc bảo dưỡng được giao cho nhân viên đang đăng nhập
+ */
+export const getMyLichBaoDuongAPI = async (params = {}) => {
+   try {
+    const response = await api.get('/lichbaoduong/my-tasks', { params });
+    return response.data; // Trả về { data: [...], pagination: {...} }
+  } catch (error) {
+    console.error("Lỗi khi lấy công việc bảo dưỡng của tôi:", error);
+     if (error.response?.status === 404 || error.response?.status === 403) {
+        return { data: [], pagination: { currentPage: 1, limit: params.limit || 10, totalItems: 0, totalPages: 0 } };
+    }
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật trạng thái hoặc thông tin của một lịch bảo dưỡng
+ */
+export const updateLichBaoDuongStatusAPI = async (id, data) => {
+  try {
+    const response = await api.patch(`/lichbaoduong/${id}/status`, data);
+     toast.success(response.data?.message || "Cập nhật trạng thái thành công!");
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật trạng thái lịch bảo dưỡng ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * TẠO HÀNG LOẠT lịch bảo dưỡng định kỳ 
+ */
+export const createBulkLichBaoDuongAPI = async (payload) => {
+  try {
+    // Gọi endpoint POST /api/lichbaoduong/bulk
+    const response = await api.post('/lichbaoduong/bulk', payload);
+    toast.success(response.data?.message || "Tạo lịch bảo dưỡng hàng loạt thành công!");
+    return response.data; // Trả về { message, insertedIds }
+  } catch (error) {
+    console.error("Lỗi khi tạo lịch bảo dưỡng hàng loạt:", error);
+    // Toast lỗi đã được xử lý bởi interceptor
+    throw error;
+  }
+};
+
+/**
+ * XÓA một lịch bảo dưỡng cụ thể (chỉ khi 'Chờ xử lý')
+ */
+export const deleteLichBaoDuongAPI = async (id) => {
+  try {
+    const response = await api.delete(`/lichbaoduong/${id}`);
+    toast.success(response.data?.message || `Xóa lịch bảo dưỡng ID ${id} thành công!`);
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi xóa lịch bảo dưỡng ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// API upload hình ảnh chứng từ cho lịch bảo dưỡng
+// export const uploadChungTuBaoDuongAPI = async (lichBaoDuongId, formData) => { ... }
+
+// ========= KẾT THÚC API LỊCH BẢO DƯỠNG ================================================= //
 
 

@@ -65,6 +65,7 @@ exports.createLogBaoTri = async (req, res) => {
     const nhanvien_id = req.user?.id;
     const {
         baohong_id,
+        lichbaoduong_id,
         thongtinthietbi_id,
         phong_id,
         hoatdong,
@@ -80,8 +81,16 @@ exports.createLogBaoTri = async (req, res) => {
     } = req.body;
 
     // Validation 
-    if (!nhanvien_id || !baohong_id || isNaN(parseInt(baohong_id)) || !phong_id || !hoatdong || !ketQuaXuLy || !phuongAnXuLy) {
-        return res.status(400).json({ error: "Thiếu thông tin bắt buộc (bao gồm ID Báo hỏng hợp lệ, Phòng, Hoạt động, Kết quả, Phương án)." });
+    if (!nhanvien_id || (!baohong_id && !lichbaoduong_id) || !phong_id || !hoatdong || !ketQuaXuLy || !phuongAnXuLy) {
+        return res.status(400).json({ error: "Thiếu thông tin bắt buộc (bao gồm ID Báo hỏng HOẶC ID Lịch bảo dưỡng, Phòng, Hoạt động, Kết quả, Phương án)." });
+    }
+    // Thêm kiểm tra kiểu dữ liệu nếu cần (ví dụ: đảm bảo ID là số)
+    const parsedBaoHongId = baohong_id ? parseInt(baohong_id) : null;
+    const parsedLichBaoDuongId = lichbaoduong_id ? parseInt(lichbaoduong_id) : null;
+    const parsedThietBiId = (thongtinthietbi_id !== null && thongtinthietbi_id !== undefined && !isNaN(parseInt(thongtinthietbi_id))) ? parseInt(thongtinthietbi_id) : null;
+
+    if ((baohong_id && isNaN(parsedBaoHongId)) || (lichbaoduong_id && isNaN(parsedLichBaoDuongId))) {
+        return res.status(400).json({ error: "ID Báo hỏng hoặc ID Lịch bảo dưỡng không hợp lệ." });
     }
     if (phuongAnXuLy === 'Khác' && (!phuongAnKhacChiTiet || phuongAnKhacChiTiet.trim() === '')) {
         return res.status(400).json({ error: "Vui lòng nhập chi tiết cho phương án xử lý 'Khác'." });
@@ -89,6 +98,7 @@ exports.createLogBaoTri = async (req, res) => {
     if (suDungVatTu === true && (!ghiChuVatTu || !hinhAnhHoaDonUrls || hinhAnhHoaDonUrls.length === 0)) {
         return res.status(400).json({ error: "Vui lòng cung cấp chi tiết vật tư, dịch vụ và hình ảnh hóa đơn." });
     }
+    // --- Kết thúc Validation ---
 
 
     const connection = await pool.getConnection();
@@ -98,99 +108,133 @@ exports.createLogBaoTri = async (req, res) => {
         // 1. Lưu log vào bảng `baotri`
         const sqlInsertLog =
             `INSERT INTO baotri (
-                 baohong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong,
+                 baohong_id, lichbaoduong_id, nhanvien_id, thongtinthietbi_id, phong_id, hoatdong,
                  ketQuaXuLy, phuongAnXuLy, phuongAnKhacChiTiet,
                  suDungVatTu, ghiChuVatTu, chiPhi,
                  hinhAnhHoaDonUrls, hinhAnhHongHocUrls,
                  ngayDuKienTra,
                  thoiGian
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
         const logParams = [
-            parseInt(baohong_id),
+            parsedBaoHongId,
+            parsedLichBaoDuongId,
             nhanvien_id,
-            (thongtinthietbi_id !== null && thongtinthietbi_id !== undefined && !isNaN(parseInt(thongtinthietbi_id))) ? parseInt(thongtinthietbi_id) : null,
+            parsedThietBiId,
             phong_id, hoatdong, ketQuaXuLy,
             phuongAnXuLy,
             (phuongAnXuLy === 'Khác' ? phuongAnKhacChiTiet : null),
             suDungVatTu === true,
             suDungVatTu === true ? ghiChuVatTu : null,
-            (suDungVatTu === true && chiPhi && !isNaN(parseInt(chiPhi))) ? parseInt(chiPhi) : null,
+            (suDungVatTu === true && chiPhi && !isNaN(parseFloat(chiPhi))) ? parseFloat(chiPhi) : null, // Sửa thành parseFloat nếu chi phí có thể lẻ
             hinhAnhHoaDonUrls && hinhAnhHoaDonUrls.length > 0 ? JSON.stringify(hinhAnhHoaDonUrls) : null,
             hinhAnhHongHocUrls && hinhAnhHongHocUrls.length > 0 ? JSON.stringify(hinhAnhHongHocUrls) : null,
             (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành' ? ngayDuKienTra || null : null)
         ];
 
         const [logResult] = await connection.query(sqlInsertLog, logParams);
+        const insertedLogId = logResult.insertId;
 
         // 2. Cập nhật `baohong.coLogBaoTri = TRUE` 
-        await connection.query("UPDATE baohong SET coLogBaoTri = TRUE WHERE id = ?", [parseInt(baohong_id)]);
+        // --- Xử lý cập nhật Báo Hỏng (nếu có baohong_id) ---
+        if (parsedBaoHongId) {
+            relatedTableId = parsedBaoHongId;
+            await connection.query("UPDATE baohong SET coLogBaoTri = TRUE WHERE id = ?", [relatedTableId]);
 
+            // Xác định trạng thái tiếp theo cho Báo Hỏng
+            if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
+                nextStatus = 'Chờ Hoàn Tất Bảo Hành';
+            } else if (ketQuaXuLy === 'Đã nhận từ bảo hành') {
+                nextStatus = 'Chờ Xem Xét';
+            } else if (ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' || (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong')) {
+                nextStatus = 'Hoàn Thành';
+            } else if (ketQuaXuLy === 'Đề xuất thanh lý' || phuongAnXuLy === 'Khác' || phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') {
+                nextStatus = 'Chờ Xem Xét';
+            }
+
+            // Thực hiện cập nhật trạng thái Báo hỏng nếu có trạng thái mới
+            if (nextStatus) {
+                updateRelatedTableQuery = "UPDATE baohong SET trangThai = ?";
+                updateRelatedTableParams = [nextStatus];
+
+                // Ghi nhận thời gian xử lý nếu trạng thái là Hoàn Thành/Chờ Xem Xét và chưa có
+                if (nextStatus === 'Hoàn Thành' || nextStatus === 'Chờ Xem Xét') {
+                    const [currentBH] = await connection.query("SELECT thoiGianXuLy FROM baohong WHERE id = ?", [relatedTableId]);
+                    if (currentBH.length > 0 && !currentBH[0].thoiGianXuLy) {
+                        updateRelatedTableQuery += ", thoiGianXuLy = NOW()";
+                    }
+                }
+                // Reset ghi chú admin (tùy chọn)
+                updateRelatedTableQuery += ", ghiChuAdmin = NULL";
+                updateRelatedTableQuery += " WHERE id = ?";
+                updateRelatedTableParams.push(relatedTableId);
+
+                console.log(`[createLogBaoTri] ID BH ${relatedTableId}: Updating status query: ${updateRelatedTableQuery} with params:`, updateRelatedTableParams);
+                await connection.query(updateRelatedTableQuery, updateRelatedTableParams);
+            }
+        }
+        // --- Xử lý cập nhật Lịch Bảo Dưỡng ---
+        else if (parsedLichBaoDuongId) {
+            relatedTableId = parsedLichBaoDuongId;
+            // Cập nhật coLogBaoTri cho lichbaoduong
+            await connection.query("UPDATE lichbaoduong SET coLogBaoTri = TRUE WHERE id = ?", [relatedTableId]);
+
+            // Xác định trạng thái tiếp theo cho Lịch Bảo Dưỡng (tương tự baohong)
+             if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
+                nextStatus = 'Chờ Hoàn Tất Bảo Hành'; // Đảm bảo ENUM có giá trị này
+            } else if (ketQuaXuLy === 'Đã nhận từ bảo hành') {
+                // Khi nhận về, coi như hoàn thành lịch bảo dưỡng
+                nextStatus = 'Hoàn thành';
+            } else if (ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' || (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong')) {
+                nextStatus = 'Hoàn thành';
+            } else if (ketQuaXuLy === 'Đề xuất thanh lý' || phuongAnXuLy === 'Khác' || phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') {
+                 nextStatus = 'Hoàn thành';
+                 // nextStatus = 'Chờ Xem Xét';
+            }
+
+            // Thực hiện cập nhật trạng thái Lịch Bảo Dưỡng nếu có trạng thái mới
+            if (nextStatus) {
+                updateRelatedTableQuery = "UPDATE lichbaoduong SET trangThai = ?";
+                updateRelatedTableParams = [nextStatus];
+
+                 // Có thể thêm logic cập nhật ngày hoàn thành thực tế nếu cần
+                 // if (nextStatus === 'Hoàn thành') {
+                 //    updateRelatedTableQuery += ", ngay_hoan_thanh_thuc_te = NOW()";
+                 // }
+
+                updateRelatedTableQuery += " WHERE id = ?";
+                updateRelatedTableParams.push(relatedTableId);
+
+                console.log(`[createLogBaoTri] ID LBD ${relatedTableId}: Updating status query: ${updateRelatedTableQuery} with params:`, updateRelatedTableParams);
+                await connection.query(updateRelatedTableQuery, updateRelatedTableParams);
+            }
+        }
         // 3. Cập nhật thongtinthietbi 
-        const isThietBiIdValid = thongtinthietbi_id !== null && thongtinthietbi_id !== undefined && !isNaN(parseInt(thongtinthietbi_id));
-        if (isThietBiIdValid) {
-            const tttbIdInt = parseInt(thongtinthietbi_id);
+        if (parsedThietBiId) {
+            const tttbIdInt = parsedThietBiId;
             if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
                 await connection.query("UPDATE thongtinthietbi SET tinhTrang = 'dang_bao_hanh', ngayDuKienTra = ? WHERE id = ?", [ngayDuKienTra || null, tttbIdInt]);
             } else if (ketQuaXuLy === 'Đã nhận từ bảo hành') {
                 const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
-                const finalStatusDevice = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc); // Ra 'con_bao_hanh' hoặc 'het_bao_hanh'
-                console.log(`[createLogBaoTri] ID BH ${baohong_id}, TTTB ${tttbIdInt}: Nhận BH về, cập nhật TTTB thành ${finalStatusDevice}`);
+                const finalStatusDevice = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
+                console.log(`[createLogBaoTri] Task ID ${relatedTableId}, TTTB ${tttbIdInt}: Nhận BH về, cập nhật TTTB thành ${finalStatusDevice}`);
                 await connection.query("UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?", [finalStatusDevice, tttbIdInt]);
-            }
-            else if (ketQuaXuLy === 'Đề xuất thanh lý') {
+            } else if (ketQuaXuLy === 'Đề xuất thanh lý') {
                 await connection.query("UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?", [tttbIdInt]);
-            }
-            else if (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý') {
-                const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
-                const finalStatus = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
-                await connection.query("UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?", [finalStatus, tttbIdInt]);
-            }
-        }
-
-        //  4. CẬP NHẬT TRẠNG THÁI BÁO HỎNG 
-        const bhIdInt = parseInt(baohong_id);
-        let nextBaoHongStatus = null;
-
-        if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
-            // Nếu gửi bảo hành, chuyển trạng thái Báo hỏng sang "Chờ Hoàn Tất Bảo Hành"
-            nextBaoHongStatus = 'Chờ Hoàn Tất Bảo Hành';
-        } else if (ketQuaXuLy === 'Đã nhận từ bảo hành') {
-            console.log(`[createLogBaoTri] ID BH ${baohong_id}: Nhận BH về, cập nhật trạng thái BH thành Chờ Xem Xét`);
-            nextBaoHongStatus = 'Chờ Xem Xét';
-        } else if (ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' || (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong')) {
-            nextBaoHongStatus = 'Hoàn Thành';
-            // Không cần chờ xem xét nếu đã tự hoàn thành
-        } else if (ketQuaXuLy === 'Đề xuất thanh lý' || phuongAnXuLy === 'Khác' || phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') {
-            // Các trường hợp cần admin xem xét (đề xuất TL, bàn giao, phương án khác...)
-            nextBaoHongStatus = 'Chờ Xem Xét';
-        }
-
-        // Thực hiện cập nhật trạng thái Báo hỏng nếu có trạng thái mới
-        if (nextBaoHongStatus) {
-            let updateBaoHongQuery = "UPDATE baohong SET trangThai = ?";
-            const updateBaoHongParams = [nextBaoHongStatus];
-
-            // Nếu trạng thái đích là Hoàn Thành hoặc Chờ Xem Xét (do NV thao tác), ghi nhận thời gian xử lý
-            if (nextBaoHongStatus === 'Hoàn Thành' || nextBaoHongStatus === 'Chờ Xem Xét') {
-                 // Kiểm tra xem thoiGianXuLy đã có chưa, nếu chưa thì mới set NOW()
-                 const [currentBH] = await connection.query("SELECT thoiGianXuLy FROM baohong WHERE id = ?", [bhIdInt]);
-                 if (currentBH.length > 0 && !currentBH[0].thoiGianXuLy) {
-                    updateBaoHongQuery += ", thoiGianXuLy = NOW()";
+            } else if (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý') {
+                 // Chỉ cập nhật nếu trạng thái hiện tại không phải là đang bảo hành/chờ thanh lý
+                 const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
+                 if (!['dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly'].includes(currentStatusInfo.tinhTrang)) {
+                    const finalStatus = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
+                    await connection.query("UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?", [finalStatus, tttbIdInt]);
+                 } else {
+                     console.log(`[createLogBaoTri] Task ID ${relatedTableId}, TTTB ${tttbIdInt}: Giữ nguyên trạng thái TTTB '${currentStatusInfo.tinhTrang}' vì đang trong quy trình đặc biệt.`);
                  }
             }
-            // Reset ghi chú admin khi nhân viên cập nhật (trừ khi chuyển sang chờ xem xét?)
-            updateBaoHongQuery += ", ghiChuAdmin = NULL";
-
-            updateBaoHongQuery += " WHERE id = ?";
-            updateBaoHongParams.push(bhIdInt);
-
-            console.log(`[createLogBaoTri] ID BH ${baohong_id}: Updating status query: ${updateBaoHongQuery} with params:`, updateBaoHongParams);
-            await connection.query(updateBaoHongQuery, updateBaoHongParams);
         }
-
+        
         await connection.commit();
-        console.log(`[createLogBaoTri] ID BH ${baohong_id}: Transaction committed successfully.`);
-        res.status(201).json({ message: "Ghi nhận hoạt động bảo trì thành công.", logId: logResult.insertId });
+        console.log(`[createLogBaoTri] Log ${insertedLogId} cho Task ID ${relatedTableId}: Transaction committed successfully.`);
+        res.status(201).json({ message: "Ghi nhận hoạt động bảo trì thành công.", logId: insertedLogId });
 
     } catch (error) {
         await connection.rollback();
@@ -314,4 +358,48 @@ exports.uploadInvoiceImage = (req, res) => {
     // Trả về mảng các URL của các ảnh đã upload
     const imageUrls = req.files.map(file => file.path);
     res.json({ imageUrls });
+};
+
+// Lấy lịch sử log của một lịch bảo dưỡng cụ thể
+exports.getLogsByLichBaoDuongId = async (req, res) => {
+    const { lichbaoduong_id } = req.params;
+
+    if (!lichbaoduong_id || isNaN(parseInt(lichbaoduong_id))) {
+        return res.status(400).json({ error: "ID lịch bảo dưỡng không hợp lệ." });
+    }
+    const parsedLichBaoDuongId = parseInt(lichbaoduong_id);
+
+    try {
+        const [logs] = await pool.query(
+            `SELECT bt.*, u.hoTen as tenNhanVien
+             FROM baotri bt
+             LEFT JOIN users u ON bt.nhanvien_id = u.id 
+             WHERE bt.lichbaoduong_id = ?
+             ORDER BY bt.thoiGian DESC`,
+            [parsedLichBaoDuongId]
+        );
+
+        const getUrlsFromArrayOrNull = (data) => {
+            if (Array.isArray(data)) return data;
+            if (data && typeof data === 'string' && data.trim() !== '') {
+                try {
+                    const parsed = JSON.parse(data);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) { console.error(`Lỗi parse JSON cho log:`, e, "Giá trị gốc:", data); return []; }
+            }
+            return [];
+        };
+
+        const formattedLogs = logs.map(log => ({
+            ...log,
+            hinhAnhHoaDonUrls: getUrlsFromArrayOrNull(log.hinhAnhHoaDonUrls),
+            hinhAnhHongHocUrls: getUrlsFromArrayOrNull(log.hinhAnhHongHocUrls)
+        }));
+
+        res.json(formattedLogs);
+
+    } catch (error) {
+        console.error(`Error fetching logs for lichbaoduong ${parsedLichBaoDuongId}:`, error);
+        res.status(500).json({ error: "Lỗi server khi lấy lịch sử bảo trì." });
+    }
 };
