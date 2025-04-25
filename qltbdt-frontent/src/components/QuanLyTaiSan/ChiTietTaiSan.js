@@ -2,10 +2,10 @@ import React from 'react';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import NotFound from '../../pages/NotFound';
 import { getTinhTrangLabel } from '../../utils/constants';
-import { FaCheckCircle, FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaTimes } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaTimes, FaHistory } from 'react-icons/fa';
 
 
-const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch }) => { 
+const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch, onOpenLogModal }) => { 
     if (!taiSanData) return <NotFound />; 
 
     const renderTinhTrang = (tinhTrang) => {
@@ -94,6 +94,19 @@ const ChiTietTaiSan = ({ taiSanData, onClose, triggerRefetch }) => {
                     <dt className="w-1/3 font-medium text-gray-500">Giá Trị:</dt>
                     <dd className="w-2/3 text-gray-800">{formatCurrency(taiSanData.giaTriBanDau) || '0'}</dd>
                 </div>
+                <div className="flex items-center pt-2 border-t mt-3">
+                     <dt className="w-1/3 font-medium text-gray-500">Lịch sử bảo trì:</dt>
+                     <dd className="w-2/3">
+                         <button
+                             onClick={() => onOpenLogModal(taiSanData)} 
+                             className="flex items-center px-3 py-1 text-sm text-blue-700 border border-blue-300 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                             title="Xem toàn bộ lịch sử bảo trì/sửa chữa của thiết bị này"
+                             disabled={!onOpenLogModal}
+                         >
+                             <FaHistory className="mr-1.5" /> Xem Log
+                         </button>
+                     </dd>
+                 </div>
             </dl>
         </div>
     );

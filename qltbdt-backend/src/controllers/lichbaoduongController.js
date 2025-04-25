@@ -1,42 +1,79 @@
 const db = require('../config/db');
+const { emitToUser } = require('../socket');
 
 // Hàm helper được cập nhật để query bảng 'users' và 'lichtruc'
 async function suggestNhanVienForPhong(phongId, ngayBaoTri) {
-    // Ưu tiên 1: Nhân viên phụ trách phòng đó (role='nhanvien', tinhTrang='on')
-    let queryPhuTrach = `
+    const startOfDay = new Date(ngayBaoTri + 'T00:00:00');
+    const endOfDay = new Date(ngayBaoTri + 'T23:59:59');
+
+    // 1. Nhân viên phụ trách
+    const queryPhuTrach = `
         SELECT u.id, u.hoTen, u.role as chucvu, 1 AS priority
         FROM users u
         JOIN nhanvien_phong_phutrach nppt ON u.id = nppt.nhanvien_id
         WHERE nppt.phong_id = ? AND u.role = 'nhanvien' AND u.tinhTrang = 'on'`;
     const [phuTrachNV] = await db.query(queryPhuTrach, [phongId]);
 
-    // Ưu tiên 2: Nhân viên có lịch trực trong ngày bảo trì (role='nhanvien', tinhTrang='on')
-    let queryLichTruc = `
+    // 2. Nhân viên có lịch trực trong ngày, không trùng người phụ trách
+    const queryLichTruc = `
         SELECT u.id, u.hoTen, u.role as chucvu, 2 AS priority
         FROM users u
         JOIN lichtruc lt ON u.id = lt.nhanvien_id
-        WHERE DATE(lt.start_time) = ? AND u.role = 'nhanvien' AND u.tinhTrang = 'on'
-          AND u.id NOT IN (SELECT id FROM (${queryPhuTrach.replace('?', phongId).replace('SELECT u.id, u.hoTen, u.role as chucvu, 1 AS priority', 'SELECT u.id')}) AS pt)`;
-    const [lichTrucNv] = await db.query(queryLichTruc, [ngayBaoTri]);
+        WHERE lt.start_time BETWEEN ? AND ?
+          AND u.role = 'nhanvien' AND u.tinhTrang = 'on'
+          AND u.id NOT IN (
+              SELECT u.id FROM users u
+              JOIN nhanvien_phong_phutrach nppt ON u.id = nppt.nhanvien_id
+              WHERE nppt.phong_id = ?
+          )`;
+    const [lichTrucNV] = await db.query(queryLichTruc, [startOfDay, endOfDay, phongId]);
 
-    // --- THAY ĐỔI LOGIC GỢI Ý ---
-    // Nếu KHÔNG có ai có lịch trực (Ưu tiên 2 rỗng) -> KHÔNG gợi ý ai cả (kể cả người phụ trách)
-    if (lichTrucNv.length === 0) {
-        return [];
-    }
+    // 3. Các nhân viên còn lại (chưa nằm trong 1 hoặc 2)
+    const queryNhanVienConLai = `
+        SELECT u.id, u.hoTen, u.role as chucvu, 3 AS priority
+        FROM users u
+        WHERE u.role = 'nhanvien' AND u.tinhTrang = 'on'
+            AND u.id NOT IN (
+                SELECT u.id
+                FROM nhanvien_phong_phutrach nppt
+                JOIN users u ON u.id = nppt.nhanvien_id
+                WHERE nppt.phong_id = ?
+                UNION
+                SELECT u.id
+                FROM users u
+                JOIN lichtruc lt ON u.id = lt.nhanvien_id
+                WHERE lt.start_time BETWEEN ? AND ?
+            )`;
+    const [nhanVienConLai] = await db.query(queryNhanVienConLai, [phongId, startOfDay, endOfDay]);
 
-    // Nếu có người trực, thì chỉ lấy người Phụ trách (Ưu tiên 1) và người có Lịch trực (Ưu tiên 2)
-    // Bỏ qua Ưu tiên 3 (nhân viên còn lại không có lịch trực)
-    const suggestedList = [...phuTrachNV, ...lichTrucNv];
-    // --- KẾT THÚC THAY ĐỔI LOGIC ---
 
-    // Lọc danh sách duy nhất (giữ nguyên)
+    // Gộp tất cả lại
+    const suggestedList = [...phuTrachNV, ...lichTrucNV, ...nhanVienConLai];
+
+    // Lọc trùng phòng hờ
     const uniqueList = suggestedList.filter((nv, index, self) =>
         index === self.findIndex((t) => t.id === nv.id)
     );
 
     return uniqueList;
 }
+
+exports.suggestNhanVien = async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Không có quyền truy cập." });
+    }
+    const { phongId, ngayBaoTri } = req.query;
+    if (!phongId || !ngayBaoTri) {
+        return res.status(400).json({ message: "Cần cung cấp ID phòng và Ngày bảo trì." });
+    }
+    try {
+        const suggestedList = await suggestNhanVienForPhong(phongId, ngayBaoTri);
+        res.status(200).json(suggestedList);
+    } catch (error) {
+        console.error("Lỗi khi gợi ý nhân viên:", error);
+        res.status(500).json({ message: "Lỗi máy chủ khi gợi ý nhân viên." });
+    }
+};
 
 exports.createLichBaoDuong = async (req, res) => {
     // Sử dụng chuỗi role trực tiếp hoặc hằng số ROLES.ADMIN
@@ -74,6 +111,12 @@ exports.createLichBaoDuong = async (req, res) => {
                 'Chờ xử lý'
             ]);
             results.push(result.insertId);
+            if (nhanvien_id) {
+                emitToUser(nhanvien_id, 'new_assigned_task', {
+                    taskId: result.insertId,
+                    type: 'baoduong',
+                });
+            }
         }
         await connection.commit();
         res.status(201).json({ message: "Đã tạo lịch bảo dưỡng thành công.", insertedIds: results });
@@ -146,6 +189,12 @@ exports.createBulkLichBaoDuong = async (req, res) => {
                     0
                 ]);
                 insertedIds.push(result.insertId);
+                if (nhanvien_id) {
+                    emitToUser(nhanvien_id, 'new_assigned_task', {
+                        taskId: result.insertId,
+                        type: 'baoduong',
+                    });
+                }
             }
         }
 
@@ -158,23 +207,6 @@ exports.createBulkLichBaoDuong = async (req, res) => {
         res.status(500).json({ message: "Lỗi máy chủ nội bộ khi tạo lịch bảo dưỡng hàng loạt." });
     } finally {
         connection.release();
-    }
-};
-
-exports.suggestNhanVien = async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Không có quyền truy cập." });
-    }
-    const { phongId, ngayBaoTri } = req.query;
-    if (!phongId || !ngayBaoTri) {
-        return res.status(400).json({ message: "Cần cung cấp ID phòng và Ngày bảo trì." });
-    }
-    try {
-        const suggestedList = await suggestNhanVienForPhong(phongId, ngayBaoTri);
-        res.status(200).json(suggestedList);
-    } catch (error) {
-        console.error("Lỗi khi gợi ý nhân viên:", error);
-        res.status(500).json({ message: "Lỗi máy chủ khi gợi ý nhân viên." });
     }
 };
 

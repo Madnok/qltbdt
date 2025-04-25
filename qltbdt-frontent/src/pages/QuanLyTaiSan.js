@@ -6,7 +6,7 @@ import ChiTietTaiSan from '../components/QuanLyTaiSan/ChiTietTaiSan';
 import RightPanel from '../components/layout/RightPanel';
 import { getAllTaiSanAPI } from '../api';
 import Pagination from '../components/layout/Pagination.js';
-
+import ModalXemLogBaoTri from '../components/LichTruc/ModalXemLogBaoTri';
 const ITEMS_PER_PAGE = 12;
 
 const QuanLyTaiSan = () => {
@@ -15,6 +15,8 @@ const QuanLyTaiSan = () => {
     const [showRightPanel, setShowRightPanel] = useState(false);
     const [selectedTaiSanData, setSelectedTaiSanData] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [selectedAssetForLog, setSelectedAssetForLog] = useState(null);
 
     // Cập nhật useQuery để gửi tham số pagination và sort
     const { data: apiResponse, isLoading, error, refetch, isPreviousData } = useQuery({
@@ -94,8 +96,23 @@ const QuanLyTaiSan = () => {
         setCurrentPage(page);
     };
 
+    const handleOpenLogModal = useCallback((assetData) => {
+        if (assetData && assetData.id) {
+            console.log("Opening log modal for asset:", assetData);
+            setSelectedAssetForLog(assetData); 
+            setIsLogModalOpen(true);
+        } else {
+            console.error("Attempted to open log modal without valid asset data.");
+        }
+    }, []);
+
+    const handleCloseLogModal = useCallback(() => {
+        setIsLogModalOpen(false);
+        setSelectedAssetForLog(null);
+    }, []);
+
     return (
-        <div className="flex flex-1 bg-white">
+        <div className="flex flex-1 bg-white border">
             {/* Phần bên trái (Danh sách và bộ lọc) */}
             <div className={`transition-all duration-300 ${showRightPanel ? "w-3/5" : "w-full"}`}>
                 <div className="flex flex-col h-[450] p-4">
@@ -147,10 +164,23 @@ const QuanLyTaiSan = () => {
                                 taiSanData={selectedTaiSanData}
                                 triggerRefetch={triggerRefetch}
                                 onClose={handleCloseRightPanel}
+                                onOpenLogModal={handleOpenLogModal}
                             />
                         }
                     />
                 </div>
+            )}
+
+            {/* **Render Modal Xem Log (đặt ở đây để nó hiện trên cùng)** */}
+            {isLogModalOpen && selectedAssetForLog && (
+                <ModalXemLogBaoTri
+                    // Chỉ truyền thongtinthietbiId vì ta muốn xem log THEO THIẾT BỊ
+                    thongtinthietbiId={selectedAssetForLog.id}
+                    tenThietBi={selectedAssetForLog.tenLoaiThietBi} // Truyền tên thiết bị
+                    phongName={selectedAssetForLog.phong_name} // Truyền tên phòng (nếu có)
+                    onClose={handleCloseLogModal}
+                // Không cần truyền baohongId hay lichbaoduongId
+                />
             )}
         </div>
     );

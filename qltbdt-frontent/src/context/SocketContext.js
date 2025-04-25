@@ -67,6 +67,16 @@ export const SocketProvider = ({ children }) => {
                 queryClient.invalidateQueries({ queryKey: ['phong', data.phongId] });
                 queryClient.invalidateQueries({ queryKey: ['phongList'] });
             });
+            newSocket.on('new_assigned_task', (data) => {
+                toast.info(data.message || 'Bạn có công việc mới!');
+                if (data.type === 'baoduong') {
+                    queryClient.invalidateQueries(['assignedBaoDuongTasks']);
+                    queryClient.invalidateQueries(['baotriMyTasks']);
+                } else if (data.type === 'baohong') {
+                    queryClient.invalidateQueries(['assignedBaoHongTasks']);
+                    queryClient.invalidateQueries(['baohongMyTasks']);
+                }
+            });
 
             setSocket(newSocket);
 
@@ -87,6 +97,7 @@ export const SocketProvider = ({ children }) => {
                 newSocket.off('task_cancelled');
                 newSocket.off('new_baohong_created');
                 newSocket.off('asset_assigned_to_room');
+                newSocket.off('new_assigned_task');
                 newSocket.disconnect();
             }
         };

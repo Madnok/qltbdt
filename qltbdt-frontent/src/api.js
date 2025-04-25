@@ -654,37 +654,70 @@ export const createLogBaoTriAPI = async (logData) => {
 };
 
 // Lấy lịch sử log của một báo hỏng
-export const getBaoHongLogAPI = async (baoHongId) => {
-  if (!baoHongId) return [];
-  try {
-    const response = await api.get(`/baotri/log/${baoHongId}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Lỗi lấy log cho báo hỏng ${baoHongId}:`, error);
-    if (error.response?.status === 404) {
-      return [];
-    }
-    throw error;
-  }
-};
+// export const getBaoHongLogAPI = async (baoHongId) => {
+//   if (!baoHongId) return [];
+//   try {
+//     const response = await api.get(`/baotri/log/${baoHongId}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error(`Lỗi lấy log cho báo hỏng ${baoHongId}:`, error);
+//     if (error.response?.status === 404) {
+//       return [];
+//     }
+//     throw error;
+//   }
+// };
 
-// Lấy log bảo trì theo ID lịch bảo dưỡng
-export const getBaoTriLogsByLichBaoDuongIdAPI = async (lichbaoduongId) => {
-  const { data } = await api.get(`/baotri/log/${lichbaoduongId}`);
-  return data;
-};
+// // Lấy log bảo trì theo ID lịch bảo dưỡng
+// export const getBaoTriLogsByLichBaoDuongIdAPI = async (lichbaoduongId) => {
+//   const { data } = await api.get(`/baotri/log/${lichbaoduongId}`);
+//   return data;
+// };
 
 // Lấy lịch sử log của một thongtinthietbi_id
-export const fetchBaoTriByThietBiAPI = async (thongtinthietbiId) => {
-  if (!thongtinthietbiId) {
-      return [];
+// export const fetchBaoTriByThietBiAPI = async (thongtinthietbiId) => {
+//   if (!thongtinthietbiId) {
+//       return [];
+//   }
+//   try {
+//       const { data } = await api.get(`/baotri/thietbi/${thongtinthietbiId}`);
+//       return data || [];
+//   } catch (error) {
+//       console.error("Lỗi khi lấy log bảo trì theo thiết bị:", error);
+//       throw error;
+//   }
+// };
+
+/**
+ * Lấy lịch sử log bảo trì dựa trên các ID cung cấp.
+ */
+export const fetchLogsAPI = async (params = {}) => {
+  // Chỉ giữ lại một key ID hợp lệ đầu tiên tìm thấy để tránh gửi nhiều ID
+  let validParams = {};
+  if (params.lichbaoduong_id) {
+    validParams = { lichbaoduong_id: params.lichbaoduong_id };
+  } else if (params.baohong_id) {
+    validParams = { baohong_id: params.baohong_id };
+  } else if (params.thongtinthietbi_id) {
+    validParams = { thongtinthietbi_id: params.thongtinthietbi_id };
   }
+
+  if (Object.keys(validParams).length === 0) {
+      console.warn("fetchLogsAPI called without a valid ID parameter.");
+      return []; // Trả về mảng rỗng nếu không có ID hợp lệ
+  }
+
   try {
-      const { data } = await api.get(`/baotri/thietbi/${thongtinthietbiId}`);
-      return data || [];
+    // Gọi endpoint mới '/baotri/logs' với query parameters
+    const { data } = await api.get(`/baotri/logs`, { params: validParams });
+    return data || []; // Trả về data hoặc mảng rỗng
   } catch (error) {
-      console.error("Lỗi khi lấy log bảo trì theo thiết bị:", error);
-      throw error;
+    console.error("Lỗi khi lấy log bảo trì:", error.response?.data || error.message);
+    // Trả về mảng rỗng nếu lỗi 404 hoặc lỗi khác để component không bị crash
+     if (error.response?.status === 404) {
+      return [];
+    }
+    throw error; // Ném lỗi khác để React Query xử lý nếu cần
   }
 };
 

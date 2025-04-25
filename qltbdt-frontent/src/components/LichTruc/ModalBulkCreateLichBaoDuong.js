@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import * as api from '../../api'; // Đảm bảo import đúng đường dẫn
 import { FaTrashAlt, FaTimesCircle, FaSpinner } from 'react-icons/fa';
+import { getUuTienLabel } from '../../utils/constants';
 
 const ModalBulkCreateLichBaoDuong = ({ isOpen, onClose }) => { // Giữ isOpen và onClose để điều khiển từ cha
 
@@ -36,11 +37,13 @@ const ModalBulkCreateLichBaoDuong = ({ isOpen, onClose }) => { // Giữ isOpen v
 
         try {
             const suggestions = await api.suggestNhanVienAPI({ phongId: roomId, ngayBaoTri });
-            const suggestionOptions = suggestions.map(nv => ({
+            const suggestionOptions = suggestions
+            .map(nv => ({
                 value: nv.id,
-                label: `${nv.hoTen} (Ưu Tiên: ${nv.priority})`,
+                label: `${nv.hoTen} (${getUuTienLabel(nv.priority)})`,
                 priority: nv.priority
-            })).sort((a, b) => a.priority - b.priority);
+            }))
+            .sort((a, b) => a.priority - b.priority);
 
             setRoomTasks(prev => {
                 if (!prev[roomId]) return prev;
@@ -73,7 +76,7 @@ const ModalBulkCreateLichBaoDuong = ({ isOpen, onClose }) => { // Giữ isOpen v
     const bulkCreateMutation = useMutation({
         mutationFn: api.createBulkLichBaoDuongAPI,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['lichBaoDuongListAll'] });
+            queryClient.invalidateQueries({ queryKey: ['lichBaoDuongListAllUnfiltered'] });
             toast.success("Tạo lịch bảo dưỡng hàng loạt thành công!");
             onClose();
             setSelectedRooms([]);

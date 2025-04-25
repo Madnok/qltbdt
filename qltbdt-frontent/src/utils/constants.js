@@ -95,3 +95,9 @@ export const TINH_TRANG_OPTIONS = [
     { value: "xuat_tra", label: "Xuất Trả" },
     { value: "dieu_chuyen", label: "Điều Chuyển" }
   ];
+
+export const getUuTienLabel = (priority) => {
+    if (priority === 1) return 'Phụ trách phòng';
+    if (priority === 2) return 'Đang trực';
+    return 'Còn lại';
+};

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaPlus,
-    FaTrash, FaSpinner, FaExclamationTriangle, FaCheckCircle,
-    FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaInfoCircle
+    FaTrash, FaSpinner, FaExclamationTriangle, FaCheckCircle, FaEdit,
+    FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaInfoCircle, FaHistory
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import ModalXemLogBaoTri from '../LichTruc/ModalXemLogBaoTri';
 
 // --- API Functions ---
 import {
@@ -22,7 +23,7 @@ import { getTinhTrangLabel } from '../../utils/constants';
 import Pagination from '../layout/Pagination';
 import Popup from '../layout/Popup';
 import FormThietBi from '../forms/FormThietBi';
-import ChiTietThongTinThietBi from '../DanhMuc/ChiTiet/ChiTietThongTinThietBi'; 
+import ChiTietThongTinThietBi from '../DanhMuc/ChiTiet/ChiTietThongTinThietBi';
 
 
 // --- Constants ---
@@ -32,7 +33,7 @@ const ITEMS_PER_PAGE_DETAILS = 5;   // Số lượng TTTB trên mỗi trang chi 
 // ============================================================================
 // COMPONENT: ChiTietTaiSanRow (Hiển thị một dòng Tình Trạng Thiết Bị - TTTB)
 // ============================================================================
-const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails }) => {
+const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails, onOpenLogModal }) => {
     // Function để lấy style và icon dựa trên tình trạng
     const getTinhTrangElement = (tinhTrang) => {
         const label = getTinhTrangLabel(tinhTrang);
@@ -62,15 +63,27 @@ const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails }) => {
             <td className="px-4 py-2 whitespace-nowrap text-gray-600">{tenPhong}</td>
             {/* Ngày nhập kho */}
             <td className="px-4 py-2 whitespace-nowrap text-gray-600">{ngayNhap}</td>
-            {/* Hành động (ví dụ: xem chi tiết TTTB) */}
+            {/* Hành động */}
             <td className="px-4 py-2 whitespace-nowrap text-center">
-                <button
-                    onClick={() => onViewDetails(tttb.id)}
-                    className="text-blue-500 hover:text-blue-700 transition duration-150 ease-in-out"
-                    title={`Xem chi tiết tài sản #${tttb.id}`}
-                >
-                    <FaInfoCircle />
-                </button>
+                <div className="flex items-center justify-center gap-x-3">
+                    {/* Nút xem chi tiết TTTB */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onViewDetails(tttb.id); }}
+                        className="text-blue-500 hover:text-blue-700 transition duration-150 ease-in-out"
+                        title={`Xem chi tiết tài sản #${tttb.id}`}
+                    >
+                        <FaInfoCircle />
+                    </button>
+                    {/*  NÚT XEM LOG */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onOpenLogModal(tttb); }}
+                        className="text-purple-600 hover:text-purple-800 transition duration-150 ease-in-out"
+                        title={`Xem lịch sử bảo trì #${tttb.id}`}
+                        disabled={!onOpenLogModal}
+                    >
+                        <FaHistory />
+                    </button>
+                </div>
             </td>
         </tr>
     );
@@ -96,6 +109,9 @@ function ThietBi() {
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [selectedTTTBId, setSelectedTTTBId] = useState(null);
+    const [showTTTBDetailModal, setShowTTTBDetailModal] = useState(false); // State cho modal chi tiết TTTB
+    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [selectedAssetForLog, setSelectedAssetForLog] = useState(null);
 
 
     // --- Data Fetching ---
@@ -264,23 +280,14 @@ function ThietBi() {
     // Mở form thêm
     const handleOpenAddForm = useCallback(() => { setShowAddForm(true); }, []);
     // Đóng form thêm
+
     const handleCloseAddForm = useCallback(() => { setShowAddForm(false); }, []);
-    // Khi thêm thành công (đóng form và fetch lại)
+
+    // Khi thêm thành công 
     const handleAddSuccess = useCallback(() => {
         setShowAddForm(false);
         fetchData(); // Fetch lại toàn bộ list
     }, [fetchData]);
-
-    // Mở modal xem chi tiết TTTB
-    const handleViewTTTBDetails = useCallback((tttbId) => {
-        console.log("Requesting view details for TTTB ID:", tttbId);
-        setSelectedTTTBId(tttbId);
-    }, []);
-    // Đóng modal xem chi tiết TTTB
-    const handleCloseTTTBDetails = useCallback(() => {
-        setSelectedTTTBId(null);
-    }, []);
-
 
     // Xử lý xóa Loại Thiết Bị
     const handleDelete = useCallback(async (thietBiId, tenThietBi) => {
@@ -320,9 +327,40 @@ function ThietBi() {
         }
     }, [dropdownData, fetchData]);
 
+    // Handler mở modal chi tiết TTTB 
+    const handleOpenTTTBDetailModal = useCallback((tttbId) => {
+        setSelectedTTTBId(tttbId);
+        setShowTTTBDetailModal(true);
+    }, []);
+    // Handler đóng modal chi tiết TTTB
+    const handleCloseTTTBDetailModal = useCallback(() => {
+        setSelectedTTTBId(null);
+        setShowTTTBDetailModal(false);
+    }, []);
+
+
+    // **Handlers cho modal xem log **
+    const handleOpenLogModal = useCallback((assetData) => {
+        if (assetData && assetData.id) {
+            const loaiTb = thietBiList.find(tb => tb.id === assetData.thietbi_id);
+            setSelectedAssetForLog({
+                ...assetData,
+                tenLoaiThietBi: loaiTb?.tenThietBi
+            });
+            setIsLogModalOpen(true);
+        } else {
+            console.error("Attempted to open log modal without valid TTTB data.");
+        }
+    }, [thietBiList]);
+
+    const handleCloseLogModal = useCallback(() => {
+        setIsLogModalOpen(false);
+        setSelectedAssetForLog(null);
+    }, []);
+
     // --- Rendering ---
     return (
-        <div className="p-2 md:p-4 bg-white min-h-screen font-sans">
+        <div className="p-2 md:p-4 bg-white min-h-screen font-sans relative">
             {/* === Thanh Filter và Nút Thêm === */}
             <div className="mb-4 p-4 bg-white border-2 rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                 {/* Filters */}
@@ -454,6 +492,7 @@ function ThietBi() {
                                                         {/* Hành động */}
                                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2 align-top">
                                                             {/* Nút Xóa (có điều kiện) */}
+                                                            <button className="p-2 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100" title={`Sửa loại ${tb.tenThietBi}`}><FaEdit /></button>
                                                             <button
                                                                 onClick={() => handleDelete(tb.id, tb.tenThietBi)}
                                                                 className={`p-2 rounded transition duration-150 ease-in-out ${canDelete ? 'text-red-500 hover:text-red-700 hover:bg-red-100' : 'text-gray-400 cursor-not-allowed'}`}
@@ -524,7 +563,8 @@ function ThietBi() {
                                                                                                     <ChiTietTaiSanRow
                                                                                                         key={`detail-${tttb.id}`}
                                                                                                         tttb={tttb}
-                                                                                                        onViewDetails={handleViewTTTBDetails}
+                                                                                                        onViewDetails={handleOpenTTTBDetailModal} // Đổi tên handler cho rõ
+                                                                                                        onOpenLogModal={handleOpenLogModal} // **Truyền xuống đây**
                                                                                                     />
                                                                                                 ))}
                                                                                             </tbody>
@@ -574,7 +614,6 @@ function ThietBi() {
             {/* === Modals === */}
 
             {/* Popup Form Thêm/Sửa Loại Thiết Bị */}
-            {console.log("Checking selectedTTTBId before rendering Details Modal:", selectedTTTBId)}
             {showAddForm && (
                 <Popup isOpen={showAddForm} title="Thêm Loại Thiết bị mới" onClose={handleCloseAddForm}>
                     <FormThietBi
@@ -586,13 +625,24 @@ function ThietBi() {
             )}
 
             {/* Popup Xem Chi tiết TTTB */}
-            {selectedTTTBId !== null && ( 
-                <ChiTietThongTinThietBi
-                    tttbId={selectedTTTBId}
-                    onClose={handleCloseTTTBDetails} 
+            {showTTTBDetailModal && selectedTTTBId && (
+                 <Popup isOpen={showTTTBDetailModal} onClose={handleCloseTTTBDetailModal} title="Chi tiết Thông tin Thiết bị">
+                     <ChiTietThongTinThietBi
+                         tttbId={selectedTTTBId}
+                         onClose={handleCloseTTTBDetailModal}
+                     />
+                 </Popup>
+             )}
+
+            {/* Render Modal Xem Log  */}
+            {isLogModalOpen && selectedAssetForLog && (
+                <ModalXemLogBaoTri
+                    thongtinthietbiId={selectedAssetForLog.id}
+                    tenThietBi={selectedAssetForLog.tenLoaiThietBi || 'Thiết bị'}
+                    phongName={selectedAssetForLog.phong_name}
+                    onClose={handleCloseLogModal}
                 />
             )}
-
         </div>
     );
 }

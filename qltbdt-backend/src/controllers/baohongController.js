@@ -7,13 +7,6 @@ const { emitToUser } = require('../socket');
 /**
  * Helper: Xử lý Admin duyệt báo hỏng lần đầu.
  * Tự quản lý transaction.
- * @param {object} connection - Active DB connection
- * @param {number} id - ID báo hỏng
- * @param {object} updateData - Dữ liệu từ req.body (chứa nhanvien_id, ghiChuAdmin)
- * @param {object} currentBaoHong - Dữ liệu báo hỏng hiện tại
- * @param {object} currentUser - Thông tin user request (req.user)
- * @returns {Promise<object>} - Object kết quả thành công
- * @throws {Error} - Ném lỗi nếu thất bại (đã rollback)
  */
 
 async function _handleAdminInitialApproval(connection, id, updateData, currentBaoHong, currentUser) {
@@ -639,7 +632,6 @@ exports.updateBaoHong = async (req, res) => {
     const currentUser = req.user;
     let connection = null;
 
-    console.log(`[updateBaoHong] ID: ${id} - Request by User ID: ${currentUser?.id}, Role: ${currentUser?.role}. Body:`, JSON.stringify(updateData));
 
     try {
         connection = await pool.getConnection();
@@ -656,7 +648,6 @@ exports.updateBaoHong = async (req, res) => {
         // --- Kiểm tra quyền của nhân viên ---
         if (currentUser?.role === 'nhanvien' && currentBaoHong.nhanvien_id !== currentUser.id) {
             // Có thể thêm logic cho phép NV nhận việc ở đây nếu cần
-            console.log(`[updateBaoHong] ID: ${id}, Forbidden: NV ${currentUser.id} không được gán.`);
             return res.status(403).json({ error: "Bạn không được giao xử lý báo hỏng này." });
         }
 

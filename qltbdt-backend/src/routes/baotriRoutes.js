@@ -9,20 +9,23 @@ router.use(verifyToken); // Tất cả các route dưới đây yêu cầu đăn
 // Lấy danh sách task đang tiến hành/yêu cầu làm lại của nhân viên
 router.get("/my-tasks", requireRole(['nhanvien']), baotriController.getMyTasks);
 
-// Lấy lịch sử log của một báo hỏng
-router.get("/log/:baohong_id", requireRole(['admin', 'nhanvien']), baotriController.getBaoHongLog);
-
 // Tạo log bảo trì mới
 router.post("/", requireRole(['nhanvien']), baotriController.createLogBaoTri);
 
 // Upload ảnh hóa đơn (nếu có)
 router.post("/upload-invoice", requireRole(['nhanvien']), uploadInvoiceImage.array('hinhAnhHoaDon', 5), baotriController.uploadInvoiceImage); // Cho phép upload tối đa 5 ảnh
 
-// Lấy log theo thongtinthietbi_id 
-router.get('/thietbi/:thongtinthietbi_id', requireRole(['admin', 'nhanvien']), baotriController.getLogsByThietBiId);
+// // Lấy lịch sử log của một báo hỏng
+// router.get("/log/:baohong_id", requireRole(['admin', 'nhanvien']), baotriController.getBaoHongLog);
 
-// THÊM ROUTE MỚI: Lấy log theo ID lịch bảo dưỡng
-router.get('/log/:lichbaoduong_id', verifyToken, requireRole(['admin', 'nhanvien']), baotriController.getLogsByLichBaoDuongId);
+// // Lấy log theo thongtinthietbi_id 
+// router.get('/thietbi/:thongtinthietbi_id', requireRole(['admin', 'nhanvien']), baotriController.getLogsByThietBiId);
+
+// // THÊM ROUTE MỚI: Lấy log theo ID lịch bảo dưỡng
+// router.get('/log/:lichbaoduong_id', verifyToken, requireRole(['admin', 'nhanvien']), baotriController.getLogsByLichBaoDuongId);
+
+// === LẤY LOG ===
+router.get("/logs", requireRole(['admin', 'nhanvien']), baotriController.getLogs);
 
 
 module.exports = router;

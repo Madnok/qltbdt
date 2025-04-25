@@ -156,12 +156,12 @@ exports.createThietBi = async (req, res) => {
 // Cập nhật thiết bị
 exports.updateThietBi = async (req, res) => {
     const { id } = req.params;
-    const { theloai_id, tenThietBi, moTa, donGia, tonKho } = req.body;
+    const {tenThietBi, moTa, donGia } = req.body;
 
     try {
         await pool.query(
-            "UPDATE thietbi SET theloai_id = ?, tenThietBi = ?, moTa = ?, donGia = ?, tonKho = ? WHERE id = ?",
-            [theloai_id, tenThietBi, moTa, donGia, tonKho, id]
+            "UPDATE thietbi SET theloai_id = ?, tenThietBi = ?, moTa = ?, donGia = ? WHERE id = ?",
+            [tenThietBi, moTa, donGia, id]
         );
         res.json({ message: "Cập nhật thiết bị thành công!" });
     } catch (error) {
