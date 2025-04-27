@@ -18,6 +18,7 @@ const baotriRoutes = require("./routes/baotriRoutes");
 const phieuxuatRoutes = require("./routes/phieuxuatRoutes");
 const gopyRoutes = require("./routes/gopyRoutes");
 const lichbaoduongRoutes = require("./routes/lichbaoduongRoutes");
+const thongkeRoutes = require("./routes/thongkeRoutes");
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use("/api/baotri", baotriRoutes);
 app.use("/api/xuat", phieuxuatRoutes);
 app.use("/api/gopy", gopyRoutes);
 app.use("/api/lichbaoduong", lichbaoduongRoutes);
+app.use("/api/thongke", thongkeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

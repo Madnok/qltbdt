@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 const cloudinary = require("../config/cloudinary");
-
+const { getIoInstance } = require('../socket');
 
 // Lấy danh sách thiết bị đủ điều kiện xuất kho
 exports.getEligibleDevicesForExport = async (req, res) => {
@@ -164,6 +164,21 @@ exports.createPhieuXuat = async (req, res) => {
 
         await connection.commit();
         console.log(`Transaction committed for phieuxuat ID: ${newPhieuXuatId}`);
+        
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'phieu' }); 
+                io.emit('stats_updated', { type: 'thietbi' }); 
+                 if (lyDoXuat === 'thanh_ly') { 
+                     io.emit('stats_updated', { type: 'taichinh' }); 
+                 } else {
+                     console.log(`[createPhieuXuat ID: ${newPhieuXuatId}] Emitted stats_updated (types: phieu, thietbi).`);
+                 }
+            }
+        } catch (socketError) {
+             console.error(`[createPhieuXuat ID: ${newPhieuXuatId}] Socket emit error:`, socketError);
+        }
 
         res.status(201).json({
             message: `Tạo phiếu xuất ID ${newPhieuXuatId} thành công cho ${selectedDeviceIds.length} thiết bị.`,

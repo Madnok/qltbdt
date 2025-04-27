@@ -425,8 +425,19 @@ exports.updateTinhTrangTaiSan = async (req, res) => {
         if (result.affectedRows === 0) {
             console.warn(`[updateTinhTrangTaiSan] ID: ${id}, Update failed (affectedRows = 0).`);
         }
-        console.log(`[updateTinhTrangTaiSan] ID: ${id}, Update successful. Sending response.`);
         res.status(200).json({ message: `Cập nhật trạng thái thiết bị ${id} thành công.` });
+        try {
+            const io = getIoInstance();
+            if (io && result.affectedRows > 0) { 
+                io.emit('stats_updated', { type: 'thietbi' });
+                 if (tinhTrang === 'da_thanh_ly') {
+                     io.emit('stats_updated', { type: 'taichinh' });
+                     console.log(`[updateTinhTrangTaiSan ID: ${id}] Emitted stats_updated (type: taichinh).`);
+                 }
+            }
+        } catch (socketError) {
+            console.error(`[updateTinhTrangTaiSan ID: ${id}] Socket emit error:`, socketError);
+        }
 
     } catch (error) {
         console.error(`[updateTinhTrangTaiSan] ID: ${id}, ERROR:`, error);
@@ -473,6 +484,14 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
         }
 
         await connection.commit();
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'thietbi' }); 
+            }
+        } catch (socketError) {
+            console.error(`[phanBoTaiSanVaoPhong TTTB_ID: ${thongTinThietBiId}] Socket emit error:`, socketError);
+        }
         res.status(200).json({ message: `Đã phân bổ tài sản ID ${thongTinThietBiId} vào phòng ID ${phongIdInt} thành công.` });
 
         // --- SOCKET THÔNG BÁO ---

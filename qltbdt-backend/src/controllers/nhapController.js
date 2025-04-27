@@ -3,6 +3,7 @@ const db = require("../config/db");
 const cloudinary = require("../config/cloudinary");
 const fs = require('fs');
 const path = require('path');
+const { getIoInstance } = require('../socket');
 
 // Lấy danh sách tất cả phiếu nhập
 exports.getAllPhieuNhap = async (req, res) => {
@@ -202,7 +203,17 @@ exports.createPhieuNhap = async (req, res) => {
         // 4. Commit transaction
         await connection.commit();
         console.log(`[createPhieuNhapWithDetails] Transaction committed for PhieuNhap ID ${newPhieuNhapId}.`);
-
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'phieu' }); // Số lượng phiếu nhập thay đổi
+                io.emit('stats_updated', { type: 'thietbi' }); // Số lượng/trạng thái TB thay đổi
+                io.emit('stats_updated', { type: 'taichinh' }); // Giá trị tài sản thay đổi
+                console.log(`[createPhieuNhap ID: ${newPhieuNhapId}] Emitted stats_updated (types: phieu, thietbi, taichinh).`);
+            }
+        } catch (socketError) {
+             console.error(`[createPhieuNhap ID: ${newPhieuNhapId}] Socket emit error:`, socketError);
+        }
         // 5. Trả về kết quả thành công 
         res.status(201).json({
             message: `Tạo phiếu nhập và ${totalTTTBCreated} chi tiết thiết bị thành công!`,

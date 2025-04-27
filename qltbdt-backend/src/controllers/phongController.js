@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { getIoInstance } = require('../socket');
 
 //  Lấy danh sách tất cả phòng
 exports.getAllPhong = async (req, res) => {
@@ -239,6 +240,16 @@ exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
 
         await connection.commit();
 
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'thietbi' }); // Số lượng TB theo phòng/kho thay đổi
+                console.log(`[thuHoiTaiSanKhoiPhong TTTB_ID: ${tttbIdInt}] Emitted stats_updated (type: thietbi).`);
+            }
+        } catch (socketError) {
+            console.error(`[thuHoiTaiSanKhoiPhong TTTB_ID: ${tttbIdInt}] Socket emit error:`, socketError);
+        }
+
         res.status(200).json({ message: `Đã thu hồi tài sản ID ${tttbIdInt} thành công!` });
 
     } catch (error) {
@@ -280,6 +291,16 @@ exports.thuHoiNhieuTaiSanKhoiPhong = async (req, res) => {
         }
 
         await connection.commit();
+
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'thietbi' }); 
+            }
+        } catch (socketError) {
+            console.error(`[thuHoiTaiSanKhoiPhong TTTB_ID: ${tttbIdInt}] Socket emit error:`, socketError);
+        }
+
         res.json({ message: `Đã gỡ ${list.length} thiết bị khỏi phòng.` });
     } catch (err) {
         await connection.rollback();

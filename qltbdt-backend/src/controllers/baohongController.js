@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const { emitToUser } = require('../socket');
+const { getIoInstance } = require('../socket');
 
 // ==================================
 //        Hàm Helper Nội Bộ
@@ -38,6 +39,15 @@ async function _handleAdminInitialApproval(connection, id, updateData, currentBa
 
         await connection.commit();
         console.log(`[_handleAdminInitialApproval] ID: ${id} - Transaction committed.`);
+
+        try {
+            const io = getIoInstance();
+            if (io) {
+                 io.emit('stats_updated', { type: 'baohong' }); 
+            }
+        } catch (socketError) {
+            console.error(`[_handleAdminInitialApproval ID: ${id}] Socket emit error:`, socketError);
+        }
 
         // Gửi socket cho NV được gán
         try {
@@ -491,6 +501,15 @@ exports.postGuiBaoHong = async (req, res) => {
         await connection.commit();
         console.log("Báo hỏng đã được tạo thành công. Số lượng:", insertResults.length);
 
+        try {
+            const io = getIoInstance();
+            if (io && insertResults.length > 0) {
+                io.emit('stats_updated', { type: 'baohong' }); 
+            }
+        } catch (socketError) {
+            console.error("Socket emit error after creating baohong:", socketError);
+        }
+
         // Gửi socket sau khi commit thành công
         if (insertResults.length > 0) {
             try {
@@ -872,6 +891,16 @@ exports.deleteBaoHong = async (req, res) => {
         // --- Bước 5: Commit transaction ---
         await connection.commit();
         console.log(`[deleteBaoHong ID ${id}] Đã commit transaction. Xóa thành công.`);
+
+        try {
+            const io = getIoInstance();
+            if (io) {
+                io.emit('stats_updated', { type: 'baohong' });
+            }
+        } catch (socketError) {
+            console.error(`[deleteBaoHong ID: ${id}] Socket emit error:`, socketError);
+        }
+
         res.status(200).json({ message: "Xóa báo hỏng thành công!", id: parseInt(id) });
 
     } catch (error) {

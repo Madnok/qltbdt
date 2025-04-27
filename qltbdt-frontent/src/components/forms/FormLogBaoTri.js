@@ -430,12 +430,11 @@ const FormLogBaoTri = ({ taskInfo, onClose }) => {
 
     const isImageRequired = useMemo(() => {
         return (
-            ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý'
-            // ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' ||
-            // (
-            //     (phuongAnXuLy === 'Tự Sửa Chữa' || phuongAnXuLy === 'Khác') &&
-            //     (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Đề xuất thanh lý')
-            // )
+            ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' ||
+            (
+                (phuongAnXuLy === 'Tự Sửa Chữa' || phuongAnXuLy === 'Khác') &&
+                (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Đề xuất thanh lý')
+            )
         );
     }, [ketQuaXuLy, phuongAnXuLy]);
 

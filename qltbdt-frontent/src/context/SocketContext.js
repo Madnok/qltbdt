@@ -78,6 +78,12 @@ export const SocketProvider = ({ children }) => {
                 }
             });
 
+            const handleStatsUpdate = (data) => {
+                console.log('[SocketContext] Received stats_updated event:', data);
+                queryClient.invalidateQueries({ queryKey: ['thongKe'] });
+            };
+            newSocket.on('stats_updated', handleStatsUpdate);
+
             setSocket(newSocket);
 
         } else {
@@ -98,6 +104,7 @@ export const SocketProvider = ({ children }) => {
                 newSocket.off('new_baohong_created');
                 newSocket.off('asset_assigned_to_room');
                 newSocket.off('new_assigned_task');
+                newSocket.off('stats_updated');
                 newSocket.disconnect();
             }
         };

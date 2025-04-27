@@ -501,7 +501,7 @@ const ThongTinBaoHong = () => {
                                                             >
                                                                 {/* Option value dùng số */}
                                                                 <option value="">-- Chọn NV --</option>
-                                                                {item.suggested_nhanvien_id && (<option value={item.suggested_nhanvien_id}>{item.suggested_nhanvien_name} (Gợi ý)</option>)}
+                                                                {item.suggested_nhanvien_id && (<option value={item.suggested_nhanvien_id}>{item.suggested_nhanvien_name} (Phụ Trách Phòng)</option>)}
                                                                 {nhanVienList
                                                                     .filter(nv => nv.id !== item.suggested_nhanvien_id)
                                                                     .map(nv => <option key={nv.id} value={nv.id}>{nv.hoTen}</option>)

@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { getIoInstance } = require('../socket');
 
 async function getCurrentDeviceStatusAndWarranty(conn, deviceId) {
     if (!deviceId) return { tinhTrang: null, ngayBaoHanhKetThuc: null };
@@ -258,6 +259,27 @@ exports.createLogBaoTri = async (req, res) => {
         // === BƯỚC 4: Commit Transaction ===
         await connection.commit();
         console.log(`[createLogBaoTri] Log ${insertedLogId} for Task ID ${relatedTableId}: Transaction committed successfully.`);
+        
+        try {
+            const io = getIoInstance();
+            if (io) {
+                // Luôn emit cho thiết bị vì log bảo trì liên quan đến thiết bị
+                 if (parsedThietBiId) {
+                     io.emit('stats_updated', { type: 'thietbi' });
+                 }
+                 // Emit cho báo hỏng nếu log này liên quan đến báo hỏng
+                 if (parsedBaoHongId) {
+                     io.emit('stats_updated', { type: 'baohong' });
+                 }
+                // Emit cho tài chính nếu có chi phí được ghi nhận
+                if (suDungVatTu === true && chiPhi && !isNaN(parseFloat(chiPhi)) && parseFloat(chiPhi) > 0) {
+                     io.emit('stats_updated', { type: 'taichinh' });
+                 }
+            }
+        } catch (socketError) {
+            console.error(`[createLogBaoTri Log ID: ${insertedLogId}] Socket emit error:`, socketError);
+        }
+
         res.status(201).json({ message: "Ghi nhận hoạt động bảo trì thành công.", logId: insertedLogId });
 
     } catch (error) {

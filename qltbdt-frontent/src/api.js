@@ -1094,3 +1094,26 @@ export const deleteLichBaoDuongAPI = async (id) => {
 // ========= KẾT THÚC API LỊCH BẢO DƯỠNG ================================================= //
 
 
+// ============ API THỐNG KÊ ==========================================
+export const getThongKeTaiChinhTongQuanAPI = () => api.get('/thongke/tai-chinh');
+
+export const getThongKeThietBiTheoTrangThaiAPI = () => api.get('/thongke/thiet-bi/theo-trang-thai');
+
+export const getThongKeThietBiTheoPhongAPI = () => api.get('/thongke/thiet-bi/theo-phong');
+
+export const getThongKeBaoHongAPI = () => api.get('/thongke/bao-hong/theo-phong-loai');
+
+export const getThongKeChiPhiBaoTriTheoThangAPI = () => api.get('/thongke/chi-phi-bao-tri/theo-thang');
+
+export const getThongKePhieuTheoThangAPI = () => api.get('/thongke/phieu/theo-thang');
+
+export const getThongKeThietBiChiTietTheoTrangThaiAPI = (tinhTrang) => {
+    if (!tinhTrang) return Promise.reject(new Error("Thiếu trạng thái để lọc thiết bị")); 
+    return api.get('/thongke/thiet-bi-chi-tiet', { params: { tinhTrang } });
+}
+
+export const getThongKeBaoHongTheoThangAPI = () => api.get('/thongke/bao-hong/theo-thang');
+
+export const getThongKeTongThuTheoThoiGianAPI = (params) => api.get('/thongke/tong-thu/theo-thang', { params }); // params = { year, month? }
+
+export const getThongKeTongChiTheoThoiGianAPI = (params) => api.get('/thongke/tong-chi/theo-thang', { params }); // params = { year, month? }
