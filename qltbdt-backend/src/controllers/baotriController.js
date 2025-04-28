@@ -1,6 +1,22 @@
 const pool = require("../config/db");
 const { getIoInstance } = require('../socket');
 
+async function queryWithRetry(connection, sql, params, maxRetries = 1) {
+    let attempt = 0;
+    while (attempt <= maxRetries) {
+        try {
+            return await connection.query(sql, params);
+        } catch (err) {
+            if (err.code === 'ER_LOCK_WAIT_TIMEOUT' && attempt < maxRetries) {
+                console.warn(`[Retry ${attempt + 1}] Lock wait timeout, retrying...`);
+                attempt++;
+            } else {
+                throw err;
+            }
+        }
+    }
+}
+
 async function getCurrentDeviceStatusAndWarranty(conn, deviceId) {
     if (!deviceId) return { tinhTrang: null, ngayBaoHanhKetThuc: null };
     const [rows] = await conn.query("SELECT tinhTrang, ngayBaoHanhKetThuc FROM thongtinthietbi WHERE id = ?", [deviceId]);
@@ -13,6 +29,14 @@ function determineFinalStatusInternal(warrantyEndDate) {
     const endDate = new Date(warrantyEndDate);
     endDate.setHours(0, 0, 0, 0);
     return endDate >= today ? 'con_bao_hanh' : 'het_bao_hanh';
+}
+async function getCurrentTTTBState(conn, tttbId) {
+    if (!tttbId) return { trangThaiHoatDong: null, phong_id: null };
+    const [rows] = await conn.query(
+        "SELECT trangThaiHoatDong, phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE",
+        [tttbId]
+    );
+    return rows[0] || { trangThaiHoatDong: null, phong_id: null };
 }
 
 // Lấy task đang xử lý của nhân viên
@@ -28,6 +52,7 @@ exports.getMyTasks = async (req, res) => {
                 p.toa, p.tang, p.soPhong,
                 bh.thongtinthietbi_id,
                 tttb.thietbi_id,
+                tttb.trangThaiHoatDong,
                 tttb.tinhTrang AS tinhTrangThietBi,
                 tb.tenThietBi,
                 bh.moTa, bh.loaithiethai, bh.thiethai, bh.ngayBaoHong,
@@ -101,14 +126,11 @@ exports.createLogBaoTri = async (req, res) => {
 
         let insertedLogId;
         try {
-            console.log("[createLogBaoTri] STEP 1: Executing INSERT INTO baotri...");
-            console.log("[createLogBaoTri] STEP 1 Params:", logParams);
-            const [logResult] = await connection.query(sqlInsertLog, logParams);
+            const [logResult] = await queryWithRetry(connection, sqlInsertLog, logParams);
             insertedLogId = logResult.insertId;
-            console.log(`[createLogBaoTri] STEP 1 SUCCESS: Log inserted with ID: ${insertedLogId}`);
         } catch (dbError) {
             console.error("[createLogBaoTri] STEP 1 FAILED: Error inserting into baotri:", dbError);
-            throw dbError; // Ném lỗi để rollback
+            throw dbError;
         }
 
         // === BƯỚC 2: Cập nhật bảng gốc (baohong hoặc lichbaoduong) ===
@@ -140,8 +162,8 @@ exports.createLogBaoTri = async (req, res) => {
                 updateRelatedTableQuery = "UPDATE baohong SET trangThai = ?";
                 updateRelatedTableParams = [nextStatus];
                 if (nextStatus === 'Hoàn Thành' || nextStatus === 'Chờ Xem Xét') {
-                     const [currentBH] = await connection.query("SELECT thoiGianXuLy FROM baohong WHERE id = ?", [relatedTableId]);
-                     if (currentBH.length > 0 && !currentBH[0].thoiGianXuLy) { updateRelatedTableQuery += ", thoiGianXuLy = NOW()"; }
+                    const [currentBH] = await connection.query("SELECT thoiGianXuLy FROM baohong WHERE id = ?", [relatedTableId]);
+                    if (currentBH.length > 0 && !currentBH[0].thoiGianXuLy) { updateRelatedTableQuery += ", thoiGianXuLy = NOW()"; }
                 }
                 updateRelatedTableQuery += ", ghiChuAdmin = NULL WHERE id = ?";
                 updateRelatedTableParams.push(relatedTableId);
@@ -156,7 +178,7 @@ exports.createLogBaoTri = async (req, res) => {
                     throw dbError;
                 }
             } else {
-                 console.log(`[createLogBaoTri] STEP 2.2 (BaoHong ID: ${relatedTableId}): No status update needed.`);
+                console.log(`[createLogBaoTri] STEP 2.2 (BaoHong ID: ${relatedTableId}): No status update needed.`);
             }
         }
         // --- Xử lý cập nhật Lịch Bảo Dưỡng ---
@@ -165,7 +187,7 @@ exports.createLogBaoTri = async (req, res) => {
             try {
                 console.log(`[createLogBaoTri] STEP 2.1 (LichBaoDuong ID: ${relatedTableId}): Updating coLogBaoTri = TRUE...`);
                 await connection.query("UPDATE lichbaoduong SET coLogBaoTri = TRUE WHERE id = ?", [relatedTableId]);
-                 console.log(`[createLogBaoTri] STEP 2.1 SUCCESS.`);
+                console.log(`[createLogBaoTri] STEP 2.1 SUCCESS.`);
             } catch (dbError) {
                 console.error(`[createLogBaoTri] STEP 2.1 FAILED: Error updating coLogBaoTri for lichbaoduong ${relatedTableId}:`, dbError);
                 throw dbError;
@@ -179,102 +201,115 @@ exports.createLogBaoTri = async (req, res) => {
 
             // Thực hiện cập nhật trạng thái Lịch Bảo Dưỡng
             if (nextStatus) {
-                updateRelatedTableQuery = "UPDATE lichbaoduong SET trang_thai = ? WHERE id = ?";                updateRelatedTableParams = [nextStatus, relatedTableId];
-                 try {
+                updateRelatedTableQuery = "UPDATE lichbaoduong SET trang_thai = ? WHERE id = ?"; updateRelatedTableParams = [nextStatus, relatedTableId];
+                try {
                     console.log(`[createLogBaoTri] STEP 2.2 (LichBaoDuong ID: ${relatedTableId}): Updating status to '${nextStatus}'...`);
                     console.log("[createLogBaoTri] STEP 2.2 Query:", updateRelatedTableQuery);
                     console.log("[createLogBaoTri] STEP 2.2 Params:", updateRelatedTableParams);
                     await connection.query(updateRelatedTableQuery, updateRelatedTableParams);
                     console.log(`[createLogBaoTri] STEP 2.2 SUCCESS.`);
-                 } catch (dbError) {
+                } catch (dbError) {
                     console.error(`[createLogBaoTri] STEP 2.2 FAILED: Error updating status for lichbaoduong ${relatedTableId}:`, dbError);
                     throw dbError;
-                 }
+                }
             } else {
-                 console.log(`[createLogBaoTri] STEP 2.2 (LichBaoDuong ID: ${relatedTableId}): No status update needed.`);
+                console.log(`[createLogBaoTri] STEP 2.2 (LichBaoDuong ID: ${relatedTableId}): No status update needed.`);
             }
         }
 
         // === BƯỚC 3: Cập nhật thongtinthietbi (nếu có ID thiết bị) ===
         if (parsedThietBiId) {
             const tttbIdInt = parsedThietBiId;
-            let updateTTTBQuery = '';
-            let updateTTTBParams = [];
+            let updateTTTBQuery = "UPDATE thongtinthietbi SET"; // Bắt đầu câu query
+            const updateFields = [];
+            const updateTTTBParams = [];
 
+            // Lấy trạng thái hiện tại của TTTB trong transaction
+            const currentState = await getCurrentTTTBState(connection, tttbIdInt);
+            const currentPhongId = currentState.phong_id;
+            const currentTrangThaiHoatDong = currentState.trangThaiHoatDong;
+
+            let nextTinhTrang = null;
+            let nextTrangThaiHD = null;
+            let nextNgayDuKienTra = undefined; // để phân biệt giữa "không đổi" và "cho về null"
+
+            // --- Logic quyết định trạng thái mới ---
             if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
-                updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = 'dang_bao_hanh', ngayDuKienTra = ? WHERE id = ?";
-                updateTTTBParams = [ngayDuKienTra || null, tttbIdInt];
+                nextTinhTrang = 'dang_bao_hanh';
+                nextTrangThaiHD = currentTrangThaiHoatDong; // Không thay đổi trạng thái hoạt động
+                nextNgayDuKienTra = ngayDuKienTra || null;
             } else if (ketQuaXuLy === 'Đã nhận từ bảo hành') {
-                const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
-                const finalStatusDevice = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
-                updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?";
-                updateTTTBParams = [finalStatusDevice, tttbIdInt];
+                const warrantyInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
+                nextTinhTrang = determineFinalStatusInternal(warrantyInfo.ngayBaoHanhKetThuc);
+                nextNgayDuKienTra = null;
+
+                if (hoatdong.toLowerCase().includes('vẫn còn lỗi') || hoatdong.toLowerCase().includes('van con loi')) {
+                    nextTrangThaiHD = 'hỏng hóc';
+                }
             } else if (ketQuaXuLy === 'Đề xuất thanh lý') {
-                updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?";
-                updateTTTBParams = [tttbIdInt]; // <-- LỖI TIỀM ẨN Ở ĐÂY?? Params chỉ có 1 giá trị? -> PHẢI LÀ [tttbIdInt]
-                 // SỬA LẠI: params phải là ['de_xuat_thanh_ly', tttbIdInt] nếu query là SET tinhTrang... WHERE id = ?
-                 // Hoặc nếu query là SET tinhTrang = 'de_xuat_thanh_ly'... thì params là [tttbIdInt]
-                 // --> Query đúng phải là:
-                 updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?";
-                 updateTTTBParams = [tttbIdInt]; // VẪN SAI -> Phải là: updateTTTBParams = [tttbIdInt];
-                 // --> Sửa lại hoàn chỉnh:
-                 updateTTTBParams = [tttbIdInt]; // Giữ lại ID
-                 // Câu query cần sửa lại param:
-                 // query: UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?
-                 // -> Params phải là [tttbIdInt]
-                 // --> CẦN SỬA LẠI CẢ QUERY VÀ PARAMS CHO TRƯỜNG HỢP NÀY
-                 updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?";
-                 updateTTTBParams = [tttbIdInt]; // --> VẪN SAI, phải là [tttbIdInt] TRONG PARAMS CHO WHERE, còn 'de_xuat_thanh_ly' là giá trị cố định
-                 // -----> CHÍNH XÁC:
-                 updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = 'de_xuat_thanh_ly', ngayDuKienTra = NULL WHERE id = ?";
-                 updateTTTBParams = [tttbIdInt]; // Dùng ID cho phần WHERE
-
+                nextTinhTrang = 'de_xuat_thanh_ly';
+                nextTrangThaiHD = 'hỏng hóc';
+                nextNgayDuKienTra = null;
             } else if (ketQuaXuLy === 'Đã sửa chữa xong' || ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý') {
-                 const currentStatusInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
-                 if (!['dang_bao_hanh', 'cho_thanh_ly', 'da_thanh_ly', 'de_xuat_thanh_ly'].includes(currentStatusInfo.tinhTrang)) {
-                    const finalStatus = determineFinalStatusInternal(currentStatusInfo.ngayBaoHanhKetThuc);
-                    updateTTTBQuery = "UPDATE thongtinthietbi SET tinhTrang = ?, ngayDuKienTra = NULL WHERE id = ?";
-                    updateTTTBParams = [finalStatus, tttbIdInt];
-                 }
+                const warrantyInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
+                nextTinhTrang = determineFinalStatusInternal(warrantyInfo.ngayBaoHanhKetThuc);
+                nextNgayDuKienTra = null;
+                nextTrangThaiHD = currentPhongId ? 'đang dùng' : 'chưa dùng';
+            } else if (ketQuaXuLy === 'Chuyển cho bộ phận khác') {
+                const warrantyInfo = await getCurrentDeviceStatusAndWarranty(connection, tttbIdInt);
+                nextTinhTrang = warrantyInfo.tinhTrang;
+                nextTrangThaiHD = currentTrangThaiHoatDong;
+                nextNgayDuKienTra = null;
             }
 
-            if (updateTTTBQuery) {
-                 try {
-                    console.log(`[createLogBaoTri] STEP 3 (TTTB ID: ${tttbIdInt}): Updating thongtinthietbi...`);
-                    console.log("[createLogBaoTri] STEP 3 Query:", updateTTTBQuery);
-                    console.log("[createLogBaoTri] STEP 3 Params:", updateTTTBParams);
-                    await connection.query(updateTTTBQuery, updateTTTBParams);
-                    console.log(`[createLogBaoTri] STEP 3 SUCCESS.`);
-                 } catch (dbError) {
-                    console.error(`[createLogBaoTri] STEP 3 FAILED: Error updating thongtinthietbi ${tttbIdInt}:`, dbError);
-                    throw dbError;
-                 }
-            } else {
-                 console.log(`[createLogBaoTri] STEP 3 (TTTB ID: ${tttbIdInt}): No update needed for thongtinthietbi.`);
+            // --- Build câu query UPDATE ---
+            if (nextTinhTrang) {
+                updateFields.push("tinhTrang = ?");
+                updateTTTBParams.push(nextTinhTrang);
             }
-        } else {
-             console.log(`[createLogBaoTri] STEP 3: No thongtinthietbi_id provided, skipping update.`);
+            if (nextTrangThaiHD) {
+                updateFields.push("trangThaiHoatDong = ?");
+                updateTTTBParams.push(nextTrangThaiHD);
+            }
+            if (nextNgayDuKienTra !== undefined) { // cập nhật cả khi null
+                updateFields.push("ngayDuKienTra = ?");
+                updateTTTBParams.push(nextNgayDuKienTra);
+            }
+
+            if (updateFields.length > 0) {
+                updateTTTBQuery += " " + updateFields.join(", ") + " WHERE id = ?";
+                updateTTTBParams.push(tttbIdInt);
+
+                try {
+                    await connection.query(updateTTTBQuery, updateTTTBParams);
+                    console.log("[createLogBaoTri] STEP 3 SUCCESS.");
+                } catch (dbError) {
+                    throw dbError;
+                }
+            } else {
+                console.log(`[createLogBaoTri] STEP 3: No update needed for thongtinthietbi ${tttbIdInt}`);
+            }
         }
 
         // === BƯỚC 4: Commit Transaction ===
         await connection.commit();
         console.log(`[createLogBaoTri] Log ${insertedLogId} for Task ID ${relatedTableId}: Transaction committed successfully.`);
-        
+
         try {
             const io = getIoInstance();
             if (io) {
                 // Luôn emit cho thiết bị vì log bảo trì liên quan đến thiết bị
-                 if (parsedThietBiId) {
-                     io.emit('stats_updated', { type: 'thietbi' });
-                 }
-                 // Emit cho báo hỏng nếu log này liên quan đến báo hỏng
-                 if (parsedBaoHongId) {
-                     io.emit('stats_updated', { type: 'baohong' });
-                 }
+                if (parsedThietBiId) {
+                    io.emit('stats_updated', { type: 'thietbi' });
+                }
+                // Emit cho báo hỏng nếu log này liên quan đến báo hỏng
+                if (parsedBaoHongId) {
+                    io.emit('stats_updated', { type: 'baohong' });
+                }
                 // Emit cho tài chính nếu có chi phí được ghi nhận
                 if (suDungVatTu === true && chiPhi && !isNaN(parseFloat(chiPhi)) && parseFloat(chiPhi) > 0) {
-                     io.emit('stats_updated', { type: 'taichinh' });
-                 }
+                    io.emit('stats_updated', { type: 'taichinh' });
+                }
             }
         } catch (socketError) {
             console.error(`[createLogBaoTri Log ID: ${insertedLogId}] Socket emit error:`, socketError);

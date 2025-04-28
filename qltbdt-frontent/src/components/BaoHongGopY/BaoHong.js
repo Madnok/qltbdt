@@ -411,7 +411,7 @@ const BaoHong = () => {
                     </label>
                     {/* Thông báo */}
                     {(damageForm.damageType === "Các Loại Thiết Bị" && !formData.idPhong) && (<p className="italic text-center text-gray-500">Vui lòng chọn phòng.</p>)}
-                    {(damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong && (!thietBiList || thietBiList.length === 0)) && (<p className="italic text-center text-gray-500">Phòng này không có thiết bị hoặc đang tải...</p>)}
+                    {(damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong && (!thietBiList || thietBiList.length === 0)) && (<p className="italic text-center text-gray-500">Phòng này chưa có thiết bị</p>)}
 
                     {(damageForm.damageType === "Các Loại Thiết Bị" && formData.idPhong && thietBiList && thietBiList.length > 0) && (
                         <div className="mt-2 overflow-x-auto max-h-96">
@@ -442,14 +442,14 @@ const BaoHong = () => {
                                             {/* Child Table */}
                                             {expandedRows.includes(group.tenTheLoai) && (
                                                 <tr>
-                                                    <td colSpan={1}></td>
-                                                    <td colSpan={3} className="p-1 border">
+                                                    <td colSpan={4} className="p-1 border-l-2 border-blue-500">
                                                         <table className="w-full border-collapse">
                                                             <thead className="bg-gray-50">
                                                                 <tr>
                                                                     <th className="px-3 py-1 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border">Chọn</th>
                                                                     <th className="px-3 py-1 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Mã Định Danh</th>
                                                                     <th className="px-3 py-1 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Tên TB</th>
+                                                                    <th className="px-3 py-1 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border">Tình Trạng</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -480,6 +480,7 @@ const BaoHong = () => {
                                                                             </td>
                                                                             <td className="px-3 py-1 text-xs border">{tb.thongtinthietbi_id}</td>
                                                                             <td className="px-3 py-1 text-xs border">{tb.tenLoaiThietBi}</td>
+                                                                            <td className="px-3 py-1 text-xs border">{tb.trangThaiHoatDong}</td>
                                                                         </tr>
                                                                     );
                                                                 })}

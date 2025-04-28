@@ -161,9 +161,9 @@ const AssignedTasksView = () => {
     // --- Fetch Data ---
     const baoHongStatuses = useMemo(() => ['Đã Duyệt', 'Đang Tiến Hành', 'Yêu Cầu Làm Lại', 'Chờ Hoàn Tất Bảo Hành', 'Chờ Xem Xét'], []);
     const { data: baoHongTasks = [], isLoading: isLoadingBaoHong } = useQuery({
-        queryKey: ['assignedBaoHongTasks', baoHongStatuses],
+        queryKey: ['assignedBaoHong', baoHongStatuses],
         queryFn: () => api.fetchAssignedBaoHongAPI({ statuses: baoHongStatuses }),
-        staleTime: 1 * 60 * 1000,
+        staleTime: 0,
     });
 
     const baoDuongStatuses = useMemo(() => ['Chờ xử lý', 'Đang tiến hành', 'Chờ Hoàn Tất Bảo Hành'], []);
@@ -179,7 +179,7 @@ const AssignedTasksView = () => {
         mutationFn: api.updateBaoHongAPI,
         onSuccess: (data, variables) => {
             toast.success(data.message || `Cập nhật Báo hỏng ID ${variables.id} thành công.`);
-            queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+            queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
             // Invalidate cả query công việc bảo dưỡng nếu trạng thái liên quan
@@ -201,7 +201,7 @@ const AssignedTasksView = () => {
             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
             // Invalidate cả query công việc báo hỏng nếu trạng thái liên quan
              if (variables.data?.trang_thai === 'Chờ Hoàn Tất Bảo Hành') {
-                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
              }
         },
         onError: (error, variables) => {
@@ -284,7 +284,7 @@ const AssignedTasksView = () => {
      const handleCloseNhanHangModal = useCallback(() => { setSelectedTaskForNhanHang(null); setIsNhanHangModalOpen(false); }, []);
 
     const handleNhanHangSuccess = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+        queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
         queryClient.invalidateQueries({ queryKey: ['assignedBaoDuongTasks'] });
         queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
     }, [queryClient]);
@@ -395,7 +395,7 @@ const AssignedTasksView = () => {
                             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongLog', selectedTaskInfoForLog.lichbaoduong_id] });
                             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
                         } else if (selectedTaskInfoForLog?.id) { // ID ở đây là của báo hỏng
-                            queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+                            queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
                             queryClient.invalidateQueries({ queryKey: ['baohongLog', selectedTaskInfoForLog.id] });
                             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
                         }

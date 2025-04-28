@@ -25,34 +25,33 @@ export const SocketProvider = ({ children }) => {
             });
 
             newSocket.on('connect', () => {
-                console.log('✅ [SocketContext] Connected:', newSocket.id);
+                console.log('[SocketContext] Connected:', newSocket.id);
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+                queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+                queryClient.invalidateQueries({ queryKey: ['taiSan'] });
+                queryClient.invalidateQueries({ queryKey: ['phongList'] });
             });
-
             newSocket.on('disconnect', (reason) => {
-                console.log('❌ [SocketContext] Disconnected:', reason);
+                console.log('[SocketContext] Disconnected:', reason);
             });
-
             newSocket.on('connect_error', (error) => {
-                console.error('❌ [SocketContext] Connection Error:', error.message, error.data || '');
+                console.error('[SocketContext] Connection Error:', error.message, error.data || '');
                 if (newSocket) newSocket.disconnect();
                 setSocket(null);
             });
-
             newSocket.on('status_changed', (data) => {
                 if (data?.newStatus === 'off') {
                     toast.error(data?.message || 'Tài khoản của bạn đã bị khóa!', { duration: 6000, icon: '🔒' });
                     setTimeout(() => logout(), 1500);
                 }
             });
-            newSocket.on('new_task', (taskData) => {
-                toast.info(`🔔 Có công việc mới: ${taskData.moTa}`);
-                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
-            });
             newSocket.on('task_cancelled', (data) => {
                 toast.warn(`⚠️ Công việc ID ${data.baoHongId} đã bị hủy.`);
-                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                    queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+                }, 300);
             });
             newSocket.on('new_baohong_created', (data) => {
                 toast.info(data.message || `Có báo hỏng mới!`);
@@ -69,20 +68,36 @@ export const SocketProvider = ({ children }) => {
             });
             newSocket.on('new_assigned_task', (data) => {
                 toast.info(data.message || 'Bạn có công việc mới!');
-                if (data.type === 'baoduong') {
-                    queryClient.invalidateQueries(['assignedBaoDuongTasks']);
-                    queryClient.invalidateQueries(['baotriMyTasks']);
-                } else if (data.type === 'baohong') {
-                    queryClient.invalidateQueries(['assignedBaoHongTasks']);
-                    queryClient.invalidateQueries(['baohongMyTasks']);
-                }
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+                queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             });
-
+            newSocket.on('task_rework_request', (data) => {
+                toast.warn(`Yêu cầu làm lại công việc ID ${data.baoHongId}.`);
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                    queryClient.invalidateQueries({ queryKey: ['baotriMyTasks'] });
+                    queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+                }, 300);
+            });
             const handleStatsUpdate = (data) => {
-                console.log('[SocketContext] Received stats_updated event:', data);
                 queryClient.invalidateQueries({ queryKey: ['thongKe'] });
+                if (data?.type === 'baohong') {
+                    console.log('[SocketContext] Invalidating baoHongList and assignedBaoHong due to stats_updated(baohong).');
+                    queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+                    queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+                }
             };
             newSocket.on('stats_updated', handleStatsUpdate);
+
+            newSocket.on('task_started', (data) => {
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+                    queryClient.invalidateQueries({
+                        predicate: (query) => query.queryKey[0] === 'assignedBaoHong'
+                    });
+                }, 300);
+            });
 
             setSocket(newSocket);
 
@@ -99,11 +114,12 @@ export const SocketProvider = ({ children }) => {
                 newSocket.off('disconnect');
                 newSocket.off('connect_error');
                 newSocket.off('status_changed');
-                newSocket.off('new_task');
+                newSocket.off('task_started');
                 newSocket.off('task_cancelled');
                 newSocket.off('new_baohong_created');
                 newSocket.off('asset_assigned_to_room');
                 newSocket.off('new_assigned_task');
+                newSocket.off('task_rework_request');
                 newSocket.off('stats_updated');
                 newSocket.disconnect();
             }

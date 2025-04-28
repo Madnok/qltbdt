@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FaSearch } from 'react-icons/fa';
+import { renderTrangThaiHoatDong } from '../../utils/constants';
 import {
     fetchPhongCoTaiSanList,
     fetchTheLoaiList,
@@ -8,8 +9,9 @@ import {
 } from '../../api';
 
 const BoLocTaiSan = ({ onFilterChange }) => {
-    const [trangThai, setTrangThai] = useState('');
+    const [tinhTrang, settinhTrang] = useState('');
     const [phongId, setPhongId] = useState('');
+    const [trangThaiHoatDongFilter, setTrangThaiHoatDongFilter] = useState('');
     const [theLoaiId, setTheLoaiId] = useState('');
     const [thietBiId, setThietBiId] = useState('');
     const [searchText, setSearchText] = useState('');
@@ -23,7 +25,6 @@ const BoLocTaiSan = ({ onFilterChange }) => {
     // Lấy danh sách thể loại
     const { data: theLoaiList } = useQuery({
         queryKey: ['allTheLoai'],
-        // SỬA LẠI TÊN HÀM API:
         queryFn: () => fetchTheLoaiList().then(res => res.data || res)
     });
 
@@ -37,18 +38,20 @@ const BoLocTaiSan = ({ onFilterChange }) => {
     // Phần useEffect
     useEffect(() => {
         const filters = {
-            trangThai: trangThai || undefined, // Gửi undefined nếu rỗng
+            tinhTrang: tinhTrang || undefined,
+            trangThaiHoatDong: trangThaiHoatDongFilter || undefined,
             phongId: phongId || undefined,
             theLoaiId: theLoaiId || undefined,
             thietBiId: thietBiId || undefined,
             keyword: searchText || undefined
         };
         onFilterChange(filters);
-    }, [trangThai, phongId, theLoaiId, thietBiId, onFilterChange, searchText]);
+    }, [tinhTrang, trangThaiHoatDongFilter, phongId, theLoaiId, thietBiId, onFilterChange, searchText]); // <<< THÊM VÀO DEPENDENCIES
 
     // Xử lý reset bộ lọc
     const handleReset = () => {
-        setTrangThai('');
+        settinhTrang('');
+        setTrangThaiHoatDongFilter('');
         setPhongId('');
         setTheLoaiId('');
         setThietBiId('');
@@ -58,11 +61,11 @@ const BoLocTaiSan = ({ onFilterChange }) => {
     return (
         <div className="p-3 bg-white border border-gray-200 rounded-md shadow-sm">
             <div className="grid items-end grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                {/* Select Trạng thái */}
+                {/* Select tình trạng */}
                 <div>
-                    <label htmlFor="filterTrangThai" className="block mb-1 text-xs font-medium text-gray-600">Trạng thái</label>
-                    <select id="filterTrangThai" value={trangThai} onChange={(e) => setTrangThai(e.target.value)} className="w-full p-1.5 border border-gray-300 rounded-md text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Tất cả trạng thái --</option>
+                    <label htmlFor="filtertinhTrang" className="block mb-1 text-xs font-medium text-gray-600">Tình Trạng</label>
+                    <select id="filtertinhTrang" value={tinhTrang} onChange={(e) => settinhTrang(e.target.value)} className="w-full p-1.5 border border-gray-300 rounded-md text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">-- Tất cả tình trạng--</option>
                         <option value="con_bao_hanh">Còn bảo hành</option>
                         <option value="het_bao_hanh">Hết bảo hành</option>
                         <option value="cho_bao_hanh">Chờ bảo hành</option>
@@ -70,7 +73,24 @@ const BoLocTaiSan = ({ onFilterChange }) => {
                         <option value="da_bao_hanh">Đã bảo hành</option>
                         <option value="cho_thanh_ly">Chờ thanh lý</option>
                         <option value="da_thanh_ly">Đã thanh lý</option>
-                        {/* <option value="mat_mat">Mất Mát</option> */}
+                    </select>
+                </div>
+
+                {/* Select trạng thái */}
+                <div>
+                    <label htmlFor="filterTrangThaiHoatDong" className="block mb-1 text-xs font-medium text-gray-600">Trạng thái Hoạt Động</label>
+                    <select
+                        id="filterTrangThaiHoatDong"
+                        value={trangThaiHoatDongFilter}
+                        onChange={(e) => setTrangThaiHoatDongFilter(e.target.value)}
+                        className="w-full p-1.5 border border-gray-300 rounded-md text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">-- Tất cả trạng thái--</option>
+                        {['đang dùng', 'chưa dùng', 'mất mát', 'hỏng hóc'].map((value) => (
+                            <option key={value} value={value}>
+                                {renderTrangThaiHoatDong(value).props.children}
+                            </option>
+                        ))}
                     </select>
                 </div>
 

@@ -43,7 +43,7 @@ async function _handleAdminInitialApproval(connection, id, updateData, currentBa
         try {
             const io = getIoInstance();
             if (io) {
-                 io.emit('stats_updated', { type: 'baohong' }); 
+                io.emit('stats_updated', { type: 'baohong' });
             }
         } catch (socketError) {
             console.error(`[_handleAdminInitialApproval ID: ${id}] Socket emit error:`, socketError);
@@ -51,8 +51,8 @@ async function _handleAdminInitialApproval(connection, id, updateData, currentBa
 
         // Gửi socket cho NV được gán
         try {
-            emitToUser(nhanvien_id, 'new_task_assigned', { baoHongId: parseInt(id), statusAfterUpdate });
-            console.log(`[_handleAdminInitialApproval] ID: ${id} - Emitted new_task_assigned to user ${nhanvien_id}.`);
+            emitToUser(nhanvien_id, 'new_assigned_task', { baoHongId: parseInt(id), statusAfterUpdate });
+            console.log(`[_handleAdminInitialApproval] ID: ${id} - Emitted new_assigned_task to user ${nhanvien_id}.`);
         } catch (socketError) {
             console.error(`[_handleAdminInitialApproval] ID: ${id} - Failed to emit socket:`, socketError);
         }
@@ -118,7 +118,6 @@ async function _handleAdminCancelWithLog(connection, id, updateData, currentBaoH
     const statusAfterUpdate = newStatus;
     console.log(`[_handleAdminCancelWithLog] ID: ${id} - Determined new status: ${newStatus}, Should reset fields: ${shouldResetFields}`);
 
-    await connection.beginTransaction();
     try {
         // 1. Cập nhật baohong
         let queryUpdateBH = `UPDATE baohong SET trangThai = ?, nhanvien_id = NULL, ghiChuAdmin = ? `;
@@ -139,7 +138,6 @@ async function _handleAdminCancelWithLog(connection, id, updateData, currentBaoH
         const [logResult] = await connection.query(queryInsertLog, paramsInsertLog);
         if (logResult.affectedRows === 0) throw new Error("Lỗi khi ghi nhận lịch sử hủy công việc.");
 
-        await connection.commit();
         console.log(`[_handleAdminCancelWithLog] ID: ${id} - Transaction committed.`);
 
         // Gửi Socket
@@ -157,13 +155,14 @@ async function _handleAdminCancelWithLog(connection, id, updateData, currentBaoH
 
         return {
             success: true,
-            message: `Đã hủy/thu hồi công việc và ghi log. Trạng thái mới: '${newStatus}'.`,
+            message: `Chuẩn bị hủy/thu hồi công việc và ghi log. Trạng thái mới sẽ là: '${newStatus}'.`,
             id: id,
-            statusAfterUpdate: newStatus
+            statusAfterUpdate: newStatus,
+            cancelledNhanVienId: cancelledNhanVienId,
+            originalReason: originalReason
         };
 
     } catch (error) {
-        await connection.rollback();
         console.error(`[_handleAdminCancelWithLog] ID: ${id} - Error:`, error);
         throw new Error(error.message || "Lỗi khi hủy công việc (có log).");
     }
@@ -200,7 +199,6 @@ async function _handleAdminReviewOrRework(connection, id, updateData, currentBao
         finalNhanVienId = null;
     }
 
-    await connection.beginTransaction();
     try {
         let tttbUpdated = false;
         let newDeviceStatus = null;
@@ -221,8 +219,8 @@ async function _handleAdminReviewOrRework(connection, id, updateData, currentBao
                     throw new Error("Vui lòng chọn lại trạng thái 'Còn bảo hành' hoặc 'Hết bảo hành' để xác nhận.");
                 }
                 newDeviceStatus = finalDeviceStatus; // Gán trạng thái được chọn
-            } 
-            
+            }
+
             // Thực hiện cập nhật TTTB nếu có newDeviceStatus
             if (newDeviceStatus) {
                 const [tttbUpdateResult] = await connection.query("UPDATE thongtinthietbi SET tinhTrang = ? WHERE id = ?", [newDeviceStatus, currentBaoHong.thongtinthietbi_id]);
@@ -250,16 +248,25 @@ async function _handleAdminReviewOrRework(connection, id, updateData, currentBao
             throw new Error(`Không tìm thấy báo hỏng ở trạng thái '${currentStatus}' để xử lý.`);
         }
 
-        await connection.commit();
         console.log(`[_handleAdminReviewOrRework] ID: ${id} - Transaction committed.`);
 
         // Gửi Socket
-        if ((statusAfterUpdate === 'Yêu Cầu Làm Lại' || statusAfterUpdate === 'Đã Duyệt') && finalNhanVienId) {
-            try {
-                const eventName = statusAfterUpdate === 'Yêu Cầu Làm Lại' ? 'task_rework_request' : 'new_task_assigned';
-                emitToUser(finalNhanVienId, eventName, { baoHongId: parseInt(id), reason: ghiChuAdmin || null, statusAfterUpdate });
-                console.log(`[_handleAdminReviewOrRework] ID: ${id} - Emitted ${eventName} to user ${finalNhanVienId}.`);
-            } catch (socketError) { console.error(`[_handleAdminReviewOrRework] ID: ${id} - Failed to emit socket:`, socketError); }
+        try {
+            const io = getIoInstance();
+            if (io) {
+                // Gửi sự kiện chung để báo các client cập nhật
+                io.emit('stats_updated', { type: 'baohong' });
+                console.log(`[_handleAdminReviewOrRework] ID: ${id} - Emitted stats_updated after review/rework.`);
+
+                // Gửi sự kiện riêng cho NV nếu cần (đoạn này đã có)
+                if ((statusAfterUpdate === 'Yêu Cầu Làm Lại' || statusAfterUpdate === 'Đã Duyệt') && finalNhanVienId) {
+                    const eventName = statusAfterUpdate === 'Yêu Cầu Làm Lại' ? 'task_rework_request' : 'new_assigned_task'; // Sử dụng 'new_task_assigned' cho 'Đã Duyệt'
+                    emitToUser(finalNhanVienId, eventName, { baoHongId: parseInt(id), reason: ghiChuAdmin || null, statusAfterUpdate });
+                    console.log(`[_handleAdminReviewOrRework] ID: ${id} - Emitted ${eventName} to user ${finalNhanVienId}.`);
+                }
+            }
+        } catch (socketError) {
+            console.error(`[_handleAdminReviewOrRework ID: ${id}] Socket emit error after review/rework:`, socketError);
         }
 
         return {
@@ -271,7 +278,6 @@ async function _handleAdminReviewOrRework(connection, id, updateData, currentBao
         };
 
     } catch (error) {
-        await connection.rollback();
         console.error(`[_handleAdminReviewOrRework] ID: ${id} - Error:`, error);
         throw new Error(error.message || "Lỗi khi admin xử lý công việc.");
     }
@@ -319,23 +325,60 @@ async function _handleTechnicianUpdateStatus(connection, id, updateData, current
     query += " WHERE id = ? AND trangThai = ?"; // Thêm trạng thái nguồn
     params.push(id, currentBaoHong.trangThai);
 
-    await connection.beginTransaction();
     try {
         console.log(`[_handleTechnicianUpdateStatus] ID: ${id} - Executing SQL: ${query} with params:`, params);
         const [result] = await connection.query(query, params);
         console.log(`[_handleTechnicianUpdateStatus] ID: ${id} - Rows Affected: ${result.affectedRows}`);
         if (result.affectedRows === 0) throw new Error(`Không tìm thấy báo hỏng ở trạng thái '${currentBaoHong.trangThai}' để cập nhật.`);
 
-        await connection.commit();
-        console.log(`[_handleTechnicianUpdateStatus] ID: ${id} - Transaction committed.`);
-
         // Gửi Socket thông báo cho Admin
-        if (['Chờ Xem Xét', 'Không Thể Hoàn Thành'].includes(statusAfterUpdate)) {
-            try {
-                const eventName = statusAfterUpdate === 'Chờ Xem Xét' ? 'task_needs_review' : 'task_cannot_complete';
-                // emitToRole('admin', eventName, { baoHongId: parseInt(id), statusAfterUpdate });
-                console.log(`[_handleTechnicianUpdateStatus] ID: ${id} - Emitted ${eventName} to admins.`);
-            } catch (socketError) { console.error(`[_handleTechnicianUpdateStatus] ID: ${id} - Failed to emit socket:`, socketError); }
+        if (['Đang Tiến Hành', 'Chờ Xem Xét', 'Không Thể Hoàn Thành'].includes(statusAfterUpdate)) {
+            setImmediate(async () => {
+                let socketConnection = null;
+                try {
+                    socketConnection = await pool.getConnection();
+                    const [adminUsers] = await socketConnection.query(
+                        "SELECT id FROM users WHERE role = 'admin' AND tinhTrang = 'on'"
+                    );
+
+                    const eventData = {
+                        baoHongId: parseInt(id),
+                        statusAfterUpdate: statusAfterUpdate,
+                        technicianId: currentUser?.id, // ID nhân viên thực hiện
+                        technicianName: currentUser?.hoTen || `NV ID ${currentUser?.id}`
+                    };
+
+                    let eventName = 'task_updated';
+                    if (statusAfterUpdate === 'Đang Tiến Hành') {
+                        eventName = 'task_started';
+                    } else if (statusAfterUpdate === 'Chờ Xem Xét') {
+                        eventName = 'task_needs_review';
+                    } else if (statusAfterUpdate === 'Không Thể Hoàn Thành') {
+                        eventName = 'task_cannot_complete';
+                    }
+
+                    for (const admin of adminUsers) {
+                        emitToUser(admin.id, eventName, eventData);
+                    }
+                    // 1. Gửi cho các Admin
+                    if (adminUsers.length > 0) {
+                        console.log(`[_handleTechnicianUpdateStatus Socket Task] ID: ${id} - Emitting '${eventName}' to ${adminUsers.length} admins.`);
+                        for (const admin of adminUsers) {
+                            emitToUser(admin.id, eventName, eventData);
+                        }
+                    }
+
+                    // 2. GỬI CHO CHÍNH NHÂN VIÊN ĐÃ CẬP NHẬT 
+                    if (currentUser?.id) {
+                        console.log(`[_handleTechnicianUpdateStatus Socket Task] ID: ${id} - Emitting '${eventName}' back to technician ${currentUser.id}.`); emitToUser(currentUser.id, eventName, eventData);
+                    }
+
+                } catch (socketTaskError) {
+                    console.error(`[_handleTechnicianUpdateStatus Socket Task] ID: ${id} - Error fetching admins or emitting socket:`, socketTaskError);
+                } finally {
+                    if (socketConnection) socketConnection.release();
+                }
+            });
         }
 
         return {
@@ -345,7 +388,6 @@ async function _handleTechnicianUpdateStatus(connection, id, updateData, current
             statusAfterUpdate: statusAfterUpdate
         };
     } catch (error) {
-        await connection.rollback();
         console.error(`[_handleTechnicianUpdateStatus] ID: ${id} - Error:`, error);
         throw new Error(error.message || "Lỗi khi nhân viên cập nhật trạng thái.");
     }
@@ -389,7 +431,6 @@ async function _handleTechnicianTryComplete(connection, id, updateData, currentB
         }
     }
 
-    await connection.beginTransaction();
     try {
         let queryComplete = "UPDATE baohong SET trangThai = ?, thoiGianXuLy = NOW()";
         const paramsComplete = [statusAfterUpdate];
@@ -402,9 +443,6 @@ async function _handleTechnicianTryComplete(connection, id, updateData, currentB
         if (completeResult.affectedRows === 0) {
             throw new Error(`Không tìm thấy báo hỏng ở trạng thái 'Đang Tiến Hành' hoặc 'Yêu Cầu Làm Lại' để hoàn thành.`);
         }
-
-        await connection.commit();
-        console.log(`[_handleTechnicianTryComplete] ID: ${id} - Transaction committed.`);
 
         // Thông báo cho Admin
         try {
@@ -419,7 +457,6 @@ async function _handleTechnicianTryComplete(connection, id, updateData, currentB
             statusAfterUpdate: statusAfterUpdate
         };
     } catch (error) {
-        await connection.rollback();
         console.error(`[_handleTechnicianTryComplete] ID: ${id} - Error:`, error);
         throw new Error(error.message || "Lỗi khi hoàn thành công việc.");
     }
@@ -504,7 +541,7 @@ exports.postGuiBaoHong = async (req, res) => {
         try {
             const io = getIoInstance();
             if (io && insertResults.length > 0) {
-                io.emit('stats_updated', { type: 'baohong' }); 
+                io.emit('stats_updated', { type: 'baohong' });
             }
         } catch (socketError) {
             console.error("Socket emit error after creating baohong:", socketError);
@@ -559,7 +596,7 @@ exports.postGuiBaoHong = async (req, res) => {
 };
 
 
-// --- getThongTinBaoHong (Cập nhật logic gợi ý NV) ---
+// --- getThongTinBaoHong  ---
 exports.getThongTinBaoHong = async (req, res) => {
     try {
         // Query để lấy thông tin báo hỏng và gợi ý NV
@@ -568,7 +605,7 @@ exports.getThongTinBaoHong = async (req, res) => {
                bh.*,
                p.toa, p.tang, p.soPhong,
                CONCAT(p.toa, p.tang, '.', p.soPhong) AS phong_name,
-               tttb.thietbi_id, tttb.tinhTrang, tb.tenThietBi,
+               tttb.thietbi_id, tttb.tinhTrang, tttb.trangThaiHoatDong, tb.tenThietBi,
                u_assigned.hoTen AS tenNhanVienDaGan,
                latest_log.phuongAnXuLy AS phuongAnXuLyCuoiCung,
                -- Gợi ý NV: Ưu tiên cố định -> Lịch trực HIỆN TẠI -> Lịch trực gần nhất (nếu không có ai đang trực)
@@ -654,6 +691,7 @@ exports.updateBaoHong = async (req, res) => {
 
     try {
         connection = await pool.getConnection();
+        await connection.beginTransaction();
 
         // --- Lấy thông tin báo hỏng hiện tại ---
         const [currentBaoHongRows] = await connection.query(
@@ -696,7 +734,6 @@ exports.updateBaoHong = async (req, res) => {
             }
         } else if (currentUser?.role === 'nhanvien') {
             if (targetStatus) { // Phải có trạng thái đích từ NV
-                // Gọi helper chung, helper này sẽ tự phân loại tiếp (TryComplete hoặc UpdateStatus)
                 result = await _handleTechnicianUpdateStatus(connection, id, updateData, currentBaoHong, currentUser);
             } else {
                 throw new Error("Nhân viên cần cung cấp trạng thái mới để cập nhật.");
@@ -705,21 +742,31 @@ exports.updateBaoHong = async (req, res) => {
             throw new Error("Vai trò không hợp lệ hoặc thiếu thông tin hành động.");
         }
 
+        // --- XỬ LÝ COMMIT / ROLLBACK CHÍNH ---
+        if (result?.success) {
+            await connection.commit();
+            console.log(`[updateBaoHong] ID: ${id} - Transaction committed successfully.`);
+        } else {
+            console.log(`[updateBaoHong] ID: ${id} - Rolling back transaction due to helper failure or lack of success flag.`);
+            await connection.rollback(); 
+            throw new Error(result?.message || "Lỗi không xác định từ helper.");
+        }
+
         // --- Gửi Response ---
         return res.status(200).json(result);
 
     } catch (error) {
-        // Helper đã rollback nếu có lỗi trong transaction của nó
+        if (connection) await connection.rollback();
         console.error(`[updateBaoHong] ID: ${id} - Error in main handler:`, error);
         const statusCode = error.message.includes("Vui lòng") ? 400 :
             error.message.includes("Không tìm thấy") ? 404 :
                 error.message.includes("không được phép") || error.message.includes("không được giao xử lý") ? 403 :
-                    error.message.includes("Không thể") ? 400 : // Bad request do logic nghiệp vụ
+                    error.message.includes("Không thể") ? 400 :
                         500;
         return res.status(statusCode).json({ error: error.message || "Lỗi máy chủ khi cập nhật báo hỏng." });
     } finally {
         if (connection) {
-            try { await connection.release(); } catch (relError) { console.error("Error releasing connection:", relError); }
+            connection.release();
             console.log(`[updateBaoHong] ID: ${id} - Connection released.`);
         }
     }
@@ -751,6 +798,7 @@ exports.getAssignedBaoHong = async (req, res) => {
                 p.toa, p.tang, p.soPhong,
                 CONCAT(p.toa, p.tang, '.', p.soPhong) AS phong_name,
                 tttb.thietbi_id,
+                tttb.trangThaiHoatDong,
                 tb.tenThietBi,
                 tttb.tinhTrang AS tinhTrangThietBi
             FROM baohong bh

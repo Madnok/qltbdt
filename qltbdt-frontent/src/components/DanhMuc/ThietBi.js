@@ -6,20 +6,14 @@ import {
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import ModalXemLogBaoTri from '../LichTruc/ModalXemLogBaoTri';
-
-// --- API Functions ---
 import {
     getThietBi,         // GET /api/thietbi 
     fetchTheLoaiList,   // GET /api/theloai 
     getTTTBByMaThietBi, // GET /api/tttb/thietbi/:maThietBi 
     deleteThietBi,      // DELETE /api/thietbi/:id
 } from '../../api';
-
-// --- Helper Functions ---
 import { paginateData, formatDate } from '../../utils/helpers';
-import { getTinhTrangLabel } from '../../utils/constants';
-
-// --- Layout Components ---
+import { getTinhTrangLabel, renderTrangThaiHoatDong } from '../../utils/constants'
 import Pagination from '../layout/Pagination';
 import Popup from '../layout/Popup';
 import FormThietBi from '../forms/FormThietBi';
@@ -57,6 +51,8 @@ const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails, onOpenLogModal }) =>
         <tr className="hover:bg-slate-50 text-sm">
             {/* Mã định danh TTTB (id của TTTB) */}
             <td className="px-4 py-2 whitespace-nowrap text-gray-700">{tttb.id}</td>
+            {/* Trạng thái của TTTB */}
+            <td className="px-4 py-2 whitespace-nowrap text-gray-600">{renderTrangThaiHoatDong(tttb.trangThaiHoatDong)}</td>
             {/* Tình trạng TTTB */}
             <td className="px-4 py-2 whitespace-nowrap">{getTinhTrangElement(tttb.tinhTrang)}</td>
             {/* Phòng hiện tại */}
@@ -551,6 +547,7 @@ function ThietBi() {
                                                                                                 <tr>
                                                                                                     {/* Các cột của bảng chi tiết */}
                                                                                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Định Danh</th>
+                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng Thái</th>
                                                                                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tình Trạng</th>
                                                                                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phòng</th>
                                                                                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày Nhập</th>
@@ -564,7 +561,7 @@ function ThietBi() {
                                                                                                         key={`detail-${tttb.id}`}
                                                                                                         tttb={tttb}
                                                                                                         onViewDetails={handleOpenTTTBDetailModal} // Đổi tên handler cho rõ
-                                                                                                        onOpenLogModal={handleOpenLogModal} // **Truyền xuống đây**
+                                                                                                        onOpenLogModal={handleOpenLogModal}
                                                                                                     />
                                                                                                 ))}
                                                                                             </tbody>
@@ -626,13 +623,13 @@ function ThietBi() {
 
             {/* Popup Xem Chi tiết TTTB */}
             {showTTTBDetailModal && selectedTTTBId && (
-                 <Popup isOpen={showTTTBDetailModal} onClose={handleCloseTTTBDetailModal} title="Chi tiết Thông tin Thiết bị">
-                     <ChiTietThongTinThietBi
-                         tttbId={selectedTTTBId}
-                         onClose={handleCloseTTTBDetailModal}
-                     />
-                 </Popup>
-             )}
+                <Popup isOpen={showTTTBDetailModal} onClose={handleCloseTTTBDetailModal} title="Chi tiết Thông tin Thiết bị">
+                    <ChiTietThongTinThietBi
+                        tttbId={selectedTTTBId}
+                        onClose={handleCloseTTTBDetailModal}
+                    />
+                </Popup>
+            )}
 
             {/* Render Modal Xem Log  */}
             {isLogModalOpen && selectedAssetForLog && (

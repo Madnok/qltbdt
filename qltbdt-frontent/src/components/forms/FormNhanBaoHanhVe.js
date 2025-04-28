@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react'; // Thêm useMemo, useEffect
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaTimesCircle, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 import { createLogBaoTriAPI, uploadInvoiceImagesAPI } from '../../api';
@@ -35,14 +34,14 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
             toast.success(data.message || `Đã ghi nhận việc nhận thiết bị từ bảo hành.`);
             // **Invalidate query cho cả hai loại công việc**
             queryClient.invalidateQueries({ queryKey: ['assignedBaoDuongTasks'] });
-            queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+            queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             if (deviceInfo?.id) { // Invalidate dựa trên deviceInfo.id (là thongtinthietbi_id)
                 queryClient.invalidateQueries({ queryKey: ['thongTinThietBi', deviceInfo.id] });
                 queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
                 queryClient.invalidateQueries({ queryKey: ['baoTriLogDetailUnified', { thongtinthietbi_id: deviceInfo.id }] }); // Invalidate log theo TTTB
-                queryClient.invalidateQueries({ queryKey: ['baoTriLogsByThietBi', deviceInfo.id] }); // Giữ lại key cũ nếu dùng
+                queryClient.invalidateQueries({ queryKey: ['baoTriLogsByThietBi', deviceInfo.id] });
             }
              // Invalidate log chi tiết của task gốc nếu có ID
             if (deviceInfo?.relatedBaoHongId) queryClient.invalidateQueries({ queryKey: ['baotriLogDetailUnified', { baohong_id: deviceInfo.relatedBaoHongId }] });
@@ -187,7 +186,7 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                         </div>
                     </div>
 
-                    {/* Textarea Hoạt động (readOnly hoặc ẩn đi nếu muốn) */}
+                    {/* Textarea Hoạt động  */}
                     <div>
                         <label htmlFor="hoatdongNhanHang" className="block mb-1 text-sm font-medium text-gray-700">Nội dung ghi nhận (tự động)</label>
                         <textarea

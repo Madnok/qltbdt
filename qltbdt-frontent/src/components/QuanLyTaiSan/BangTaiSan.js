@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaCheckCircle, FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaShareSquare, FaPaperPlane, FaSyncAlt, FaChevronDown, FaQuestionCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaShareSquare, FaPaperPlane, FaSyncAlt, FaChevronDown } from 'react-icons/fa';
 import { getTinhTrangLabel, TINH_TRANG_OPTIONS } from '../../utils/constants';
 import { formatDate } from '../../utils/helpers';
+import { renderTrangThaiHoatDong } from '../../utils/constants';
 import { updateTinhTrangTaiSanAPI, removeMultipleFromPhongAPI } from '../../api';
 import { toast } from 'react-toastify';
 import FormPhanBo from './FormPhanBo';
-import FormPhieuXuat from '../forms/FormPhieuXuat'; // dùng cái này thay thế.
-// checkpoint ở đây
+import FormPhieuXuat from '../forms/FormPhieuXuat';
+
 
 const TARGET_STATUS_OPTIONS = TINH_TRANG_OPTIONS.filter(opt =>
     ['con_bao_hanh', 'het_bao_hanh', 'cho_thanh_ly', 'mat_mat'].includes(opt.value)
@@ -198,8 +199,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
             case 'dang_bao_hanh': return <span className="inline-flex items-center text-blue-600"><FaWrench className="mr-1" /> {label}</span>;
             case 'da_bao_hanh': return <span className="inline-flex items-center text-purple-600"><FaWrench className="mr-1" /> {label}</span>;
             case 'cho_thanh_ly': return <span className="inline-flex items-center text-yellow-600"><FaClock className="mr-1" /> {label}</span>;
-            case 'da_thanh_ly': return <span className="inline-flex items-center text-gray-600"><FaTrashAlt className="mr-1" /> {label}</span>;
-            case 'mat_mat': return <span className="inline-flex items-center text-black"><FaQuestionCircle className="mr-1" /> {label}</span>;
+            case 'da_thanh_ly': return <span className="inline-flex items-center text-gray-600"><FaTrashAlt className="mr-1" /> {label}</span>;         
             default: return label;
         }
     };
@@ -304,6 +304,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Loại TB</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Thể Loại</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Vị Trí</th>
+                            <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Tình Trạng</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Ngày Nhập</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-center text-black uppercase">Ngày BH Còn Lại</th>
                             <th scope="col" className="px-4 py-2 text-xs font-bold tracking-wider text-left text-black uppercase">Trạng Thái</th>
@@ -329,6 +330,7 @@ const BangTaiSan = ({ data = [], onRowSelect, selectedRowId, triggerRefetch }) =
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.tenLoaiThietBi}</td>
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.tenTheLoai}</td>
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{item.phong_name}</td>
+                                <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{renderTrangThaiHoatDong(item.trangThaiHoatDong)}</td>
                                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{formatDate(item.ngayNhapKho)}</td>
                                 <td className="px-4 py-2 text-sm text-center text-gray-500 whitespace-nowrap">{item.ngayBaoHanhConLaiRaw ?? 'N/A'}</td>
                                 <td className="px-4 py-2 text-sm whitespace-nowrap">{renderTinhTrang(item.tinhTrang)}</td>

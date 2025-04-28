@@ -15,7 +15,7 @@ exports.getAllThongTinThietBi = async (req, res) => {
 exports.getThongTinThietBiById = async (req, res) => {
     const { id } = req.params; // Lấy ID của TTTB cần xem
 
-    // Kiểm tra ID hợp lệ
+    // Kiểm tra ID hợp lệrawData.trangThaiHoatDong
     if (isNaN(parseInt(id))) {
         return res.status(400).json({ error: "Mã Thông Tin Thiết Bị không hợp lệ." });
     }
@@ -27,7 +27,7 @@ exports.getThongTinThietBiById = async (req, res) => {
                 -- Thông tin chính từ TTTB
                 tttb.id, tttb.tinhTrang, tttb.nguoiDuocCap,
                 tttb.ngayBaoHanhKetThuc, tttb.ngayDuKienTra,
-                tttb.ngayMua, tttb.giaTriBanDau,
+                tttb.ngayMua, tttb.giaTriBanDau, tttb.trangThaiHoatDong,
                 tttb.thietbi_id, tttb.phong_id, tttb.phieunhap_id,
 
                 -- Thông tin từ bảng Phong (p)
@@ -66,11 +66,12 @@ exports.getThongTinThietBiById = async (req, res) => {
             // Các trường trực tiếp từ tttb
             id: rawData.id,
             tinhTrang: rawData.tinhTrang,
+            trangThaiHoatDong: rawData.trangThaiHoatDong,
             nguoiDuocCap: rawData.nguoiDuocCap,
             ngayBaoHanhKetThuc: rawData.ngayBaoHanhKetThuc,
             ngayDuKienTra: rawData.ngayDuKienTra,
-            ngayMua: rawData.ngayMua,           // Lấy từ tttb nếu có
-            giaTriBanDau: rawData.giaTriBanDau, // Lấy từ tttb nếu có
+            ngayMua: rawData.ngayMua,           
+            giaTriBanDau: rawData.giaTriBanDau, 
 
             // Tính toán phong_name
             phong_name: rawData.phong_toa && rawData.phong_tang && rawData.phong_soPhong
@@ -156,6 +157,7 @@ exports.getThietBiTrongPhong = async (req, res) => {
             `SELECT
                 tttb.id, 
                 tttb.tinhTrang,
+                tttb.trangThaiHoatDong,
                 tb.tenThietBi AS tenLoaiThietBi,
                 tl.theLoai AS tenTheLoai,
                 tb.id AS thietbi_id_type 
@@ -196,7 +198,7 @@ exports.getThietBiByTheLoai = async (req, res) => {
 exports.getAllTaiSanChiTiet = async (req, res) => {
     try {
         // Lấy tham số filter và pagination từ query string
-        const { trangThai, phongId, theLoaiId, thietBiId /*, sortBy, order */ } = req.query;
+        const { tinhTrang, phongId, theLoaiId, thietBiId, trangThaiHoatDong, keyword /*, sortBy, order */ } = req.query;
         const page = parseInt(req.query.page) || 1; // Trang hiện tại, mặc định là 1
         const limit = parseInt(req.query.limit) || 14; // Số dòng/trang, mặc định là 14
         const offset = (page - 1) * limit; // Tính offset cho SQL
@@ -204,11 +206,20 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
         // --- Xây dựng phần WHERE cho cả query chính và query count ---
         let whereClause = " WHERE 1=1 ";
         const params = [];
+        const countParams = [];
 
-        if (trangThai) {
+        if (tinhTrang) {
             whereClause += " AND ttb.tinhTrang = ?";
-            params.push(trangThai);
+            params.push(tinhTrang);
+            countParams.push(tinhTrang);
         }
+
+        if (trangThaiHoatDong) {
+            whereClause += " AND ttb.trangThaiHoatDong = ?";
+            params.push(trangThaiHoatDong);
+            countParams.push(trangThaiHoatDong);
+        }
+
         if (phongId === 'kho' || phongId === 'null' || phongId === '') {
             whereClause += " AND ttb.phong_id IS NULL";
         } else if (phongId) {
@@ -216,6 +227,7 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
             if (!isNaN(parsedPhongId)) {
                 whereClause += " AND ttb.phong_id = ?";
                 params.push(parsedPhongId);
+                countParams.push(parsedPhongId);
             } else {
                 return res.status(400).json({ error: `Giá trị phongId không hợp lệ: ${phongId}` });
             }
@@ -224,22 +236,27 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
             // Cần JOIN với thietbi (tb) để lọc theo theLoaiId
             whereClause += " AND tb.theloai_id = ?";
             params.push(parseInt(theLoaiId));
+            countParams.push(parseInt(theLoaiId));
         }
         if (thietBiId) {
             whereClause += " AND ttb.thietbi_id = ?";
             params.push(parseInt(thietBiId));
+            countParams.push(parseInt(thietBiId));
         }
-        if (req.query.keyword) {
+        if (keyword) { 
+            const keywordLike = `%${keyword.toLowerCase()}%`;
             whereClause += `
                 AND (
                     LOWER(tb.tenThietBi) LIKE ? OR
                     LOWER(tl.theLoai) LIKE ? OR
-                    LOWER(CONCAT(p.toa, p.tang, p.soPhong)) LIKE ? OR
+                    LOWER(CONCAT(p.toa, p.tang, '.', p.soPhong)) LIKE ? OR
                     ttb.id LIKE ?
+                    -- Bạn có thể thêm tìm kiếm theo trạng thái hoạt động nếu muốn
+                    OR LOWER(ttb.trangThaiHoatDong) LIKE ?
                 )
             `;
-            const keyword = `%${req.query.keyword.toLowerCase()}%`;
-            params.push(keyword, keyword, keyword, keyword);
+             params.push(keywordLike, keywordLike, keywordLike, keywordLike, keywordLike); 
+             countParams.push(keywordLike, keywordLike, keywordLike, keywordLike, keywordLike); 
         }
         // --- Kết thúc xây dựng WHERE ---
 
@@ -253,7 +270,7 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
             LEFT JOIN phong p ON ttb.phong_id = p.id
             ${whereClause}
         `;
-        const [countResult] = await pool.query(countQuery, params);
+        const [countResult] = await pool.query(countQuery, countParams);
         const totalItems = countResult[0].total;
         const totalPages = Math.ceil(totalItems / limit);
         // --- Kết thúc query count ---
@@ -265,6 +282,7 @@ exports.getAllTaiSanChiTiet = async (req, res) => {
                 ttb.ngayBaoHanhKetThuc, 
                 ttb.ngayDuKienTra,
                 ttb.thietbi_id, ttb.phieunhap_id, ttb.ngayMua, ttb.giaTriBanDau, 
+                ttb.trangThaiHoatDong,
                 tb.tenThietBi AS tenLoaiThietBi,
                 tb.theloai_id, tb.tonKho,
                 tl.theLoai AS tenTheLoai,
@@ -325,7 +343,7 @@ exports.getTaiSanPhanBoHopLe = async (req, res) => {
     try {
         const query = `
             SELECT
-                ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.ngayBaoHanhKetThuc,
+                ttb.id, ttb.tinhTrang, ttb.phong_id, ttb.ngayBaoHanhKetThuc, ttb.trangThaiHoatDong,
                 ttb.thietbi_id, tb.tenThietBi AS tenLoaiThietBi,
                 tb.theloai_id, tl.theLoai AS tenTheLoai,
                 ttb.ngayMua, ttb.giaTriBanDau
@@ -354,11 +372,9 @@ exports.getTTTBByMaThietBi = async (req, res) => {
         // Query lấy TTTB theo thietbi_id, join thêm thông tin cần thiết
         const [rows] = await pool.query(
             `SELECT
-                tttb.id, tttb.tinhTrang, tttb.phong_id, tttb.nguoiDuocCap,
-                tttb.ngayBaoHanhKetThuc, tttb.ngayDuKienTra,
-                tttb.thietbi_id, tttb.phieunhap_id, tttb.ngayMua, tttb.giaTriBanDau,
+                tttb.*,
                 p.toa, p.tang, p.soPhong, -- Lấy thông tin phòng
-                pn.ngayTao AS ngayNhapKho, pn.nguoiTao, pn.truongHopNhap -- Lấy ngày nhập từ phiếu nhập
+                pn.ngayTao AS ngayNhapKho, pn.nguoiTao, pn.truongHopNhap 
             FROM thongtinthietbi tttb
             LEFT JOIN phong p ON tttb.phong_id = p.id
             LEFT JOIN phieunhap pn ON tttb.phieunhap_id = pn.id
@@ -465,17 +481,18 @@ exports.phanBoTaiSanVaoPhong = async (req, res) => {
             WHERE id = ? 
               AND phong_id IS NULL 
               AND tinhTrang IN ('con_bao_hanh', 'het_bao_hanh') 
+              AND trangThaiHoatDong = 'chưa dùng'
             FOR UPDATE
         `, [thongTinThietBiId]);
 
         if (rows.length === 0) {
             await connection.rollback();
-            return res.status(400).json({ error: `Thiết bị không hợp lệ để phân bổ (đã có phòng hoặc tình trạng không hợp lệ).` });
+            return res.status(400).json({ error: `Thiết bị không hợp lệ để phân bổ (đã có phòng, tình trạng không hợp lệ, hoặc không phải 'chưa dùng').` });
         }
 
         const [updateResult] = await connection.query(
-            'UPDATE thongtinthietbi SET phong_id = ? WHERE id = ?',
-            [phongIdInt, thongTinThietBiId]
+            'UPDATE thongtinthietbi SET phong_id = ?, trangThaiHoatDong = ? WHERE id = ?', 
+            [phongIdInt, 'đang dùng', thongTinThietBiId] 
         );
 
         if (updateResult.affectedRows === 0) {

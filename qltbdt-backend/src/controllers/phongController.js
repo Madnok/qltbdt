@@ -161,7 +161,7 @@ exports.getThietBiTrongPhong = async (req, res) => {
 
     try {
         const query = `
-            SELECT tttb.id AS thongtinthietbi_id, tttb.tinhTrang, tb.tenThietBi AS tenLoaiThietBi, tl.theLoai AS tenTheLoai, bh_latest.trangThai AS trangThaiBaoHongHienTai
+            SELECT tttb.id AS thongtinthietbi_id, tttb.tinhTrang, tttb.trangThaiHoatDong, tb.tenThietBi AS tenLoaiThietBi, tl.theLoai AS tenTheLoai, bh_latest.trangThai AS trangThaiBaoHongHienTai
              FROM thongtinthietbi tttb
              LEFT JOIN thietbi tb ON tttb.thietbi_id = tb.id
              LEFT JOIN theloai tl ON tb.theloai_id = tl.id
@@ -208,7 +208,7 @@ exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
 
         // --- Kiểm tra tài sản trong bảng thongtinthietbi ---
         const [rows] = await connection.query(
-            'SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE', // Chỉ cần lấy phong_id để kiểm tra
+            'SELECT phong_id, trangThaiHoatDong FROM thongtinthietbi WHERE id = ? FOR UPDATE',
             [tttbIdInt]
         );
 
@@ -224,12 +224,17 @@ exports.thuHoiTaiSanKhoiPhong = async (req, res) => {
             await connection.rollback();
             return res.status(400).json({ error: `Tài sản ID ${tttbIdInt} không thực sự thuộc phòng ID ${phongIdInt}.` });
         }
+
+        let nextTrangThaiHD = taiSan.trangThaiHoatDong;
+        if (taiSan.trangThaiHoatDong === 'đang dùng') {
+            nextTrangThaiHD = 'chưa dùng';
+        }
         // ----------------------------------------------------
 
         // --- Chỉ Cập nhật phong_id = NULL ---
         const [updateResult] = await connection.query(
-            'UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?', // Bỏ cập nhật tinhTrang
-            [tttbIdInt]
+            'UPDATE thongtinthietbi SET phong_id = NULL, trangThaiHoatDong = ? WHERE id = ?',
+            [nextTrangThaiHD, tttbIdInt]
         );
 
         if (updateResult.affectedRows === 0) {
@@ -273,21 +278,32 @@ exports.thuHoiNhieuTaiSanKhoiPhong = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
+        let successCount = 0;
 
         for (const item of list) {
             const { thongtinthietbi_id, phong_id } = item;
 
             const [rows] = await connection.query(
-                "SELECT phong_id FROM thongtinthietbi WHERE id = ? FOR UPDATE",
+                "SELECT phong_id, trangThaiHoatDong FROM thongtinthietbi WHERE id = ? FOR UPDATE",
                 [thongtinthietbi_id]
             );
 
             if (!rows.length || rows[0].phong_id !== phong_id) continue;
 
-            await connection.query(
-                "UPDATE thongtinthietbi SET phong_id = NULL WHERE id = ?",
-                [thongtinthietbi_id]
+            const currentTrangThaiHD = rows[0].trangThaiHoatDong;
+            let nextTrangThaiHD = currentTrangThaiHD;
+            if (currentTrangThaiHD === 'đang dùng') {
+                nextTrangThaiHD = 'chưa dùng';
+            }
+
+            // Cập nhật
+            const [updateResult] = await connection.query(
+                "UPDATE thongtinthietbi SET phong_id = NULL, trangThaiHoatDong = ? WHERE id = ?",
+                [nextTrangThaiHD, thongtinthietbi_id]
             );
+            if (updateResult.affectedRows > 0) {
+                successCount++;
+            }
         }
 
         await connection.commit();
@@ -295,13 +311,13 @@ exports.thuHoiNhieuTaiSanKhoiPhong = async (req, res) => {
         try {
             const io = getIoInstance();
             if (io) {
-                io.emit('stats_updated', { type: 'thietbi' }); 
+                io.emit('stats_updated', { type: 'thietbi' });
             }
         } catch (socketError) {
-            console.error(`[thuHoiTaiSanKhoiPhong TTTB_ID: ${tttbIdInt}] Socket emit error:`, socketError);
+            console.error(`[thuHoiNhieuTaiSanKhoiPhong] Socket emit error:`, socketError);
         }
 
-        res.json({ message: `Đã gỡ ${list.length} thiết bị khỏi phòng.` });
+        res.json({ message: `Đã thu hồi ${successCount} / ${list.length} thiết bị.` }); // Thông báo chính xác hơn
     } catch (err) {
         await connection.rollback();
         console.error("Lỗi thu hồi nhiều thiết bị:", err);

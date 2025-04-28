@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaCheckCircle, FaHistory, FaUndo, FaUserCheck, FaSearch, FaBan } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaEye, FaTrashAlt, FaCheckCircle, FaHistory, FaUndo, FaUserCheck, FaSearch, FaBan, FaPlusCircle } from "react-icons/fa";
 import moment from "moment";
 import { getTinhTrangLabel } from '../../utils/constants';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModalXemLogBaoTri from './ModalXemLogBaoTri';
 import { toast } from 'react-toastify';
 import eventBus from '../../utils/eventBus';
+import FormNhanBaoHanhVe from '../forms/FormNhanBaoHanhVe';
 
 import {
     fetchBaoHongListAPI,
@@ -116,6 +117,8 @@ const ThongTinBaoHong = () => {
         tenThietBi: null,
         phongName: null,
     });
+    const [isAdminReceiveModalOpen, setIsAdminReceiveModalOpen] = useState(false);
+    const [selectedTaskForAdminReceive, setSelectedTaskForAdminReceive] = useState(null);
 
     const queryClient = useQueryClient();
 
@@ -147,6 +150,39 @@ const ThongTinBaoHong = () => {
             eventBus.off('baoHongSubmitted', handleNewBaoHong);
         };
     }, [queryClient]);
+
+    const handleOpenAdminReceiveModal = useCallback((item) => {
+        if (!item || !item.thongtinthietbi_id || !item.id) {
+            toast.error("Thiếu thông tin Báo hỏng hoặc Thiết bị liên kết.");
+            return;
+        }
+        // Chuẩn bị dữ liệu cho FormNhanBaoHanhVe
+        const deviceInfoForModal = {
+            id: item.thongtinthietbi_id,
+            tenThietBi: item.tenThietBi,
+            phong_id: item.phong_id,
+            phong_name: item.phong_name,
+            relatedBaoHongId: item.id,
+            relatedLichBaoDuongId: null
+        };
+        setSelectedTaskForAdminReceive(deviceInfoForModal);
+        setIsAdminReceiveModalOpen(true);
+    }, []);
+
+    const handleCloseAdminReceiveModal = useCallback(() => {
+        setSelectedTaskForAdminReceive(null);
+        setIsAdminReceiveModalOpen(false);
+    }, []);
+
+    const handleAdminReceiveSuccess = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
+        queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+        queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+        queryClient.invalidateQueries({ queryKey: ['thongTinThietBi', selectedTaskForAdminReceive?.id] }); // Invalidate chi tiết TTTB
+        queryClient.invalidateQueries({ queryKey: ['baotriLogDetailUnified'] });
+        handleCloseAdminReceiveModal();
+    }, [queryClient, selectedTaskForAdminReceive, handleCloseAdminReceiveModal]);
+
 
     // Tạo lookup maps bằng useMemo
     const phongMap = useMemo(() => new Map(phongList.map(p => [p.id, p.phong])), [phongList]);
@@ -359,7 +395,7 @@ const ThongTinBaoHong = () => {
         <div className="flex flex-col w-full h-screen min-h-screen overflow-auto bg-white border-r shadow-md">
             {/* Header */}
             <div className="flex flex-col bg-white shadow-md">
-                <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border-b"> {/* Cho phép wrap và thêm gap */}
+                <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white border-b">
                     <h2 className="text-xl font-semibold">Thông Tin Báo Hỏng</h2>
                     {/* Thanh tìm kiếm */}
                     <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
@@ -581,6 +617,7 @@ const ThongTinBaoHong = () => {
                                                                 <FaCheckCircle className={(item.trangThai === 'Chờ Xem Xét' && !(updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)) ? 'text-green-600 hover:text-green-900' : 'text-gray-400'} />
                                                             </button>
 
+                                                            {/* 6. Nút Làm Lại/Duyệt Lại */}
                                                             <button
                                                                 onClick={() => handleAdminRequestRework(item)}
                                                                 className={`
@@ -596,7 +633,7 @@ const ThongTinBaoHong = () => {
                                                                 <FaUndo />
                                                             </button>
 
-                                                            {/* 6. Nút Hủy Lệnh/Thu hồi */}
+                                                            {/* 7. Nút Hủy Lệnh/Thu hồi */}
                                                             <button
                                                                 onClick={() => handleCancel(item)}
                                                                 className={`
@@ -612,10 +649,33 @@ const ThongTinBaoHong = () => {
                                                                 <FaBan />
                                                             </button>
 
-                                                            {/* 7. Xóa */}
+                                                            {/* 8. NÚT ADMIN NHẬN HÀNG BẢO HÀNH */}
+                                                            <button
+                                                                onClick={() => handleOpenAdminReceiveModal(item)}
+                                                                className={`p-1 rounded 
+        ${item.trangThai === 'Chờ Hoàn Tất Bảo Hành'
+                                                                        ? 'text-green-600 hover:text-green-800 hover:bg-green-100'
+                                                                        : 'text-gray-400 cursor-not-allowed'}
+        ${updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id ? 'opacity-50' : ''}
+    `}
+                                                                title={
+                                                                    item.trangThai === 'Chờ Hoàn Tất Bảo Hành'
+                                                                        ? "Admin nhận thiết bị từ bảo hành về"
+                                                                        : "Chức năng chỉ dùng khi task 'Chờ Hoàn Tất BH'"
+                                                                }
+                                                                disabled={
+                                                                    item.trangThai !== 'Chờ Hoàn Tất Bảo Hành' ||
+                                                                    (updateStatusMutation.isPending && updateStatusMutation.variables?.id === item.id)
+                                                                }
+                                                            >
+                                                                <FaPlusCircle />
+                                                            </button>
+
+
+                                                            {/* 9. Xóa */}
                                                             <button
                                                                 onClick={() => handleDelete(item.id)}
-                                                                className={` ${(item.trangThai === 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành' )? 'text-red-600 hover:text-red-900' : 'text-gray-400 cursor-not-allowed'} ${(deleteMutation.isPending && deleteMutation.variables === item.id) ? 'opacity-50' : ''} `}
+                                                                className={` ${(item.trangThai === 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành') ? 'text-red-600 hover:text-red-900' : 'text-gray-400 cursor-not-allowed'} ${(deleteMutation.isPending && deleteMutation.variables === item.id) ? 'opacity-50' : ''} `}
                                                                 title={item.trangThai === 'Chờ Duyệt' ? "Xóa báo hỏng" : "Không thể xóa khi đang xử lý hoặc đã hoàn thành"}
                                                                 disabled={!(item.trangThai === 'Chờ Duyệt' || item.trangThai === 'Hoàn Thành') || (deleteMutation.isPending && deleteMutation.variables === item.id)}
                                                             >
@@ -627,12 +687,27 @@ const ThongTinBaoHong = () => {
                                                 {/* Bảng con chi tiết */}
                                                 {expandedRows.has(item.id) && (
                                                     <tr className="bg-gray-50">
-                                                        <td colSpan="10" className="px-6 py-3 border"> {/* Tăng colSpan */}
+                                                        <td colSpan="10" className="px-6 py-3 border">
                                                             <div className='text-sm text-gray-700'>
-                                                                {/* Hiển thị Tên Thiết Bị nếu có */}
-                                                                {item.tenThietBi && <p><strong>Thiết bị cụ thể:</strong> {item.tenThietBi} {item.thongtinthietbi_id ? `(MĐD: ${item.thongtinthietbi_id})` : ''}</p>}
-                                                                {/* Hiển thị Tình trạng TTTB */}
-                                                                <p className="mt-1"><strong>Tình trạng thiết bị hiện tại:</strong> <span className="font-medium">{item.tinhTrang ? getTinhTrangLabel(item.tinhTrang) : 'N/A'}</span></p>
+                                                                {/* Hiển thị Tên Thiết Bị */}
+                                                                {item.tenThietBi && (
+                                                                    <p>
+                                                                        <strong>Thiết bị cụ thể:</strong> {item.tenThietBi}
+                                                                        {item.thongtinthietbi_id ? ` (MĐD: ${item.thongtinthietbi_id})` : ''}
+                                                                    </p>
+                                                                )}
+                                                                {/* Hiển thị Trạng Thái */}
+                                                                {item.trangThaiHoatDong && (
+                                                                    <p className="mt-1">
+                                                                        <strong>Trạng Thái:</strong> <span className="font-normal">{item.trangThaiHoatDong}</span>
+                                                                    </p>
+                                                                )}
+                                                                {/* Hiển thị Tình trạng Thiết bị */}
+                                                                {item.tinhTrang && (
+                                                                    <p className="mt-1">
+                                                                        <strong>Tình trạng thiết bị hiện tại:</strong> <span className="font-medium">{getTinhTrangLabel(item.tinhTrang)}</span>
+                                                                    </p>
+                                                                )}
                                                                 <p className="mt-1"><strong>Mô Tả:</strong> {item.moTa || "Không có mô tả"}</p>
                                                                 <p className="mt-1"><strong>Hình Ảnh:</strong></p>
                                                                 {item.hinhAnh ? (<button onClick={() => setModalImage(item.hinhAnh)} className="mt-1 border rounded hover:opacity-80"><img src={item.hinhAnh} alt="Hình ảnh báo hỏng" className="object-contain max-h-40" /></button>) : (<span className='italic'>Không có hình ảnh</span>)}
@@ -804,14 +879,13 @@ const ThongTinBaoHong = () => {
                     updateStatusMutation.mutate({
                         id: baoHongId,
                         updateData: {
-                            action: 'cancel_with_log', // Gửi action mới
-                            lyDoHuy: reason          // Gửi lý do
+                            action: 'cancel_with_log',
+                            lyDoHuy: reason
                         }
                     }, {
-                        onSuccess: () => { // Đóng modal sau khi thành công
+                        onSuccess: () => {
                             setIsCancelModalOpen(false);
                         },
-                        // onError đã được xử lý chung bởi mutation hook
                     });
                 }}
             />
@@ -821,13 +895,11 @@ const ThongTinBaoHong = () => {
                 isOpen={isConfirmCompleteModalOpen}
                 onClose={() => setIsConfirmCompleteModalOpen(false)}
                 data={confirmCompleteData}
-                // Kiểm tra action và ID đang loading
                 isLoading={updateStatusMutation.isPending && updateStatusMutation.variables?.id === confirmCompleteData.baoHongId && updateStatusMutation.variables?.updateData?.trangThai === 'Hoàn Thành'}
                 onSubmit={(baoHongId, finalStatus) => {
                     const payload = {
                         trangThai: 'Hoàn Thành'
                     };
-                    // Chỉ thêm finalDeviceStatus vào payload nếu nó được chọn trong modal
                     if (finalStatus) {
                         payload.finalDeviceStatus = finalStatus;
                     }
@@ -836,11 +908,22 @@ const ThongTinBaoHong = () => {
                         updateData: payload
                     }, {
                         onSuccess: () => {
-                            setIsConfirmCompleteModalOpen(false); // Đóng modal khi thành công
+                            setIsConfirmCompleteModalOpen(false);
                         }
                     });
                 }}
             />
+
+            {/*  RENDER MODAL ADMIN NHẬN HÀNG */}
+            {isAdminReceiveModalOpen && selectedTaskForAdminReceive && (
+                <FormNhanBaoHanhVe
+                    key={`admin-receive-${selectedTaskForAdminReceive.id}-${selectedTaskForAdminReceive.relatedBaoHongId}`}
+                    deviceInfo={selectedTaskForAdminReceive}
+                    onClose={handleCloseAdminReceiveModal}
+                    onSuccess={handleAdminReceiveSuccess}
+                />
+            )}
+
 
         </div>
     );
@@ -918,19 +1001,15 @@ const CancelWithReasonModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =
 
 // === Component Modal Xác Nhận Hoàn Thành ===
 const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) => {
-    // State local để lưu trạng thái TB cuối cùng được chọn và ghi chú
     const [selectedFinalStatus, setSelectedFinalStatus] = useState('');
-    const [ghiChu, setGhiChu] = useState(''); // <-- Thêm state cho ghi chú
+    const [ghiChu, setGhiChu] = useState('');
     const [error, setError] = useState('');
 
     // --- Logic xác định điều kiện hiển thị dropdown ---
-    // Giả định rằng 'data.originalDeviceStatus' chứa tình trạng của TTTB *trước khi* xử lý báo hỏng này.
-    // Và hành động này chỉ xảy ra khi trạng thái báo hỏng là 'cho_xem_xet'.
     const originalDeviceStatus = data?.originalDeviceStatus; // Lấy tình trạng gốc của thiết bị từ props data
     const isDeXuatThanhLy = originalDeviceStatus === 'de_xuat_thanh_ly';
     const isConOrHetBH = originalDeviceStatus === 'con_bao_hanh' || originalDeviceStatus === 'het_bao_hanh';
 
-    // Chỉ cần chọn trạng thái thiết bị nếu tình trạng gốc là một trong các trường hợp đặc biệt
     const needsDeviceStatusSelection = isDeXuatThanhLy || isConOrHetBH;
 
     let dropdownOptions = [];
@@ -949,7 +1028,6 @@ const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =>
         dropdownLabel = 'Xác nhận tình trạng thiết bị sau xử lý';
         dropdownOptions = [
             { value: '', label: '-- Chọn tình trạng --' },
-             // Các lựa chọn khi tình trạng gốc là còn/hết BH
             { value: 'con_bao_hanh', label: 'Còn Bảo Hành' },
             { value: 'het_bao_hanh', label: 'Hết Bảo Hành' },
         ];
@@ -974,12 +1052,10 @@ const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =>
         // Reset lỗi nếu đã chọn
         setError('');
 
-        // Gọi hàm submit từ props, truyền cả finalStatus và ghi chú
-        // Component cha cần xử lý 3 tham số này
         onSubmit(data.baoHongId, selectedFinalStatus || null, ghiChu);
     };
 
-    if (!isOpen || !data) return null; // Thêm kiểm tra data để tránh lỗi
+    if (!isOpen || !data) return null;
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm">
@@ -988,14 +1064,14 @@ const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =>
                 <p className="mb-4 text-base">
                     Bạn có chắc muốn chuyển trạng thái báo hỏng ID: <span className='font-bold text-green-800'>{data.baoHongId}</span> từ <span className='font-semibold text-orange-600'>Chờ xem xét</span> sang <span className='font-semibold text-green-600'>Hoàn thành</span>?
                 </p>
-                 {/* Hiển thị thông tin thiết bị liên quan nếu có */}
-                 {data.tenThietBi && (
-                     <p className="mb-4 text-sm text-gray-600">
-                         Thiết bị: <span className='font-medium'>{data.tenThietBi}</span> (ID: {data.tttbId}) - Tình trạng gốc: <span className='font-medium'>{data.originalDeviceStatusLabel || originalDeviceStatus}</span>
-                     </p>
-                 )}
+                {/* Hiển thị thông tin thiết bị liên quan nếu có */}
+                {data.tenThietBi && (
+                    <p className="mb-4 text-sm text-gray-600">
+                        Thiết bị: <span className='font-medium'>{data.tenThietBi}</span> (ID: {data.tttbId}) - Tình trạng gốc: <span className='font-medium'>{data.originalDeviceStatusLabel || originalDeviceStatus}</span>
+                    </p>
+                )}
 
-                {/* Dropdown chọn trạng thái cuối (hiển thị có điều kiện) */}
+                {/* Dropdown chọn trạng thái cuối */}
                 {needsDeviceStatusSelection && (
                     <div className="mb-4">
                         <label htmlFor="finalDeviceStatusSelect" className="block mb-1.5 text-sm font-medium text-gray-800">
@@ -1030,10 +1106,9 @@ const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =>
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 focus:border-indigo-500"
                         placeholder="Nhập ghi chú giải thích (ví dụ: lý do từ chối đề xuất thanh lý, tình trạng cụ thể sau sửa chữa...)"
                     />
-                     {/* Có thể thêm validation ghi chú bắt buộc nếu cần, ví dụ khi từ chối đề xuất thanh lý */}
-                     {isDeXuatThanhLy && (selectedFinalStatus === 'con_bao_hanh' || selectedFinalStatus === 'het_bao_hanh') && !ghiChu.trim() && (
-                         <p className="mt-1 text-xs text-orange-600">Nên nhập ghi chú khi từ chối đề xuất thanh lý.</p>
-                     )}
+                    {isDeXuatThanhLy && (selectedFinalStatus === 'con_bao_hanh' || selectedFinalStatus === 'het_bao_hanh') && !ghiChu.trim() && (
+                        <p className="mt-1 text-xs text-orange-600">Nên nhập ghi chú khi từ chối đề xuất thanh lý.</p>
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
@@ -1047,21 +1122,20 @@ const ConfirmCompleteModal = ({ isOpen, onClose, data, onSubmit, isLoading }) =>
                     </button>
                     <button
                         onClick={handleSubmit}
-                        // Disable nếu đang loading HOẶC nếu cần chọn trạng thái TB mà chưa chọn
                         disabled={isLoading || (needsDeviceStatusSelection && !selectedFinalStatus)}
                         className="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
-                             <svg className="inline w-4 h-4 mr-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="inline w-4 h-4 mr-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                             </svg>
-                            ) : 'Xác nhận Hoàn thành'}
+                            </svg>
+                        ) : 'Xác nhận Hoàn thành'}
                     </button>
                 </div>
             </div>
-             {/* Simple animation style */}
-             <style>{`
+            {/*  animation style */}
+            <style>{`
                 @keyframes modal-scale-in {
                     from { opacity: 0; transform: scale(0.95); }
                     to { opacity: 1; transform: scale(1); }

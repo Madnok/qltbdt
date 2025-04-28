@@ -83,7 +83,7 @@
 //                 queryClient.invalidateQueries({ queryKey: ['lichBaoDuongLog', taskId] }); // Log chi tiết của Lịch Bảo dưỡng
 //                 queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] }); // Danh sách Lịch Bảo dưỡng (cho admin nếu cần)
 //             } else {
-//                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] }); // Query cho Báo Hỏng của NV
+//                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] }); // Query cho Báo Hỏng của NV
 //                 queryClient.invalidateQueries({ queryKey: ['baohongLog', taskId] }); // Log chi tiết của Báo Hỏng
 //                 queryClient.invalidateQueries({ queryKey: ['baoHongList'] }); // Danh sách Báo Hỏng (cho admin)
 //             }
@@ -482,7 +482,7 @@ const FormLogBaoTri = ({ taskInfo, onClose }) => {
                 }
                 queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
             } else {
-                queryClient.invalidateQueries({ queryKey: ['assignedBaoHongTasks'] });
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
                 if (baohongIdForQuery) {
                     queryClient.invalidateQueries({ queryKey: ['baohongLog', baohongIdForQuery] });
                 }

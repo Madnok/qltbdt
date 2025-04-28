@@ -13,8 +13,8 @@
     router.post("/xoathietbi", requireRole(['admin']), verifyToken, phongController.thuHoiTaiSanKhoiPhong);
     router.post('/xoa-nhieu-thietbi', requireRole(['admin']), verifyToken, phongController.thuHoiNhieuTaiSanKhoiPhong);
     router.get("/:id", phongController.getPhongById);
-    router.post("/", phongController.addPhong);
-    router.put("/:id", phongController.updatePhong);
-    router.delete("/:id", phongController.deletePhong);
+    router.post("/", requireRole(['admin']), phongController.addPhong);
+    router.put("/:id", requireRole(['admin']), phongController.updatePhong);
+    router.delete("/:id", requireRole(['admin']), phongController.deletePhong);
 
     module.exports = router;

@@ -10,10 +10,10 @@ router.use(verifyToken); // Tất cả các route dưới đây yêu cầu đăn
 router.get("/my-tasks", requireRole(['nhanvien']), baotriController.getMyTasks);
 
 // Tạo log bảo trì mới
-router.post("/", requireRole(['nhanvien']), baotriController.createLogBaoTri);
+router.post("/", requireRole(['admin','nhanvien']), baotriController.createLogBaoTri);
 
 // Upload ảnh hóa đơn (nếu có)
-router.post("/upload-invoice", requireRole(['nhanvien']), uploadInvoiceImage.array('hinhAnhHoaDon', 5), baotriController.uploadInvoiceImage); // Cho phép upload tối đa 5 ảnh
+router.post("/upload-invoice", requireRole(['admin','nhanvien']), uploadInvoiceImage.array('hinhAnhHoaDon', 5), baotriController.uploadInvoiceImage); // Cho phép upload tối đa 5 ảnh
 
 // // Lấy lịch sử log của một báo hỏng
 // router.get("/log/:baohong_id", requireRole(['admin', 'nhanvien']), baotriController.getBaoHongLog);

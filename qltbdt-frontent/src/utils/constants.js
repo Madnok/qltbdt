@@ -101,3 +101,15 @@ export const getUuTienLabel = (priority) => {
     if (priority === 2) return 'Đang trực';
     return 'Còn lại';
 };
+
+export const renderTrangThaiHoatDong = (trangThaiHoatDong) => {
+    const config = {
+        'đang dùng': { label: 'Đang dùng', color: 'text-blue-500'},
+        'chưa dùng': { label: 'Chưa dùng', color: 'text-gray-500'},
+        'mất mát': { label: 'Mất mát', color: 'text-black' },
+        'hỏng hóc': { label: 'Hỏng hóc', color: 'text-red-700'},
+    };
+    const { label, color } = config[trangThaiHoatDong] || { label: 'Không xác định', color: 'text-gray-500' };
+
+    return <span className={`inline-flex items-center ${color}`}>{label}</span>;
+};

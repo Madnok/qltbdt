@@ -178,8 +178,8 @@ exports.createPhieuNhap = async (req, res) => {
                 // Query INSERT cho thongtinthietbi
                 const insertTTTBQuery = `
                     INSERT INTO thongtinthietbi
-                    (thietbi_id, phieunhap_id, ngayMua, giaTriBanDau, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, tenThietBi)
-                    VALUES (?, ?, ?, ?, 'con_bao_hanh', ?, ?, ?)
+                    (thietbi_id, phieunhap_id, ngayMua, giaTriBanDau, tinhTrang, thoiGianBaoHanh, ngayBaoHanhKetThuc, tenThietBi, trangThaiHoatDong)
+                    VALUES (?, ?, ?, ?, 'con_bao_hanh', ?, ?, ?, 'chưa dùng')
                 `;
 
                 const tttbParams = [
@@ -209,7 +209,6 @@ exports.createPhieuNhap = async (req, res) => {
                 io.emit('stats_updated', { type: 'phieu' }); // Số lượng phiếu nhập thay đổi
                 io.emit('stats_updated', { type: 'thietbi' }); // Số lượng/trạng thái TB thay đổi
                 io.emit('stats_updated', { type: 'taichinh' }); // Giá trị tài sản thay đổi
-                console.log(`[createPhieuNhap ID: ${newPhieuNhapId}] Emitted stats_updated (types: phieu, thietbi, taichinh).`);
             }
         } catch (socketError) {
              console.error(`[createPhieuNhap ID: ${newPhieuNhapId}] Socket emit error:`, socketError);

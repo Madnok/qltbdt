@@ -1,4 +1,3 @@
-const userSockets = new Map(); // Lưu trữ socket của người dùng: Map<userId, socketId>
 const { verify } = require('jsonwebtoken');
 const { Server } = require("socket.io");
 const cookie = require('cookie');
@@ -7,23 +6,17 @@ let ioInstance = null;
 
 // Middleware xác thực Socket.IO
 const authenticateSocket = (socket, next) => {
-    let token = null;
     try {
-        // Parse cookie header một cách an toàn
         const cookies = cookie.parse(socket.handshake.headers?.cookie || '');
-        token = cookies.token; // Lấy giá trị của cookie tên 'token'
+        const token = cookies.token;
+        if (!token) return next(new Error('Lỗi xác thực: Không tìm thấy token cookie'));
 
-        if (!token) {
-            return next(new Error('Lỗi xác thực: Không tìm thấy token cookie'));
-        }
-
-        // Xác thực token lấy từ cookie
         const decoded = verify(token, process.env.JWT_SECRET);
-        socket.user = decoded; // Gắn user vào socket
-        next(); 
+        socket.user = decoded;
+        next();
     } catch (err) {
         console.error('Socket Auth Error:', err.message);
-        next(new Error(`Lỗi xác thực Socket: ${err.message}`)); // Trả lỗi về client
+        next(new Error(`Lỗi xác thực Socket: ${err.message}`));
     }
 };
 
@@ -39,27 +32,33 @@ function initializeSocket(server) {
     ioInstance = new Server(server, {
         cors: {
             origin: function (origin, callback) {
-                 if (!origin || allowedOrigins.includes(origin)) {
-                     callback(null, true);
-                 } else {
-                     console.error(`CORS Error: Origin ${origin} not allowed for Socket.IO.`);
-                     callback(new Error("Not allowed by CORS for Socket.IO"));
-                 }
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    console.error(`CORS Error: Origin ${origin} not allowed for Socket.IO.`);
+                    callback(new Error("Not allowed by CORS for Socket.IO"));
+                }
             },
             methods: ["GET", "POST"],
-            credentials: true // Rất quan trọng để trình duyệt gửi cookie
+            credentials: true
         }
     });
 
-    ioInstance.use(authenticateSocket); // Dùng middleware auth đã sửa
+    ioInstance.use(authenticateSocket);
 
     ioInstance.on('connection', (socket) => {
-         const userId = socket.user?.id;
-         if (!userId) { /* ... xử lý lỗi user không có ID ... */ return; }
-         const userRoom = String(userId);
-         socket.join(userRoom);
-         console.log(`User ${userId} connected and joined room ${userRoom}. Socket: ${socket.id}`);
-         socket.on('disconnect', (reason) => { /* ... */ });
+        const userId = socket.user?.id;
+        if (!userId) {
+            console.warn('Socket connected without userId.');
+            return;
+        }
+        const userRoom = String(userId);
+        socket.join(userRoom);
+        console.log(`User ${userId} connected and joined room ${userRoom}. Socket: ${socket.id}`);
+
+        socket.on('disconnect', (reason) => {
+            console.log(`User ${userId} disconnected. Reason: ${reason}`);
+        });
     });
 
     console.log("Socket.IO initialized with cookie authentication.");
@@ -69,20 +68,28 @@ function initializeSocket(server) {
 // Hàm gửi sự kiện tới room của user cụ thể
 function emitToUser(userId, eventName, data) {
     if (!ioInstance) {
-        console.error("không thể phát: Socket.IO instance not initialized.");
+        console.error("[emitToUser] Socket.IO instance not initialized.");
         return;
     }
-    const targetUserId = userId?.toString();
-    if (!targetUserId) {
-        console.warn("Đã cố gắng gửi tới người dùng nhưng userId không hợp lệ.");
+    const targetRoom = userId?.toString();
+    if (!targetRoom) {
+        console.warn("[emitToUser] Invalid userId.");
         return;
     }
-    ioInstance.to(targetUserId).emit(eventName, data);
+
+    const room = ioInstance.sockets.adapter.rooms.get(targetRoom);
+
+    if (!room || room.size === 0) {
+        console.warn(`[emitToUser] No active sockets found for user ${targetRoom}. Event '${eventName}' skipped.`);
+        return;
+    }
+
+    ioInstance.to(targetRoom).emit(eventName, data);
+    console.log(`[emitToUser] Emitted '${eventName}' to user ${targetRoom}.`);
 }
 
-// Export hàm khởi tạo và hàm emit
 module.exports = {
     initializeSocket,
     emitToUser,
-    getIoInstance: () => ioInstance 
+    getIoInstance: () => ioInstance
 };

@@ -82,6 +82,10 @@ const ChiTietThongTinThietBi = ({ tttbId, onClose }) => {
               <dd className="text-sm text-gray-900">{displayValue(details.phong_name)}</dd>
             </div>
             <div className="flex justify-between">
+              <dt className="text-sm font-medium text-gray-500">Trạng Thái</dt>
+              <dd className="text-sm text-gray-900">{displayValue(details.trangThaiHoatDong)}</dd>
+            </div>
+            <div className="flex justify-between">
               <dt className="text-sm font-medium text-gray-500">Người được cấp</dt>
               <dd className="text-sm text-gray-900">{displayValue(details.nguoiDuocCap)}</dd>
             </div>
