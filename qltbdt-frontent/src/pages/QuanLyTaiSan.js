@@ -6,7 +6,7 @@ import ChiTietTaiSan from '../components/QuanLyTaiSan/ChiTietTaiSan';
 import RightPanel from '../components/layout/RightPanel';
 import { getAllTaiSanAPI } from '../api';
 import Pagination from '../components/layout/Pagination.js';
-import ModalXemLogBaoTri from '../components/LichTruc/ModalXemLogBaoTri';
+import ModalXemLogBaoTri from '../components/CongViec/ModalXemLogBaoTri';
 const ITEMS_PER_PAGE = 12;
 
 const QuanLyTaiSan = () => {

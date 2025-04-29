@@ -421,7 +421,7 @@ export const removeAssignedRooms = (employeeId, phongIdsArray) =>
 
 //lấy lịch trình Nội bộ của nhân viên
 export const fetchMyScheduleInternal = () => {
-  return api.get('/lichtruc/');
+  return api.get('/congviec/');
 };
 // ======================================================================================= //
 
@@ -431,11 +431,11 @@ export const fetchMyScheduleInternal = () => {
 // ** GÁN Nhân Viên VÀO Phòng**
 export const fetchNhanVienList = async () => {
   try {
-    const response = await api.get('/lichtruc/nhanvien');
+    const response = await api.get('/congviec/nhanvien');
     // Nếu response.data không phải là mảng, báo lỗi hoặc trả về mảng rỗng
     if (!Array.isArray(response.data)) {
-      console.error("LỖI: API /api/lichtruc/nhanvien KHÔNG trả về một mảng!", response.data);
-      throw new Error("API /api/lichtruc/nhanvien không trả về định dạng mảng như mong đợi.");
+      console.error("LỖI: API /api/congviec/nhanvien KHÔNG trả về một mảng!", response.data);
+      throw new Error("API /api/congviec/nhanvien không trả về định dạng mảng như mong đợi.");
       //  Hoặc trả về mảng rỗng để tránh lỗi.
       // return [];
     }
@@ -492,32 +492,32 @@ export const removeAssignedRoomsForEmployee = (employeeId, phongIdsArray) => api
 
 export const fetchAllLichTruc = async ({ queryKey }) => {
   const params = queryKey[1]; // Lấy phần tử thứ 2 làm params
-  const { data } = await api.get('/lichtruc', { params });
+  const { data } = await api.get('/congviec', { params });
   return data;
 };
 
 export const fetchMySchedule = async () => { // Hàm fetch lịch cá nhân
-  const { data } = await api.get('/lichtruc/'); // Endpoint này cần trả về lịch của user đã login
+  const { data } = await api.get('/congviec/'); // Endpoint này cần trả về lịch của user đã login
   return data;
 };
 
 export const addLichTrucAPI = async (lichTrucData) => {
-  const { data } = await api.post('/lichtruc/themlichtruc', lichTrucData);
+  const { data } = await api.post('/congviec/themlichtruc', lichTrucData);
   return data;
 };
 
 export const updateLichTrucAPI = async ({ id, ...lichTrucData }) => {
-  const { data } = await api.put(`/lichtruc/${id}`, lichTrucData);
+  const { data } = await api.put(`/congviec/${id}`, lichTrucData);
   return data;
 };
 
 export const deleteLichTrucAPI = async (lichTrucId) => {
-  const { data } = await api.delete(`/lichtruc/${lichTrucId}`);
+  const { data } = await api.delete(`/congviec/${lichTrucId}`);
   return data;
 };
 
 export const saveBulkLichTrucChangesAPI = async (bulkData) => {
-  const { data } = await api.post('/lichtruc/bulk-save', bulkData);
+  const { data } = await api.post('/congviec/bulk-save', bulkData);
   return data;
 };
 

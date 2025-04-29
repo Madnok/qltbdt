@@ -273,7 +273,7 @@ const AdminGopYManagement = () => {
             <div className="flex items-center justify-between mb-4">
                 {/* Tiêu đề bên trái */}
                 <div className="w-1/3">
-                    <h3 className="text-lg font-semibold">Quản Lý Góp Ý Hệ Thống</h3>
+                    <h3 className="text-lg font-semibold">Góp Ý Hệ Thống</h3>
                 </div>
 
                 {/* Thanh tìm kiếm căn giữa */}

@@ -24,6 +24,27 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
         updateBaoDuongStatusMutation,
     } = handlers;
 
+    // Xác định tiêu đề cột dựa trên loại công việc
+    const headers = useMemo(() => {
+        if (taskType === 'baohong') {
+            return [
+                { label: 'Thiết bị / Mô tả', className: 'text-left' },
+                { label: 'Ngày báo', className: 'text-left whitespace-nowrap' },
+                { label: 'Trạng thái CV', className: 'text-center' },
+                { label: 'TT Thiết bị', className: 'text-center' },
+                { label: 'Hành động', className: 'text-center' }
+            ];
+        } else {
+            return [
+                { label: 'Thiết bị / Mô tả', className: 'text-left' },
+                { label: 'Ngày tạo', className: 'text-left whitespace-nowrap' },
+                { label: 'Trạng thái', className: 'text-center' },
+                { label: 'TT Thiết bị', className: 'text-center' },
+                { label: 'Hành động', className: 'text-center' }
+            ];
+        }
+    }, [taskType]);
+
     if (!tasks || tasks.length === 0) return null;
 
     const isLoadingBaoHongAction = updateBaoHongStatusMutation.isPending;
@@ -49,7 +70,20 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
             {/* Danh sách công việc */}
             {isOpen && (
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="min-w-full divide-y divide-gray-200 border-t">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                {headers.map((header, index) => (
+                                    <th
+                                        key={index}
+                                        scope="col"
+                                        className={`px-4 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider ${header.className}`}
+                                    >
+                                        {header.label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {tasks.map((task) => {
                                 const isBaoHong = taskType === 'baohong';
@@ -59,7 +93,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                 const tenThietBi = task.tenThietBi;
                                 const thietBiId = task.thongtinthietbi_id;
                                 const coLog = task.coLogBaoTri;
-                                const tinhTrangTB = task.tinhTrangThietBi;
+                                const tinhTrangTB = isBaoHong ? task.tinhTrangThietBi : task.tinhTrang;
                                 const ghiChuAdmin = task.ghiChuAdmin;
 
                                 const isLoadingAction = isBaoHong
@@ -70,7 +104,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                     <tr key={`${taskType}-${task.id}`} className={`${isBaoHong && currentStatus === 'Yêu Cầu Làm Lại' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                         {/* Thiết bị / Mô tả */}
                                         <td className="px-4 py-2 text-sm text-gray-700 max-w-xs break-words">
-                                            {tenThietBi ? `${tenThietBi} ${thietBiId ? `(ID: ${thietBiId})` : ''}` : (isBaoHong ? 'Hạ tầng/Khác' : '')}
+                                            {tenThietBi ? `${tenThietBi} ${thietBiId ? `(MĐD: ${thietBiId})` : ''}` : (isBaoHong ? 'Hạ tầng/Khác' : '')}
                                             <span className="block mt-1 text-xs text-gray-500">{moTaCongViec}</span>
                                         </td>
                                         {/* Ngày */}
@@ -79,20 +113,21 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                         </td>
                                         {/* Trạng thái CV */}
                                         <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                isBaoHong ?
-                                                    (currentStatus === 'Đang Tiến Hành' ? 'bg-yellow-100 text-yellow-800' :
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isBaoHong ?
+                                                (currentStatus === 'Đang Tiến Hành' ? 'bg-yellow-100 text-yellow-800' :
                                                     currentStatus === 'Yêu Cầu Làm Lại' ? 'bg-red-100 text-red-800' :
-                                                    currentStatus === 'Đã Duyệt' ? 'bg-blue-100 text-blue-800' :
-                                                    currentStatus === 'Chờ Hoàn Tất Bảo Hành' ? 'bg-orange-100 text-orange-800' :
-                                                    currentStatus === 'Chờ Xem Xét' ? 'bg-purple-100 text-purple-800' :
-                                                    'bg-gray-100 text-gray-800')
+                                                        currentStatus === 'Đã Duyệt' ? 'bg-blue-100 text-blue-800' :
+                                                            currentStatus === 'Chờ Hoàn Tất Bảo Hành' ? 'bg-orange-100 text-orange-800' :
+                                                                currentStatus === 'Chờ Xem Xét' ? 'bg-purple-100 text-purple-800' :
+                                                                    'bg-gray-100 text-gray-800')
                                                 : // Bảo dưỡng
-                                                    (currentStatus === 'Đang tiến hành' ? 'bg-yellow-100 text-yellow-800' :
+                                                (currentStatus === 'Đang tiến hành' ? 'bg-yellow-100 text-yellow-800' :
                                                     currentStatus === 'Chờ xử lý' ? 'bg-blue-100 text-blue-800' :
-                                                    currentStatus === 'Chờ Hoàn Tất Bảo Hành' ? 'bg-orange-100 text-orange-800' :
-                                                    'bg-gray-100 text-gray-800')
-                                            }`}>
+                                                        currentStatus === 'Chờ Hoàn Tất Bảo Hành' ? 'bg-orange-100 text-orange-800' :
+                                                            currentStatus === 'Chờ Xem Xét' ? 'bg-purple-100 text-purple-800' :
+                                                                currentStatus === 'Hủy' ? 'bg-red-100 text-red-800' :
+                                                                    'bg-gray-100 text-gray-800')
+                                                }`}>
                                                 {currentStatus}
                                             </span>
                                             {isBaoHong && currentStatus === 'Yêu Cầu Làm Lại' && ghiChuAdmin && (
@@ -101,37 +136,35 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                         </td>
                                         {/* TT Thiết bị */}
                                         <td className="px-4 py-2 text-sm font-medium text-center whitespace-nowrap">
-                                            {isBaoHong ?
-                                                (tinhTrangTB ? getTinhTrangLabel(tinhTrangTB) : <span className="italic text-gray-400">N/A</span>)
-                                                : '-'}
+                                            {tinhTrangTB ? getTinhTrangLabel(tinhTrangTB) : <span className="italic text-gray-400">N/A</span>}
                                         </td>
                                         {/* Hành động */}
                                         <td className="px-4 py-2 text-sm font-medium text-center whitespace-nowrap">
-                                             <div className='flex flex-wrap items-center justify-center gap-2'>
+                                            <div className='flex flex-wrap items-center justify-center gap-2'>
                                                 {isBaoHong && (
-                                                     <>
-                                                         {currentStatus === 'Đã Duyệt' && ( <button onClick={() => handleStartBaoHong(task.id)}className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed" title="Bắt đầu xử lý" disabled={isLoadingAction}><FaHourglassStart /></button> )}
-                                                         {['Đang Tiến Hành', 'Yêu Cầu Làm Lại'].includes(currentStatus) && ( <button onClick={() => handleOpenLogForm(task, 'baohong')} className="text-indigo-600 hover:text-indigo-900" title="Ghi nhận hoạt động"><FaHammer /></button> )}
-                                                         <button onClick={() => handleOpenViewLogModal(task, 'baohong')}className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
-                                                         {currentStatus === 'Chờ Hoàn Tất Bảo Hành' && ( <button onClick={() => handleOpenNhanHangModal(task, 'baohong')} className="px-2 py-1 text-xs text-white bg-green-500 rounded hover:bg-green-600" title="Xác nhận nhận thiết bị về (Báo Hỏng)" ><FaPlusCircle className="inline mr-1"/>Nhận về</button> )}
-                                                     </>
-                                                )}
-                                                 {!isBaoHong && (
                                                     <>
-                                                         {currentStatus === 'Chờ xử lý' && ( <button onClick={() => handleStartBaoDuong(task.id)} className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed" title="Bắt đầu xử lý" disabled={isLoadingAction}><FaHourglassStart /></button> )}
-                                                         {currentStatus === 'Đang tiến hành' && ( <button onClick={() => handleOpenLogForm(task, 'lichbaoduong')} className="text-indigo-600 hover:text-indigo-900" title="Ghi nhận hoạt động" ><FaHammer /></button> )}
-                                                         <button onClick={() => handleOpenViewLogModal(task, 'lichbaoduong')} className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
-                                                         {currentStatus === 'Chờ Hoàn Tất Bảo Hành' && (
-                                                             <button
+                                                        {currentStatus === 'Đã Duyệt' && (<button onClick={() => handleStartBaoHong(task.id)} className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed" title="Bắt đầu xử lý" disabled={isLoadingAction}><FaHourglassStart /></button>)}
+                                                        {['Đang Tiến Hành', 'Yêu Cầu Làm Lại'].includes(currentStatus) && (<button onClick={() => handleOpenLogForm(task, 'baohong')} className="text-indigo-600 hover:text-indigo-900" title="Ghi nhận hoạt động"><FaHammer /></button>)}
+                                                        <button onClick={() => handleOpenViewLogModal(task, 'baohong')} className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
+                                                        {currentStatus === 'Chờ Hoàn Tất Bảo Hành' && (<button onClick={() => handleOpenNhanHangModal(task, 'baohong')} className="text-green-500 rounded hover:text-green-600" title="Xác nhận nhận thiết bị về (Báo Hỏng)" ><FaPlusCircle className="inline mr-1" /></button>)}
+                                                    </>
+                                                )}
+                                                {!isBaoHong && (
+                                                    <>
+                                                        {currentStatus === 'Chờ xử lý' && (<button onClick={() => handleStartBaoDuong(task.id)} className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed" title="Bắt đầu xử lý" disabled={isLoadingAction}><FaHourglassStart /></button>)}
+                                                        {currentStatus === 'Đang tiến hành' && (<button onClick={() => handleOpenLogForm(task, 'lichbaoduong')} className="text-indigo-600 hover:text-indigo-900" title="Ghi nhận hoạt động" ><FaHammer /></button>)}
+                                                        <button onClick={() => handleOpenViewLogModal(task, 'lichbaoduong')} className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
+                                                        {currentStatus === 'Chờ Hoàn Tất Bảo Hành' && (
+                                                            <button
                                                                 onClick={() => handleOpenNhanHangModal(task, 'lichbaoduong')}
                                                                 className="px-2 py-1 text-xs text-white bg-green-500 rounded hover:bg-green-600"
                                                                 title="Xác nhận nhận thiết bị về (Bảo Dưỡng)"
-                                                             >
+                                                            >
                                                                 <FaPlusCircle className="inline mr-1" /> Nhận về
-                                                             </button>
-                                                         )}
+                                                            </button>
+                                                        )}
                                                     </>
-                                                 )}
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -145,8 +178,8 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
     );
 };
 
-// --- Component Chính AssignedTasksView ---
-const AssignedTasksView = () => {
+// --- Component Chính CongViecNhanVien ---
+const CongViecNhanVien = () => {
     const queryClient = useQueryClient();
     const [activeTaskTypeTab, setActiveTaskTypeTab] = useState('baohong'); // Mặc định là tab Báo Hỏng
 
@@ -166,7 +199,7 @@ const AssignedTasksView = () => {
         staleTime: 0,
     });
 
-    const baoDuongStatuses = useMemo(() => ['Chờ xử lý', 'Đang tiến hành', 'Chờ Hoàn Tất Bảo Hành'], []);
+    const baoDuongStatuses = useMemo(() => ['Chờ xử lý', 'Đang tiến hành', 'Chờ Hoàn Tất Bảo Hành', 'Chờ Xem Xét', 'Hủy'], []);
     const { data: baoDuongTasksData, isLoading: isLoadingBaoDuong } = useQuery({
         queryKey: ['assignedBaoDuongTasks', baoDuongStatuses],
         queryFn: () => api.getMyLichBaoDuongAPI({ trangThai: baoDuongStatuses.join(','), limit: 1000 }),
@@ -183,9 +216,9 @@ const AssignedTasksView = () => {
             queryClient.invalidateQueries({ queryKey: ['baoHongList'] });
             queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
             // Invalidate cả query công việc bảo dưỡng nếu trạng thái liên quan
-             if (variables.updateData?.trangThai === 'Chờ Hoàn Tất Bảo Hành') {
-                 queryClient.invalidateQueries({ queryKey: ['assignedBaoDuongTasks'] });
-             }
+            if (variables.updateData?.trangThai === 'Chờ Hoàn Tất Bảo Hành') {
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoDuongTasks'] });
+            }
         },
         onError: (error, variables) => {
             console.error("Lỗi cập nhật Báo hỏng:", error);
@@ -200,9 +233,9 @@ const AssignedTasksView = () => {
             queryClient.invalidateQueries({ queryKey: ['assignedBaoDuongTasks'] });
             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
             // Invalidate cả query công việc báo hỏng nếu trạng thái liên quan
-             if (variables.data?.trang_thai === 'Chờ Hoàn Tất Bảo Hành') {
-                 queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
-             }
+            if (variables.data?.trang_thai === 'Chờ Hoàn Tất Bảo Hành') {
+                queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
+            }
         },
         onError: (error, variables) => {
             console.error("Lỗi cập nhật Lịch bảo dưỡng:", error);
@@ -243,7 +276,6 @@ const AssignedTasksView = () => {
             ghiChuAdmin: task.ghiChuAdmin, // Ghi chú từ Admin (nếu có)
             suggestedKetQuaXuLy: suggestedResult // Kết quả gợi ý (nếu có)
         };
-        console.log(`[AssignedTasksView - handleOpenLogForm] Constructed logInfo for type '${type}':`, logInfo);
         setSelectedTaskInfoForLog(logInfo);
         setIsLogFormOpen(true);
     }, []);
@@ -281,7 +313,7 @@ const AssignedTasksView = () => {
         setIsNhanHangModalOpen(true);
     }, []);
 
-     const handleCloseNhanHangModal = useCallback(() => { setSelectedTaskForNhanHang(null); setIsNhanHangModalOpen(false); }, []);
+    const handleCloseNhanHangModal = useCallback(() => { setSelectedTaskForNhanHang(null); setIsNhanHangModalOpen(false); }, []);
 
     const handleNhanHangSuccess = useCallback(() => {
         queryClient.invalidateQueries({ queryKey: ['assignedBaoHong'] });
@@ -290,7 +322,7 @@ const AssignedTasksView = () => {
     }, [queryClient]);
 
     // --- Gộp handlers vào object để truyền xuống RoomTaskGroup ---
-     const handlers = useMemo(() => ({
+    const handlers = useMemo(() => ({
         handleOpenLogForm, handleOpenViewLogModal, handleStartBaoHong,
         handleOpenNhanHangModal, handleStartBaoDuong, updateBaoHongStatusMutation, updateBaoDuongStatusMutation,
     }), [
@@ -334,13 +366,6 @@ const AssignedTasksView = () => {
                             <p className="text-center text-gray-500">Không có công việc sửa chữa nào.</p>
                         ) : (
                             <div className="space-y-4">
-                                <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_120px] gap-4 px-4 py-2 bg-gray-50 rounded-t-md text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div className="col-span-1">Thiết bị / Mô tả</div>
-                                    <div className="col-span-1 text-left">Ngày báo</div>
-                                    <div className="col-span-1 text-center">Trạng thái CV</div>
-                                    <div className="col-span-1 text-center">TT Thiết bị</div>
-                                    <div className="col-span-1 text-center">Hành động</div>
-                                </div>
                                 {sortedBaoHongRooms.map(roomName => (
                                     <RoomTaskGroup
                                         key={`bh-room-${roomName}`}
@@ -362,13 +387,6 @@ const AssignedTasksView = () => {
                             <p className="text-center text-gray-500">Không có công việc bảo dưỡng nào.</p>
                         ) : (
                             <div className="space-y-4">
-                                <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_120px] gap-4 px-4 py-2 bg-gray-50 rounded-t-md text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div className="col-span-1">Thiết bị / Mô tả</div>
-                                    <div className="col-span-1 text-left">Ngày BD</div>
-                                    <div className="col-span-1 text-center">Trạng thái</div>
-                                    <div className="col-span-1 text-center">TT Thiết bị</div>
-                                    <div className="col-span-1 text-center">Hành động</div>
-                                </div>
                                 {sortedBaoDuongRooms.map(roomName => (
                                     <RoomTaskGroup
                                         key={`bd-room-${roomName}`}
@@ -401,10 +419,10 @@ const AssignedTasksView = () => {
                         }
                         // Invalidate các query liên quan khác
                         if (selectedTaskInfoForLog?.thongtinthietbi_id) {
-                           queryClient.invalidateQueries({ queryKey: ['thongTinThietBi', selectedTaskInfoForLog.thongtinthietbi_id] });
-                           queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
-                           queryClient.invalidateQueries({ queryKey: ['baoTriLogsByThietBi', selectedTaskInfoForLog.thongtinthietbi_id] });
-                           // Thêm query mới cho modal log
+                            queryClient.invalidateQueries({ queryKey: ['thongTinThietBi', selectedTaskInfoForLog.thongtinthietbi_id] });
+                            queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+                            queryClient.invalidateQueries({ queryKey: ['baoTriLogsByThietBi', selectedTaskInfoForLog.thongtinthietbi_id] });
+                            // Thêm query mới cho modal log
                             queryClient.invalidateQueries({ queryKey: ['baotriLogDetailUnified'] });
                         }
                     }}
@@ -433,4 +451,4 @@ const AssignedTasksView = () => {
     );
 };
 
-export default AssignedTasksView; // Đổi tên export
+export default CongViecNhanVien; 

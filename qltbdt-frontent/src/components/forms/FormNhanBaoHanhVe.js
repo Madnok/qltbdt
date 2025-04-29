@@ -10,23 +10,25 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
     const relatedTaskId = isFromMaintenance ? deviceInfo.relatedLichBaoDuongId : deviceInfo.relatedBaoHongId;
     const taskTypeLabel = isFromMaintenance ? `Lịch BD gốc ID: ${relatedTaskId}` : `Báo hỏng gốc ID: ${relatedTaskId}`;
 
-    const [ketQuaNhanHang, setKetQuaNhanHang] = useState('tot'); 
+    const [ketQuaNhanHang, setKetQuaNhanHang] = useState('tot');
     const [hoatdong, setHoatdong] = useState(
-        `Nhận thiết bị ${deviceInfo?.tenThietBi || `ID ${deviceInfo?.id}` || 'N/A'} từ bảo hành về. (${taskTypeLabel})`
-    );
+        `Nhận thiết bị ${deviceInfo?.tenThietBi ? deviceInfo.tenThietBi : 'N/A'} (${deviceInfo?.id ? `MĐD: ${deviceInfo.id}` : 'N/A'}) từ bảo hành về. (${taskTypeLabel})`
+    );    
     const [damageFiles, setDamageFiles] = useState([]);
     const [damagePreviews, setDamagePreviews] = useState([]);
     const [error, setError] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false); 
+    const [isProcessing, setIsProcessing] = useState(false);
     const queryClient = useQueryClient();
 
     // Cập nhật hoạt động khi kết quả thay đổi
     useEffect(() => {
-        const baseText = `Nhận thiết bị ${deviceInfo?.tenThietBi || `ID ${deviceInfo?.id}` || 'N/A'} từ bảo hành về. (${taskTypeLabel})`;
-        const suffix = ketQuaNhanHang === 'tot' ? ' - Tình trạng ghi nhận: Hoạt động tốt.' : ' - Tình trạng ghi nhận: Vẫn còn lỗi.';
+        const baseText = `Nhận thiết bị ${deviceInfo?.tenThietBi ? deviceInfo.tenThietBi : 'N/A'} (${deviceInfo?.id ? `MĐD: ${deviceInfo.id}` : 'N/A'}) từ bảo hành về. (${taskTypeLabel})`;
+        const suffix = ketQuaNhanHang === 'tot' 
+            ? ' - Tình trạng ghi nhận: Hoạt động tốt.' 
+            : ' - Tình trạng ghi nhận: Vẫn còn lỗi.';
         setHoatdong(baseText + suffix);
     }, [ketQuaNhanHang, deviceInfo, taskTypeLabel]);
-
+    
     // Mutation tạo log
     const createLogMutation = useMutation({
         mutationFn: createLogBaoTriAPI,
@@ -43,7 +45,7 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                 queryClient.invalidateQueries({ queryKey: ['baoTriLogDetailUnified', { thongtinthietbi_id: deviceInfo.id }] }); // Invalidate log theo TTTB
                 queryClient.invalidateQueries({ queryKey: ['baoTriLogsByThietBi', deviceInfo.id] });
             }
-             // Invalidate log chi tiết của task gốc nếu có ID
+            // Invalidate log chi tiết của task gốc nếu có ID
             if (deviceInfo?.relatedBaoHongId) queryClient.invalidateQueries({ queryKey: ['baotriLogDetailUnified', { baohong_id: deviceInfo.relatedBaoHongId }] });
             if (deviceInfo?.relatedLichBaoDuongId) queryClient.invalidateQueries({ queryKey: ['baotriLogDetailUnified', { lichbaoduong_id: deviceInfo.relatedLichBaoDuongId }] });
 
@@ -59,31 +61,31 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
     });
 
     // Hàm xử lý upload file (Tương tự FormLogBaoTri)
-     const handleFileChange = (e) => {
-         const files = Array.from(e.target.files);
-         const maxFiles = 2; // Giới hạn 2 ảnh xác nhận lỗi
-         if (files.length + damageFiles.length > maxFiles) {
-             toast.error(`Chỉ được tải lên tối đa ${maxFiles} ảnh xác nhận lỗi.`);
-             e.target.value = null;
-             return;
-         }
-         const addedFiles = [];
-         files.forEach(file => {
-             if (file.size > 10 * 1024 * 1024) { toast.error(`File "${file.name}" quá lớn.`); return; }
-             if (!file.type.startsWith('image/')) { toast.warn(`File "${file.name}" không phải ảnh.`); return; }
-             addedFiles.push(file);
-             const reader = new FileReader();
-             reader.onloadend = () => setDamagePreviews(prev => [...prev, { name: file.name, url: reader.result }]);
-             reader.readAsDataURL(file);
-         });
-         if (addedFiles.length > 0) setDamageFiles(prev => [...prev, ...addedFiles]);
-         setError('');
-         e.target.value = null;
-     };
-     const removePreview = (fileName) => {
-         setDamageFiles(prev => prev.filter(file => file.name !== fileName));
-         setDamagePreviews(prev => prev.filter(preview => preview.name !== fileName));
-     };
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        const maxFiles = 2; // Giới hạn 2 ảnh xác nhận lỗi
+        if (files.length + damageFiles.length > maxFiles) {
+            toast.error(`Chỉ được tải lên tối đa ${maxFiles} ảnh xác nhận lỗi.`);
+            e.target.value = null;
+            return;
+        }
+        const addedFiles = [];
+        files.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { toast.error(`File "${file.name}" quá lớn.`); return; }
+            if (!file.type.startsWith('image/')) { toast.warn(`File "${file.name}" không phải ảnh.`); return; }
+            addedFiles.push(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setDamagePreviews(prev => [...prev, { name: file.name, url: reader.result }]);
+            reader.readAsDataURL(file);
+        });
+        if (addedFiles.length > 0) setDamageFiles(prev => [...prev, ...addedFiles]);
+        setError('');
+        e.target.value = null;
+    };
+    const removePreview = (fileName) => {
+        setDamageFiles(prev => prev.filter(file => file.name !== fileName));
+        setDamagePreviews(prev => prev.filter(preview => preview.name !== fileName));
+    };
 
 
     // Hàm Submit
@@ -115,17 +117,16 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                 // Thông tin chung
                 thongtinthietbi_id: deviceInfo.id,
                 phong_id: deviceInfo.phong_id,
-                hoatdong: hoatdong.trim(), // Hoạt động đã cập nhật theo kết quả
-                ketQuaXuLy: 'Đã nhận từ bảo hành', // Kết quả cố định
-                phuongAnXuLy: 'Bảo hành',          // Phương án cố định
-                // Các trường khác thường không cần khi nhận hàng về
+                hoatdong: hoatdong.trim(),
+                ketQuaXuLy: 'Đã nhận từ bảo hành',
+                phuongAnXuLy: 'Bảo hành',
                 phuongAnKhacChiTiet: null,
                 suDungVatTu: false,
                 ghiChuVatTu: null,
                 chiPhi: null,
-                hinhAnhHoaDonUrls: [], // Không có hóa đơn khi nhận về
-                hinhAnhHongHocUrls: uploadedDamageUrls, // Ảnh xác nhận (nếu có lỗi)
-                ngayDuKienTra: null // Không cần ngày dự kiến trả nữa
+                hinhAnhHoaDonUrls: [],
+                hinhAnhHongHocUrls: uploadedDamageUrls,
+                ngayDuKienTra: null
             };
 
             console.log("Submitting NhanHangVe Payload:", payload);
@@ -136,7 +137,6 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
             setError(`Lỗi upload ảnh: ${uploadErr.response?.data?.error || uploadErr.message}`);
             setIsProcessing(false); // Dừng xử lý nếu upload lỗi
         }
-        // Không setIsProcessing(false) ở đây, mutation sẽ xử lý
     };
 
     return (
@@ -149,7 +149,11 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
 
                 {/* Thông tin thiết bị */}
                 <div className="p-3 mb-4 text-sm border rounded-md bg-gray-50">
-                    <p><strong>Thiết bị:</strong> {deviceInfo?.tenThietBi || `ID ${deviceInfo?.id}` || 'N/A'}</p>
+                    <p><strong>Thiết bị:</strong>
+                        {deviceInfo?.tenThietBi ? deviceInfo.tenThietBi : 'N/A'}
+                        &nbsp;
+                        ({deviceInfo?.id ? `MĐD: ${deviceInfo.id}` : 'N/A'})
+                    </p>
                     <p><strong>Phòng gốc:</strong> {deviceInfo?.phong_name || 'N/A'}</p>
                     <p><strong>Task gốc:</strong> {taskTypeLabel}</p>
                 </div>
@@ -170,7 +174,7 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                                     onChange={(e) => setKetQuaNhanHang(e.target.value)}
                                     className="mr-2"
                                 />
-                                <FaCheck className="mr-1 text-green-500"/> Hoạt động tốt
+                                <FaCheck className="mr-1 text-green-500" /> Hoạt động tốt
                             </label>
                             <label className="flex items-center px-3 py-2 border rounded-md cursor-pointer hover:bg-gray-50">
                                 <input
@@ -181,7 +185,7 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                                     onChange={(e) => setKetQuaNhanHang(e.target.value)}
                                     className="mr-2"
                                 />
-                                <FaExclamationTriangle className="mr-1 text-red-500"/> Vẫn còn lỗi
+                                <FaExclamationTriangle className="mr-1 text-red-500" /> Vẫn còn lỗi
                             </label>
                         </div>
                     </div>
@@ -201,12 +205,12 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                             <label htmlFor="damage-upload-nhanhang" className="block mb-1 text-sm font-medium text-gray-700">
                                 Ảnh xác nhận tình trạng lỗi <span className="text-red-500">*</span> (Tối đa 2)
                             </label>
-                             <input type="file" id="damage-upload-nhanhang" multiple accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
-                             {/* Preview */}
+                            <input type="file" id="damage-upload-nhanhang" multiple accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
+                            {/* Preview */}
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {damagePreviews.map((preview, index) => (
                                     <div key={index} className="relative">
-                                        <img src={preview.url} alt={`Lỗi ${index+1}`} className="object-cover w-20 h-20 border rounded" />
+                                        <img src={preview.url} alt={`Lỗi ${index + 1}`} className="object-cover w-20 h-20 border rounded" />
                                         <button type="button" onClick={() => removePreview(preview.name)} className="absolute top-0 right-0 p-0.5 text-white bg-red-500 rounded-full text-xs leading-none">X</button>
                                     </div>
                                 ))}
@@ -225,7 +229,7 @@ const FormNhanBaoHanhVe = ({ deviceInfo, onClose, onSuccess }) => {
                 </form>
             </div>
             {/* Animation */}
-             <style>{` @keyframes modal-scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } .animate-modal-scale-in { animation: modal-scale-in 0.2s ease-out forwards; } `}</style>
+            <style>{` @keyframes modal-scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } .animate-modal-scale-in { animation: modal-scale-in 0.2s ease-out forwards; } `}</style>
         </div>
     );
 };

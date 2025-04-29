@@ -5,7 +5,7 @@ import {
     FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaInfoCircle, FaHistory
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import ModalXemLogBaoTri from '../LichTruc/ModalXemLogBaoTri';
+import ModalXemLogBaoTri from '../CongViec/ModalXemLogBaoTri';
 import {
     getThietBi,         // GET /api/thietbi 
     fetchTheLoaiList,   // GET /api/theloai 

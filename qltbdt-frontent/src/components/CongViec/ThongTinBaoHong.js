@@ -548,14 +548,13 @@ const ThongTinBaoHong = () => {
                                                     <td className="px-3 py-2 text-sm font-medium text-center border whitespace-nowrap">
                                                         <div className='flex items-center justify-center space-x-2'>
                                                             {/* 1. Xem chi tiết */}
-                                                            <button onClick={() => toggleRow(item.id)} className="text-gray-600 hover:text-indigo-900" title={expandedRows.has(item.id) ? "Thu gọn" : "Xem chi tiết"}><FaEye /></button>
+                                                            <button onClick={() => toggleRow(item.id)} className="text-blue-600 hover:text-blue-800" title={expandedRows.has(item.id) ? "Thu gọn" : "Xem chi tiết"}><FaEye /></button>
                                                             {/* 2. Xem Log Bảo trì */}
                                                             <button
                                                                 onClick={() => {
                                                                     if (item.thongtinthietbi_id) {
                                                                         setViewingDeviceHistory({
                                                                             thongtinthietbiId: item.thongtinthietbi_id,
-                                                                            // Lấy tên thiết bị từ dữ liệu item (cần đảm bảo API trả về tenThietBi)
                                                                             tenThietBi: item.tenThietBi || `Thiết bị ID: ${item.thongtinthietbi_id}`,
                                                                             phongName: item.phong_name || 'Không rõ phòng'
                                                                         });

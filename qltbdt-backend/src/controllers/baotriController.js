@@ -1,5 +1,5 @@
 const pool = require("../config/db");
-const { getIoInstance } = require('../socket');
+const { getIoInstance, emitToUser } = require('../socket');
 
 async function queryWithRetry(connection, sql, params, maxRetries = 1) {
     let attempt = 0;
@@ -138,6 +138,8 @@ exports.createLogBaoTri = async (req, res) => {
         let nextStatus = null;
         let updateRelatedTableQuery = '';
         let updateRelatedTableParams = [];
+        let notifyEventName = null;
+        let notifyData = {};
 
         // --- Xử lý cập nhật Báo Hỏng ---
         if (parsedBaoHongId) {
@@ -184,6 +186,7 @@ exports.createLogBaoTri = async (req, res) => {
         // --- Xử lý cập nhật Lịch Bảo Dưỡng ---
         else if (parsedLichBaoDuongId) {
             relatedTableId = parsedLichBaoDuongId;
+            const currentTaskType = 'lichbaoduong';
             try {
                 console.log(`[createLogBaoTri] STEP 2.1 (LichBaoDuong ID: ${relatedTableId}): Updating coLogBaoTri = TRUE...`);
                 await connection.query("UPDATE lichbaoduong SET coLogBaoTri = TRUE WHERE id = ?", [relatedTableId]);
@@ -194,20 +197,41 @@ exports.createLogBaoTri = async (req, res) => {
             }
 
             // Xác định trạng thái tiếp theo cho Lịch Bảo Dưỡng
-            if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') { nextStatus = 'Chờ Hoàn Tất Bảo Hành'; }
-            else if (ketQuaXuLy === 'Đã nhận từ bảo hành') { nextStatus = 'Hoàn thành'; } // Nhận về là hoàn thành lịch
-            else if (ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' || (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong')) { nextStatus = 'Hoàn thành'; }
-            else if (ketQuaXuLy === 'Đề xuất thanh lý' || phuongAnXuLy === 'Khác' || phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') { nextStatus = 'Hoàn thành'; } // Hoàn thành lịch, chờ admin xử lý TT TB
-
+            if (phuongAnXuLy === 'Bảo hành' && ketQuaXuLy === 'Đã gửi bảo hành') {
+                nextStatus = 'Chờ Hoàn Tất Bảo Hành';
+            } else if (ketQuaXuLy === 'Đã nhận từ bảo hành' ||
+                ketQuaXuLy === 'Không tìm thấy lỗi / Không cần xử lý' ||
+                (phuongAnXuLy === 'Tự Sửa Chữa' && ketQuaXuLy === 'Đã sửa chữa xong') ||
+                ketQuaXuLy === 'Đề xuất thanh lý' ||
+                phuongAnXuLy === 'Khác' ||
+                phuongAnXuLy === 'Bàn Giao Cho Bộ Phận Khác') 
+            {
+                nextStatus = 'Chờ Xem Xét';
+                notifyEventName = 'task_needs_review'; 
+            }
             // Thực hiện cập nhật trạng thái Lịch Bảo Dưỡng
             if (nextStatus) {
-                updateRelatedTableQuery = "UPDATE lichbaoduong SET trang_thai = ? WHERE id = ?"; updateRelatedTableParams = [nextStatus, relatedTableId];
+                updateRelatedTableQuery = "UPDATE lichbaoduong SET trang_thai = ?";
+                updateRelatedTableParams = [nextStatus];
+                if (nextStatus === 'Chờ Xem Xét' || nextStatus === 'Chờ Hoàn Tất Bảo Hành') {
+                     updateRelatedTableQuery += ", ngay_cap_nhat = NOW()";
+                }
+                updateRelatedTableQuery += " WHERE id = ?";
+                updateRelatedTableParams.push(relatedTableId);
                 try {
                     console.log(`[createLogBaoTri] STEP 2.2 (LichBaoDuong ID: ${relatedTableId}): Updating status to '${nextStatus}'...`);
-                    console.log("[createLogBaoTri] STEP 2.2 Query:", updateRelatedTableQuery);
-                    console.log("[createLogBaoTri] STEP 2.2 Params:", updateRelatedTableParams);
-                    await connection.query(updateRelatedTableQuery, updateRelatedTableParams);
-                    console.log(`[createLogBaoTri] STEP 2.2 SUCCESS.`);
+                    const [updateResult] = await connection.query(updateRelatedTableQuery, updateRelatedTableParams);
+                    console.log(`[createLogBaoTri] STEP 2.2 SUCCESS. Rows affected: ${updateResult.affectedRows}`);
+
+                    // Chuẩn bị dữ liệu cho socket notification
+                    if (notifyEventName) {
+                        notifyData = {
+                            taskId: relatedTableId,
+                            taskType: currentTaskType,
+                            statusAfterUpdate: nextStatus,
+                            technicianId: nhanvien_id,
+                        };
+                    }
                 } catch (dbError) {
                     console.error(`[createLogBaoTri] STEP 2.2 FAILED: Error updating status for lichbaoduong ${relatedTableId}:`, dbError);
                     throw dbError;
@@ -309,6 +333,13 @@ exports.createLogBaoTri = async (req, res) => {
                 // Emit cho tài chính nếu có chi phí được ghi nhận
                 if (suDungVatTu === true && chiPhi && !isNaN(parseFloat(chiPhi)) && parseFloat(chiPhi) > 0) {
                     io.emit('stats_updated', { type: 'taichinh' });
+                }
+                if (notifyEventName === 'task_needs_review') {
+                    const [adminUsers] = await pool.query("SELECT id FROM users WHERE role = 'admin' AND tinhTrang = 'on'");
+                    adminUsers.forEach(admin => {
+                        emitToUser(admin.id, notifyEventName, notifyData);
+                    });
+                    console.log(`[createLogBaoTri] Emitted '${notifyEventName}' to ${adminUsers.length} admins for LBD ID ${relatedTableId}.`);
                 }
             }
         } catch (socketError) {

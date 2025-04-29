@@ -52,7 +52,7 @@ const PhanCa = () => {
         setLoading(true);
         setApiError(null);
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/lichtruc`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/congviec`, {
                 credentials: 'include'
             }); // Thay đổi URL nếu cần
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -94,7 +94,7 @@ const PhanCa = () => {
 
     // useEffect fetch employees (không đổi)
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_API_URL}/lichtruc/nhanvien`, { credentials: 'include' })
+        fetch(`${process.env.REACT_APP_API_URL}/congviec/nhanvien`, { credentials: 'include' })
             .then((response) => response.json())
             .then((data) => {
                 setEmployees(data);
@@ -511,7 +511,7 @@ const PhanCa = () => {
         try {
             // --- Ưu tiên dùng API bulk-save ---
             const bulkPayload = { added, updated, deleted };
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/lichtruc/bulk-save`, { // API cần tạo
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/congviec/bulk-save`, { // API cần tạo
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -525,9 +525,9 @@ const PhanCa = () => {
 
             // --- Hoặc gọi API riêng lẻ (phức tạp hơn) ---
             // await Promise.all([
-            //     ...added.map(item => fetch('/lichtruc/themlichtruc', { method: 'POST', ... })),
-            //     ...updated.map(item => fetch(`/lichtruc/${item.id}`, { method: 'PUT', ... })),
-            //     ...deleted.map(id => fetch(`/lichtruc/${id}`, { method: 'DELETE' }))
+            //     ...added.map(item => fetch('/congviec/themlichtruc', { method: 'POST', ... })),
+            //     ...updated.map(item => fetch(`/congviec/${item.id}`, { method: 'PUT', ... })),
+            //     ...deleted.map(id => fetch(`/congviec/${id}`, { method: 'DELETE' }))
             // ]);
 
             // 3. Fetch lại dữ liệu mới nhất sau khi lưu thành công

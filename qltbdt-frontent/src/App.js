@@ -4,12 +4,12 @@ import NhapXuat from "./pages/NhapXuat";
 import DanhMuc from "./pages/DanhMuc";
 import ThongKe from "./pages/ThongKe";
 import NguoiDung from "./pages/NguoiDung";
-import LichTruc from "./pages/LichTruc";
+import CongViec from "./pages/CongViec";
 import PrivateRoute from "./utils/PrivateRoutes";
 import BaoHongGoiY from "./pages/BaoHongGoiY";
 import NotFound from "./pages/NotFound";
 import AppLayout from "../src/components/layout/AppLayout";
-import ThongTinBaoHong from "../src/components/LichTruc/ThongTinBaoHong";
+import ThongTinBaoHong from "../src/components/CongViec/ThongTinBaoHong";
 import QuanLyTaiSan from './pages/QuanLyTaiSan';
 import ResetPasswordPage from './pages/ResetMatKhau';
 import ForgotPasswordPage from './pages/QuenMatKhau';
@@ -27,7 +27,7 @@ function Layout() {
       
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien"]} />}>
           <Route path="/danhmuc" element={<DanhMuc />} />
-          <Route path="/lichtruc" element={<LichTruc />} />
+          <Route path="/congviec" element={<CongViec />} />
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["admin", "nhanvien", "nguoidung"]} />}>
