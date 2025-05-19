@@ -53,9 +53,8 @@ exports.getDeviceCountsByStatus = async (req, res) => {
             `SELECT tinhTrang, COUNT(*) as count
              FROM thongtinthietbi
              GROUP BY tinhTrang
-             ORDER BY FIELD(tinhTrang, 'con_bao_hanh', 'het_bao_hanh', 'dang_su_dung', 'dang_bao_hanh', 'hong', 'de_xuat_thanh_ly', 'cho_thanh_ly', 'da_thanh_ly', 'mat')` // Sắp xếp theo thứ tự logic
+             ORDER BY FIELD(tinhTrang, 'con_bao_hanh', 'het_bao_hanh', 'dang_bao_hanh', 'de_xuat_thanh_ly', 'cho_thanh_ly', 'da_thanh_ly', 'da_bao_hanh')`
         );
-        // Giữ nguyên dạng mảng [{tinhTrang: '...', count: ...}] vì dễ lặp ở frontend hơn
         res.json(rows);
     } catch (error) {
         console.error("Lỗi khi lấy số lượng thiết bị theo trạng thái:", error);
@@ -240,13 +239,12 @@ exports.getDeviceListByStatus = async (req, res) => {
         const [devices] = await pool.query(`
             SELECT
                 tttb.id,
-                tttb.tenThietBi, -- Giả sử bạn đã lưu tên TB vào tttb khi nhập
+                tttb.tenThietBi,
                 IFNULL(CONCAT(p.toa, p.tang, '.', p.soPhong), 'Trong Kho') as viTri
             FROM thongtinthietbi tttb
             LEFT JOIN phong p ON tttb.phong_id = p.id
             WHERE tttb.tinhTrang = ?
             ORDER BY tttb.id
-            LIMIT 50 -- Giới hạn số lượng trả về phòng trường hợp quá nhiều
         `, [tinhTrang]);
 
         res.json(devices);

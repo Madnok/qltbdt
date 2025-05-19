@@ -66,9 +66,7 @@ const GopY = () => {
             loaiGopY: suggestionForm.loaiGopY,
             noiDung: suggestionForm.noiDung.trim(),
             isAnonymous: suggestionForm.isAnonymous,
-            // Chỉ gửi hoTenNguoiGui nếu không ẩn danh VÀ chưa đăng nhập
             hoTenNguoiGui: (!suggestionForm.isAnonymous && isNotLoggedIn) ? senderName.trim() : undefined,
-            // THÊM user_id VÀO PAYLOAD NẾU ĐĂNG NHẬP VÀ KHÔNG ẨN DANH
             user_id: (!suggestionForm.isAnonymous && currentUser) ? currentUser.id : undefined,
 
         };
@@ -95,7 +93,7 @@ const GopY = () => {
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-lg">
-            <h2 className="flex items-center mb-6 text-xl font-semibold border-b text-card-foreground pb-2"> {/* Thêm pb-2 */}
+            <h2 className="flex items-center pb-2 mb-6 text-xl font-semibold border-b text-card-foreground"> {/* Thêm pb-2 */}
                 <MdDescription className="mr-2 text-blue-700" />
                 Gửi Góp Ý Cải Thiện Hệ Thống
             </h2>
@@ -134,7 +132,7 @@ const GopY = () => {
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring min-h-[100px] bg-background" // Thêm bg-background
                         placeholder="Mô tả chi tiết góp ý của bạn..."
-                        maxLength={1000} // Tăng giới hạn ký tự nếu cần
+                        maxLength={1000} 
                         required
                     />
                     <p className="mt-1 text-sm text-muted-foreground">

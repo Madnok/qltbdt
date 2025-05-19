@@ -43,8 +43,6 @@ const statusColorMap = {
     'cho_thanh_ly':      'rgba(245, 158, 11, 0.7)', 
     'da_thanh_ly':       'rgba(107, 114, 128, 0.7)',
     'mat_mat':           'rgba(17, 24, 39, 0.7)',   
-    // 'dang_su_dung':      'rgba(75, 192, 192, 0.7)',
-    // 'hong':              'rgba(255, 99, 132, 0.7)', 
     'default':           'rgba(209, 213, 219, 0.7)' 
 };
 const getStatusColor = (statusKey) => statusColorMap[statusKey] || statusColorMap['default'];
@@ -297,15 +295,15 @@ const ThongKe = () => {
         <div className="flex flex-1 border">
             <div className="flex flex-col w-full h-[calc(100vh-var(--header-height,80px))] bg-white">
                 {/* Header */}
-                <div className="p-4 text-2xl font-bold bg-white border-b shrink-0 shadow-sm">
+                <div className="p-4 text-2xl font-bold bg-white border-b shadow-sm shrink-0">
                     Thống Kê
                 </div>
 
                 {/* Khu vực nội dung có thể cuộn */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <div className="flex-1 p-4 overflow-y-auto md:p-6">
                     {isLoading && (
-                        <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                        <div className="flex items-center justify-center h-64">
+                            <div className="w-16 h-16 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
                         </div>
                     )}
                     {queryError && (
@@ -319,27 +317,27 @@ const ThongKe = () => {
                         <div className="space-y-6 md:space-y-8">
                             {/* Section Tài chính */}
                             {financialOverviewData && (
-                                <div className="bg-white p-6 rounded-lg shadow border-2">
-                                    <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700 flex items-center">
+                                <div className="p-6 bg-white border-2 rounded-lg shadow">
+                                    <h2 className="flex items-center pb-2 mb-4 text-xl font-semibold text-gray-700 border-b">
                                         <Info className="w-5 h-5 mr-2 text-gray-600" /> Tổng quan Chung
                                     </h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200"><h3 className="text-sm font-medium text-green-800 mb-1">Tổng Thu Thanh lý</h3><p className="text-2xl font-bold text-green-700">{formatCurrency(financialOverviewData.tongThu)}</p></div>
-                                        <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-200 break-words"><h3 className="text-sm font-medium text-blue-800 mb-1">Tổng Giá trị Tài sản</h3><p className="text-2xl font-bold text-blue-700">{formatCurrency(financialOverviewData.tongGiaTriTaiSanHienCo)}</p></div>
-                                        <div className="bg-yellow-50 p-4 rounded-lg text-center border border-yellow-200"><h3 className="text-sm font-medium text-yellow-800 mb-1">Tổng Chi phí Bảo trì</h3><p className="text-2xl font-bold text-yellow-700">{formatCurrency(financialOverviewData.tongChiPhiBaoTri)}</p></div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                        <div className="p-4 text-center border border-green-200 rounded-lg bg-green-50"><h3 className="mb-1 text-sm font-medium text-green-800">Tổng Thu Thanh lý</h3><p className="text-2xl font-bold text-green-700">{formatCurrency(financialOverviewData.tongThu)}</p></div>
+                                        <div className="p-4 text-center break-words border border-blue-200 rounded-lg bg-blue-50"><h3 className="mb-1 text-sm font-medium text-blue-800">Tổng Giá trị Tài sản</h3><p className="text-2xl font-bold text-blue-700">{formatCurrency(financialOverviewData.tongGiaTriTaiSanHienCo)}</p></div>
+                                        <div className="p-4 text-center border border-yellow-200 rounded-lg bg-yellow-50"><h3 className="mb-1 text-sm font-medium text-yellow-800">Tổng Chi phí Bảo trì</h3><p className="text-2xl font-bold text-yellow-700">{formatCurrency(financialOverviewData.tongChiPhiBaoTri)}</p></div>
                                     </div>
                                 </div>
                             )}
 
                             {/* Lưới biểu đồ 1 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {/* Thiết bị theo Trạng thái (Pie) */}
                                 <div className="bg-white p-4 rounded-lg shadow h-[450px] flex flex-col border-2">
-                                    <h3 className="text-lg font-semibold text-center mb-1 text-gray-700 flex items-center justify-center">
+                                    <h3 className="flex items-center justify-center mb-1 text-lg font-semibold text-center text-gray-700">
                                         <PieChart className="w-5 h-5 mr-2 text-indigo-600" /> Thiết bị theo Trạng thái
                                     </h3>
-                                    <p className="text-xs text-center text-gray-500 mb-2">(Click vào một phần để xem chi tiết)</p>
-                                    <div className="flex-1 relative min-h-0">
+                                    <p className="mb-2 text-xs text-center text-gray-500">(Click vào một phần để xem chi tiết)</p>
+                                    <div className="relative flex-1 min-h-0">
                                         {deviceStatusData ? (
                                             <Pie
                                                 ref={pieChartRef} 
@@ -351,89 +349,89 @@ const ThongKe = () => {
                                                     onClick: handlePieClick
                                                 }}
                                             />
-                                        ) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                        ) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                     </div>
                                 </div>
                                 {/* Thiết bị theo Phòng (Bar) */}
                                 <div className="bg-white p-4 rounded-lg shadow h-[450px] flex flex-col border-2">
-                                    <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center">
+                                    <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700">
                                         <Package className="w-5 h-5 mr-2 text-blue-600" /> Thiết bị theo Phòng
                                     </h3>
-                                    <div className="flex-1 relative min-h-0">
-                                        {deviceRoomData ? (<Bar data={deviceRoomData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { ticks: { autoSkip: false } } } }} />) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                    <div className="relative flex-1 min-h-0">
+                                        {deviceRoomData ? (<Bar data={deviceRoomData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { ticks: { autoSkip: false } } } }} />) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Lưới biểu đồ 2 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {/* Báo hỏng theo Loại TB (Doughnut) */}
                                 <div className="bg-white p-4 rounded-lg shadow h-[450px] flex flex-col border-2">
-                                    <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center">
+                                    <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700">
                                         <Wrench className="w-5 h-5 mr-2 text-red-600" /> Báo hỏng theo Loại thiết bị
                                     </h3>
-                                    <div className="flex-1 relative min-h-0">
-                                        {reportDeviceTypeData ? (<Doughnut data={reportDeviceTypeData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } } } }} />) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                    <div className="relative flex-1 min-h-0">
+                                        {reportDeviceTypeData ? (<Doughnut data={reportDeviceTypeData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } } } }} />) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                     </div>
                                 </div>
                                 {/* Báo hỏng theo Phòng (Bar) */}
                                 <div className="bg-white p-4 rounded-lg shadow h-[450px] flex flex-col border-2">
-                                    <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center">
+                                    <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700">
                                         <AlertCircle className="w-5 h-5 mr-2 text-orange-600" /> Báo hỏng theo Phòng
                                     </h3>
-                                    <div className="flex-1 relative min-h-0">
-                                        {reportRoomData ? (<Bar data={reportRoomData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                    <div className="relative flex-1 min-h-0">
+                                        {reportRoomData ? (<Bar data={reportRoomData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Phần Thống kê theo thời gian */}
-                            <div className="bg-white p-6 rounded-lg shadow space-y-6 border-2">
+                            <div className="p-6 space-y-6 bg-white border-2 rounded-lg shadow">
                                 {/* Bộ lọc */}
-                                <div className="flex flex-wrap items-center gap-4 border-b pb-4 mb-4">
+                                <div className="flex flex-wrap items-center gap-4 pb-4 mb-4 border-b">
                                     <Filter className="w-5 h-5 text-gray-600 shrink-0" />
                                     <span className='font-medium text-gray-700 shrink-0'>Lọc thời gian:</span>
-                                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="p-2 border rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"> {years.map(year => <option key={year} value={year}>{year}</option>)} </select>
-                                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="p-2 border rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"> {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)} </select>
-                                    <span className='text-xs text-gray-500 italic ml-auto'>(Áp dụng cho Báo hỏng, Nhập/Xuất, Chi phí bảo trì)</span>
+                                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="p-2 text-sm bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"> {years.map(year => <option key={year} value={year}>{year}</option>)} </select>
+                                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="p-2 text-sm bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"> {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)} </select>
+                                    <span className='ml-auto text-xs italic text-gray-500'>(Áp dụng cho Báo hỏng, Nhập/Xuất, Chi phí bảo trì)</span>
                                 </div>
 
                                 {/* Hiển thị Tổng Thu/Chi theo thời gian đã lọc */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                     <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200">
-                                         <h3 className="text-sm font-medium text-green-800 mb-1 flex items-center justify-center"> <TrendingUp size={16} className='mr-1'/> Tổng Thanh Lý {selectedMonth === 'all' ? `Năm ${selectedYear}` : `Tháng ${selectedMonth}/${selectedYear}`} {loadingRevenueTime && <Loader2 size={16} className='ml-2 animate-spin'/>} </h3>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                     <div className="p-4 text-center border border-green-200 rounded-lg bg-green-50">
+                                         <h3 className="flex items-center justify-center mb-1 text-sm font-medium text-green-800"> <TrendingUp size={16} className='mr-1'/> Tổng Thanh Lý {selectedMonth === 'all' ? `Năm ${selectedYear}` : `Tháng ${selectedMonth}/${selectedYear}`} {loadingRevenueTime && <Loader2 size={16} className='ml-2 animate-spin'/>} </h3>
                                          <p className="text-2xl font-bold text-green-700">{formatCurrency(calculatedRevenue)}</p>
-                                         {errorRevenueTime && <p className='text-xs text-red-600 mt-1'>Lỗi tải dữ liệu</p>}
+                                         {errorRevenueTime && <p className='mt-1 text-xs text-red-600'>Lỗi tải dữ liệu</p>}
                                      </div>
-                                      <div className="bg-red-50 p-4 rounded-lg text-center border border-red-200">
-                                          <h3 className="text-sm font-medium text-red-800 mb-1 flex items-center justify-center"> <TrendingDown size={16} className='mr-1'/> Tổng Chi {selectedMonth === 'all' ? `Năm ${selectedYear}` : `Tháng ${selectedMonth}/${selectedYear}`} {loadingExpenditureTime && <Loader2 size={16} className='ml-2 animate-spin'/>} </h3>
+                                      <div className="p-4 text-center border border-red-200 rounded-lg bg-red-50">
+                                          <h3 className="flex items-center justify-center mb-1 text-sm font-medium text-red-800"> <TrendingDown size={16} className='mr-1'/> Tổng Chi {selectedMonth === 'all' ? `Năm ${selectedYear}` : `Tháng ${selectedMonth}/${selectedYear}`} {loadingExpenditureTime && <Loader2 size={16} className='ml-2 animate-spin'/>} </h3>
                                           <p className="text-2xl font-bold text-red-700">{formatCurrency(calculatedExpenditure)}</p>
-                                          {errorExpenditureTime && <p className='text-xs text-red-600 mt-1'>Lỗi tải dữ liệu</p>}
+                                          {errorExpenditureTime && <p className='mt-1 text-xs text-red-600'>Lỗi tải dữ liệu</p>}
                                       </div>
                                  </div>
 
                                 {/* Lưới cho 3 biểu đồ line */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">                                    {/* Biểu đồ Phiếu Nhập/Xuất */}
+                                <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2">                                    {/* Biểu đồ Phiếu Nhập/Xuất */}
                                     <div className="h-[300px] flex flex-col col-span-1">
-                                        <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center"> <ClipboardList className="w-5 h-5 mr-2 text-teal-600" /> Phiếu Nhập/Xuất </h3>
-                                        <div className="flex-1 relative min-h-0">
-                                            {filteredTicketMonthData && filteredTicketMonthData.labels.length > 0 ? (<Line data={filteredTicketMonthData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: selectedMonth === 'all' ? 'month' : 'day', tooltipFormat: selectedMonth === 'all' ? 'MM/yyyy' : 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy', day: 'dd/MM' } }, title: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } }, plugins: { legend: { position: 'top' } } }} />) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                        <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700"> <ClipboardList className="w-5 h-5 mr-2 text-teal-600" /> Phiếu Nhập/Xuất </h3>
+                                        <div className="relative flex-1 min-h-0">
+                                            {filteredTicketMonthData && filteredTicketMonthData.labels.length > 0 ? (<Line data={filteredTicketMonthData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: selectedMonth === 'all' ? 'month' : 'day', tooltipFormat: selectedMonth === 'all' ? 'MM/yyyy' : 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy', day: 'dd/MM' } }, title: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } }, plugins: { legend: { position: 'top' } } }} />) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                         </div>
                                     </div>
                                     {/* Biểu đồ Chi phí Bảo trì */}
                                     <div className="h-[300px] flex flex-col col-span-1">
-                                        <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center"> <TrendingUp className="w-5 h-5 mr-2 text-cyan-600" /> Chi phí Bảo trì </h3>
-                                        <div className="flex-1 relative min-h-0">
+                                        <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700"> <TrendingUp className="w-5 h-5 mr-2 text-cyan-600" /> Chi phí Bảo trì </h3>
+                                        <div className="relative flex-1 min-h-0">
                                             {filteredMaintenanceCostData && filteredMaintenanceCostData.labels.length > 0 ? (
                                                 <Line data={filteredMaintenanceCostData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: selectedMonth === 'all' ? 'month' : 'day', tooltipFormat: selectedMonth === 'all' ? 'MM/yyyy' : 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy', day: 'dd/MM' } }, title: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Chi phí (VNĐ)' }, ticks: { callback: value => value.toLocaleString('vi-VN') } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${context.dataset.label}: ${context.parsed.y.toLocaleString('vi-VN')} đ` } } } }} />
-                                            ) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                            ) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                         </div>
                                     </div>
                                     {/* Biểu đồ Báo hỏng */}
                                     <div className="h-[300px] flex flex-col col-span-2 mt-6">
-                                        <h3 className="text-lg font-semibold text-center mb-3 text-gray-700 flex items-center justify-center"> <CalendarDays className="w-5 h-5 mr-2 text-purple-600" /> Báo hỏng </h3>
-                                        <div className="flex-1 relative min-h-0">
-                                            {filteredReportMonthData && filteredReportMonthData.labels.length > 0 ? (<Line data={filteredReportMonthData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: selectedMonth === 'all' ? 'month' : 'day', tooltipFormat: selectedMonth === 'all' ? 'MM/yyyy' : 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy', day: 'dd/MM' } }, title: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } }, plugins: { legend: { display: false } } }} />) : <p className="text-center text-gray-500 mt-10">Không có dữ liệu.</p>}
+                                        <h3 className="flex items-center justify-center mb-3 text-lg font-semibold text-center text-gray-700"> <CalendarDays className="w-5 h-5 mr-2 text-purple-600" /> Báo hỏng </h3>
+                                        <div className="relative flex-1 min-h-0">
+                                            {filteredReportMonthData && filteredReportMonthData.labels.length > 0 ? (<Line data={filteredReportMonthData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: selectedMonth === 'all' ? 'month' : 'day', tooltipFormat: selectedMonth === 'all' ? 'MM/yyyy' : 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy', day: 'dd/MM' } }, title: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } }, plugins: { legend: { display: false } } }} />) : <p className="mt-10 text-center text-gray-500">Không có dữ liệu.</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -448,43 +446,43 @@ const ThongKe = () => {
                 isOpen={modalIsOpen}
                 onRequestClose={() => setModalIsOpen(false)}
                 contentLabel="Chi tiết Thiết bị theo Trạng thái"
-                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
                 overlayClassName="fixed inset-0 bg-black bg-opacity-50 z-40"
             >
                 <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
-                    <div className="flex justify-between items-center border-b pb-3 mb-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                            <List className="w-5 h-5 mr-2 text-blue-600" /> Danh sách thiết bị: <span className="font-bold text-blue-600 ml-2">{selectedStatusLabel}</span>
+                    <div className="flex items-center justify-between pb-3 mb-4 border-b">
+                        <h2 className="flex items-center text-xl font-semibold text-gray-800">
+                            <List className="w-5 h-5 mr-2 text-blue-600" /> Danh sách thiết bị: <span className="ml-2 font-bold text-blue-600">{selectedStatusLabel}</span>
                         </h2>
-                        <button onClick={() => setModalIsOpen(false)} className="text-gray-400 hover:text-red-600 p-1 rounded-full hover:bg-gray-100">
+                        <button onClick={() => setModalIsOpen(false)} className="p-1 text-gray-400 rounded-full hover:text-red-600 hover:bg-gray-100">
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2"> {/* Thêm padding right nhỏ để thanh scroll không che nội dung */}
+                    <div className="flex-1 pr-2 overflow-y-auto">
                         {(loadingDetailedDevice || fetchingDetailedDevice) ? (
-                            <div className="flex justify-center items-center h-32"> <Loader2 className="animate-spin h-8 w-8 text-blue-500" /> </div>
+                            <div className="flex items-center justify-center h-32"> <Loader2 className="w-8 h-8 text-blue-500 animate-spin" /> </div>
                         ) : detailedDeviceList && detailedDeviceList.length > 0 ? (
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-100 sticky top-0"> {/* Sticky header */}
+                                <thead className="sticky top-0 bg-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Mã Định Danh</th>
-                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Tên Thiết bị</th>
-                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Vị trí</th>
+                                        <th scope="col" className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">Mã Định Danh</th>
+                                        <th scope="col" className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">Tên Thiết bị</th>
+                                        <th scope="col" className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-600 uppercase">Vị trí</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {detailedDeviceList.map((device) => (
                                         <tr key={device.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-800">{device.id}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{device.tenThietBi || '(Không có tên)'}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{device.viTri}</td>
+                                            <td className="px-4 py-3 text-sm font-semibold text-gray-800 whitespace-nowrap">{device.id}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.tenThietBi || '(Không có tên)'}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{device.viTri}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         ) : (
-                            <p className="text-center text-gray-500 mt-4">Không tìm thấy thiết bị nào cho trạng thái này.</p>
+                            <p className="mt-4 text-center text-gray-500">Không tìm thấy thiết bị nào cho trạng thái này.</p>
                         )}
                     </div>
                 </div>

@@ -53,7 +53,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
     const loadingBaoDuongTaskId = updateBaoDuongStatusMutation.variables?.id;
 
     return (
-        <div className="mb-4 border rounded-md shadow-sm bg-white overflow-hidden">
+        <div className="mb-4 overflow-hidden bg-white border rounded-md shadow-sm">
             {/* Header Phòng */}
             <button
                 className="flex items-center justify-between w-full p-3 text-left bg-gray-100 hover:bg-gray-200 focus:outline-none"
@@ -70,7 +70,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
             {/* Danh sách công việc */}
             {isOpen && (
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 border-t">
+                    <table className="min-w-full border-t divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 {headers.map((header, index) => (
@@ -103,7 +103,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                 return (
                                     <tr key={`${taskType}-${task.id}`} className={`${isBaoHong && currentStatus === 'Yêu Cầu Làm Lại' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                         {/* Thiết bị / Mô tả */}
-                                        <td className="px-4 py-2 text-sm text-gray-700 max-w-xs break-words">
+                                        <td className="max-w-xs px-4 py-2 text-sm text-gray-700 break-words">
                                             {tenThietBi ? `${tenThietBi} ${thietBiId ? `(MĐD: ${thietBiId})` : ''}` : (isBaoHong ? 'Hạ tầng/Khác' : '')}
                                             <span className="block mt-1 text-xs text-gray-500">{moTaCongViec}</span>
                                         </td>
@@ -145,7 +145,7 @@ const RoomTaskGroup = ({ roomName, tasks, taskType, handlers }) => {
                                                     <>
                                                         {currentStatus === 'Đã Duyệt' && (<button onClick={() => handleStartBaoHong(task.id)} className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed" title="Bắt đầu xử lý" disabled={isLoadingAction}><FaHourglassStart /></button>)}
                                                         {['Đang Tiến Hành', 'Yêu Cầu Làm Lại'].includes(currentStatus) && (<button onClick={() => handleOpenLogForm(task, 'baohong')} className="text-indigo-600 hover:text-indigo-900" title="Ghi nhận hoạt động"><FaHammer /></button>)}
-                                                        <button onClick={() => handleOpenViewLogModal(task, 'baohong')} className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
+                                                        <button onClick={() => handleOpenViewLogModal(task, isBaoHong ? 'baohong' : 'lichbaoduong', task.thongtinthietbi_id)} className={`${coLog ? 'text-purple-600 hover:text-purple-900' : 'text-gray-400 cursor-not-allowed'}`} disabled={!coLog} title={coLog ? "Xem lịch sử" : "Chưa có log"} ><FaHistory /></button>
                                                         {currentStatus === 'Chờ Hoàn Tất Bảo Hành' && (<button onClick={() => handleOpenNhanHangModal(task, 'baohong')} className="text-green-500 rounded hover:text-green-600" title="Xác nhận nhận thiết bị về (Báo Hỏng)" ><FaPlusCircle className="inline mr-1" /></button>)}
                                                     </>
                                                 )}
@@ -282,9 +282,9 @@ const CongViecNhanVien = () => {
 
     const handleCloseLogForm = useCallback(() => { setSelectedTaskInfoForLog(null); setIsLogFormOpen(false); }, []);
 
-    const handleOpenViewLogModal = useCallback((task, type) => {
+    const handleOpenViewLogModal = useCallback((task, type, thongtinthietbiId = null) => {
         if (!task || !task.id) { toast.error("Thiếu thông tin để xem log."); return; }
-        setViewingLogFor({ id: task.id, type: type });
+        setViewingLogFor({ id: task.id, type: type, thongtinthietbiId: thongtinthietbiId, tenThietBi: task.tenThietBi });
         setPhongNameForModal(task.tenPhong || task.phong_name);
     }, []);
 
@@ -431,10 +431,10 @@ const CongViecNhanVien = () => {
 
             {viewingLogFor.id && (
                 <ModalXemLogBaoTri
-                    // Truyền ID và loại task để Modal biết gọi API nào
-                    baoHongId={viewingLogFor.type === 'baohong' ? viewingLogFor.id : null}
-                    lichbaoduongId={viewingLogFor.type === 'lichbaoduong' ? viewingLogFor.id : null}
-                    // Không cần thongtinthietbiId ở đây trừ khi có logic khác
+                    thongtinthietbiId={viewingLogFor.thongtinthietbiId || null} 
+                    baoHongId={!viewingLogFor.thongtinthietbiId && viewingLogFor.type === 'baohong' ? viewingLogFor.id : null}
+                    lichbaoduongId={!viewingLogFor.thongtinthietbiId && viewingLogFor.type === 'lichbaoduong' ? viewingLogFor.id : null}
+                    tenThietBi={viewingLogFor.tenThietBi}
                     phongName={phongNameForModal}
                     onClose={handleCloseViewLogModal}
                 />

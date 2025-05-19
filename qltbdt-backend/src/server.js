@@ -5,7 +5,7 @@ const { initializeSocket } = require('./socket');
 const pool = require('./config/db'); 
 
 const httpServer = http.createServer(app); 
-
+const warrantyService = require('./services/warrantyService');
 
 initializeSocket(httpServer);
 
@@ -13,10 +13,6 @@ initializeSocket(httpServer);
 if (process.env.VERCEL) {
   module.exports = app;
   console.log("🚀 Running in Vercel environment - exporting app handler.");
-  // pool.query('SELECT 1')
-  //   .then(() => console.log("✅ DB connected (Vercel initial check)"))
-  //   .catch(err => console.error("❌ DB connection failed (Vercel initial check):", err));
-
 } else {
   const PORT = process.env.PORT || 5000; 
 
@@ -26,6 +22,7 @@ if (process.env.VERCEL) {
       await pool.query('SELECT 1');
       console.log("✅ Kết nối MySQL thành công!");
       console.log(`🚀 Server đang chạy tại port: ${PORT}`);
+      warrantyService.startWarrantyUpdateSchedule(); 
     } catch (error) {
       console.error("❌ Lỗi kết nối DB:", error);
       process.exit(1);

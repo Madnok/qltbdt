@@ -18,7 +18,7 @@ import Pagination from '../layout/Pagination';
 import Popup from '../layout/Popup';
 import FormThietBi from '../forms/FormThietBi';
 import ChiTietThongTinThietBi from '../DanhMuc/ChiTiet/ChiTietThongTinThietBi';
-
+import { useAuth } from '../../context/AuthProvider';
 
 // --- Constants ---
 const ITEMS_PER_PAGE_MAIN = 10;     // Số lượng Loại TB trên mỗi trang chính
@@ -44,28 +44,28 @@ const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails, onOpenLogModal }) =>
     };
 
     // Lấy thông tin phòng và ngày nhập một cách an toàn
-    const tenPhong = tttb.phong_name || <span className="text-gray-400 italic">Chưa phân bổ</span>;
+    const tenPhong = tttb.phong_name || <span className="italic text-gray-400">Chưa phân bổ</span>;
 
-    const ngayNhap = tttb.ngayNhapKho ? formatDate(tttb.ngayNhapKho) : <span className="text-gray-400 italic">Không rõ</span>;
+    const ngayNhap = tttb.ngayNhapKho ? formatDate(tttb.ngayNhapKho) : <span className="italic text-gray-400">Không rõ</span>;
     return (
-        <tr className="hover:bg-slate-50 text-sm">
+        <tr className="text-sm hover:bg-slate-50">
             {/* Mã định danh TTTB (id của TTTB) */}
-            <td className="px-4 py-2 whitespace-nowrap text-gray-700">{tttb.id}</td>
+            <td className="px-4 py-2 text-gray-700 whitespace-nowrap">{tttb.id}</td>
             {/* Trạng thái của TTTB */}
-            <td className="px-4 py-2 whitespace-nowrap text-gray-600">{renderTrangThaiHoatDong(tttb.trangThaiHoatDong)}</td>
+            <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{renderTrangThaiHoatDong(tttb.trangThaiHoatDong)}</td>
             {/* Tình trạng TTTB */}
             <td className="px-4 py-2 whitespace-nowrap">{getTinhTrangElement(tttb.tinhTrang)}</td>
             {/* Phòng hiện tại */}
-            <td className="px-4 py-2 whitespace-nowrap text-gray-600">{tenPhong}</td>
+            <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{tenPhong}</td>
             {/* Ngày nhập kho */}
-            <td className="px-4 py-2 whitespace-nowrap text-gray-600">{ngayNhap}</td>
+            <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{ngayNhap}</td>
             {/* Hành động */}
-            <td className="px-4 py-2 whitespace-nowrap text-center">
+            <td className="px-4 py-2 text-center whitespace-nowrap">
                 <div className="flex items-center justify-center gap-x-3">
                     {/* Nút xem chi tiết TTTB */}
                     <button
                         onClick={(e) => { e.stopPropagation(); onViewDetails(tttb.id); }}
-                        className="text-blue-500 hover:text-blue-700 transition duration-150 ease-in-out"
+                        className="text-blue-500 transition duration-150 ease-in-out hover:text-blue-700"
                         title={`Xem chi tiết tài sản #${tttb.id}`}
                     >
                         <FaInfoCircle />
@@ -73,7 +73,7 @@ const ChiTietTaiSanRow = React.memo(({ tttb, onViewDetails, onOpenLogModal }) =>
                     {/*  NÚT XEM LOG */}
                     <button
                         onClick={(e) => { e.stopPropagation(); onOpenLogModal(tttb); }}
-                        className="text-purple-600 hover:text-purple-800 transition duration-150 ease-in-out"
+                        className="text-purple-600 transition duration-150 ease-in-out hover:text-purple-800"
                         title={`Xem lịch sử bảo trì #${tttb.id}`}
                         disabled={!onOpenLogModal}
                     >
@@ -98,6 +98,7 @@ function ThietBi() {
     const [searchTerm, setSearchTerm] = useState('');           // Từ khóa tìm kiếm (tên hoặc mã loại TB)
     const [selectedCategory, setSelectedCategory] = useState('');// Thể loại được chọn để lọc
     const [currentPageMain, setCurrentPageMain] = useState(1);  // Trang hiện tại của bảng chính
+    const { hasRole } = useAuth();
 
     // State quản lý việc mở rộng và dữ liệu chi tiết (TTTB) cho từng Loại Thiết Bị
     const [expandedThietBiId, setExpandedThietBiId] = useState(null); // ID của Loại TB đang được mở rộng
@@ -282,23 +283,15 @@ function ThietBi() {
     // Khi thêm thành công 
     const handleAddSuccess = useCallback(() => {
         setShowAddForm(false);
-        fetchData(); // Fetch lại toàn bộ list
+        fetchData();
     }, [fetchData]);
 
     // Xử lý xóa Loại Thiết Bị
     const handleDelete = useCallback(async (thietBiId, tenThietBi) => {
         const detailInfo = dropdownData[thietBiId];
 
-        // --- Điều kiện tiên quyết để xóa ---
-        // 1. Phải mở dropdown chi tiết của loại TB này trước.
-        // 2. Dữ liệu chi tiết phải được fetch xong (không loading, không lỗi).
-        // 3. Danh sách TTTB cụ thể phải rỗng.
         if (!detailInfo || detailInfo.loading || detailInfo.error || !Array.isArray(detailInfo.data)) {
             toast.info(`Vui lòng mở và xem chi tiết của "${tenThietBi}" trước khi xóa để đảm bảo không còn tài sản.`);
-            // Tự động mở nếu chưa mở? (Tùy chọn UX)
-            // if (expandedThietBiId !== thietBiId) {
-            //     toggleDetails(thietBiId);
-            // }
             return;
         }
 
@@ -311,10 +304,9 @@ function ThietBi() {
         if (window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn loại thiết bị "${tenThietBi}" (ID: ${thietBiId})?\nLoại này hiện không có tài sản cụ thể nào.`)) {
             console.log(`Attempting to delete ThietBi ID: ${thietBiId}`);
             try {
-                await deleteThietBi(thietBiId); // Gọi API DELETE /api/thietbi/:id
+                await deleteThietBi(thietBiId);
                 toast.success(`Đã xóa thành công loại thiết bị "${tenThietBi}".`);
-                fetchData(); // Tải lại toàn bộ danh sách sau khi xóa thành công
-                // Không cần xóa dropdownData vì fetchData sẽ reset nó
+                fetchData();
             } catch (err) {
                 console.error("Error deleting ThietBi:", err);
                 const deleteErrorMessage = err.response?.data?.message || err.message || 'Lỗi khi xóa loại thiết bị.';
@@ -356,14 +348,14 @@ function ThietBi() {
 
     // --- Rendering ---
     return (
-        <div className="p-2 md:p-4 bg-white min-h-screen font-sans relative">
+        <div className="relative min-h-screen p-2 font-sans bg-white md:p-4">
             {/* === Thanh Filter và Nút Thêm === */}
-            <div className="mb-4 p-4 bg-white border-2 rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col items-center justify-between gap-4 p-4 mb-4 bg-white border-2 rounded-lg shadow-sm md:flex-row">
                 {/* Filters */}
-                <div className='flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-grow'>
+                <div className='flex flex-col flex-grow w-full gap-4 sm:flex-row md:w-auto'>
                     {/* Search Input */}
                     <div className="relative flex-grow">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
                             <FaSearch />
                         </span>
                         <input
@@ -372,14 +364,14 @@ function ThietBi() {
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
-                                setCurrentPageMain(1); // Reset về trang 1 khi tìm kiếm
+                                setCurrentPageMain(1);
                             }}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm shadow-sm"
+                            className="w-full py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         />
                     </div>
                     {/* Category Select */}
                     <div className="relative w-full md:w-56">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
                             <FaFilter />
                         </span>
                         <select
@@ -388,7 +380,7 @@ function ThietBi() {
                                 setSelectedCategory(e.target.value);
                                 setCurrentPageMain(1); // Reset về trang 1 khi lọc
                             }}
-                            className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white text-sm shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            className="w-full py-2 pl-10 pr-8 text-sm bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                             disabled={loadingTheLoai || theLoaiList.length === 0} // Disable nếu đang load hoặc không có thể loại
                         >
                             <option value="">
@@ -400,28 +392,30 @@ function ThietBi() {
                                 </option>
                             ))}
                         </select>
-                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
-                            <FaChevronDown className="h-4 w-4" />
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                            <FaChevronDown className="w-4 h-4" />
                         </span>
                     </div>
                 </div>
                 {/* Add Button */}
-                <button
-                    onClick={handleOpenAddForm}
-                    className="flex-shrink-0 w-full md:w-auto bg-gray-900 hover:bg-gray-500 text-white font-semibold py-2 px-5 rounded-md flex items-center justify-center gap-2 transition duration-150 ease-in-out text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    <FaPlus /> Thêm Loại Thiết Bị Mới
-                </button>
+                {hasRole('admin') && (
+                    <button
+                        onClick={handleOpenAddForm}
+                        className="flex items-center justify-center flex-shrink-0 w-full gap-2 px-5 py-2 text-sm font-semibold text-white transition duration-150 ease-in-out bg-gray-900 rounded-md shadow-md md:w-auto hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        <FaPlus /> Thêm Loại Thiết Bị Mới
+                    </button>
+                )}
             </div>
 
             {/* === Loading / Error State === */}
             {loading && (
-                <div className="text-center py-10 text-gray-500 flex items-center justify-center gap-2">
-                    <FaSpinner className="animate-spin h-5 w-5" /> Đang tải danh sách loại thiết bị...
+                <div className="flex items-center justify-center gap-2 py-10 text-center text-gray-500">
+                    <FaSpinner className="w-5 h-5 animate-spin" /> Đang tải danh sách loại thiết bị...
                 </div>
             )}
             {error && !loading && (
-                <div className="text-center py-10 text-red-600 font-medium bg-red-50 p-4 rounded-md border border-red-200 flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 p-4 py-10 font-medium text-center text-red-600 border border-red-200 rounded-md bg-red-50">
                     <FaExclamationTriangle /> {error}
                 </div>
             )}
@@ -431,20 +425,20 @@ function ThietBi() {
                 <>
                     {/* Trường hợp không có dữ liệu sau khi lọc/fetch */}
                     {(filteredDeviceTypes.length === 0) ? (
-                        <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow p-6">
+                        <div className="p-6 py-10 text-center text-gray-500 bg-white rounded-lg shadow">
                             Không tìm thấy loại thiết bị nào phù hợp với tiêu chí tìm kiếm/lọc của bạn.
                         </div>
                     ) : (
-                        <div className="bg-white border-2 rounded-lg shadow overflow-hidden">
+                        <div className="overflow-hidden bg-white border-2 rounded-lg shadow">
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
                                             {/* Các cột của bảng chính */}
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Loại Thiết Bị</th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Thiết Bị</th>
-                                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tồn Kho</th>
-                                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                                            <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Tên Loại Thiết Bị</th>
+                                            <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Mã Thiết Bị</th>
+                                            <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Tồn Kho</th>
+                                            <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Hành động</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -476,27 +470,31 @@ function ThietBi() {
                                                         {/* Tên Loại + Mô tả (nếu có) */}
                                                         <td className="px-6 py-4 whitespace-normal align-top">
                                                             <div className="text-sm font-semibold text-gray-900">{tb.tenThietBi || 'N/A'}</div>
-                                                            {tb.moTa && <div className="text-xs text-gray-500 italic mt-1">{tb.moTa}</div>}
+                                                            {tb.moTa && <div className="mt-1 text-xs italic text-gray-500">{tb.moTa}</div>}
                                                         </td>
                                                         {/* Mã Loại */}
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">{tb.id}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500 align-top whitespace-nowrap">{tb.id}</td>
                                                         {/* Tồn kho - Giả sử API trả về trường 'tonKhoHienTai' */}
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-center align-top">
+                                                        <td className="px-6 py-4 text-sm font-medium text-center text-gray-900 align-top whitespace-nowrap">
                                                             {/* Hiển thị số lượng tồn kho */}
                                                             {typeof tb.tonKhoHienTai === 'number' ? tb.tonKhoHienTai : <span className='text-gray-400'>N/A</span>}
                                                         </td>
                                                         {/* Hành động */}
-                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2 align-top">
-                                                            {/* Nút Xóa (có điều kiện) */}
-                                                            <button className="p-2 rounded text-blue-500 hover:text-blue-700 hover:bg-blue-100" title={`Sửa loại ${tb.tenThietBi}`}><FaEdit /></button>
-                                                            <button
-                                                                onClick={() => handleDelete(tb.id, tb.tenThietBi)}
-                                                                className={`p-2 rounded transition duration-150 ease-in-out ${canDelete ? 'text-red-500 hover:text-red-700 hover:bg-red-100' : 'text-gray-400 cursor-not-allowed'}`}
-                                                                title={deleteButtonTitle}
-                                                                disabled={!canDelete} // Disable nếu không đủ điều kiện
-                                                            >
-                                                                <FaTrash />
-                                                            </button>
+                                                        <td className="px-6 py-4 space-x-2 text-sm font-medium text-center align-top whitespace-nowrap">
+                                                            {hasRole('admin') && (
+                                                                <>
+                                                                    {/* Nút Xóa (có điều kiện) */}
+                                                                    <button className="p-2 text-blue-500 rounded hover:text-blue-700 hover:bg-blue-100" title={`Sửa loại ${tb.tenThietBi}`}><FaEdit /></button>
+                                                                    <button
+                                                                        onClick={() => handleDelete(tb.id, tb.tenThietBi)}
+                                                                        className={`p-2 rounded transition duration-150 ease-in-out ${canDelete ? 'text-red-500 hover:text-red-700 hover:bg-red-100' : 'text-gray-400 cursor-not-allowed'}`}
+                                                                        title={deleteButtonTitle}
+                                                                        disabled={!canDelete} // Disable nếu không đủ điều kiện
+                                                                    >
+                                                                        <FaTrash />
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                             {/* Nút Mở/Đóng Dropdown Chi Tiết */}
                                                             <button
                                                                 onClick={() => toggleDetails(tb.id)}
@@ -513,45 +511,45 @@ function ThietBi() {
                                                     {isExpanded && (
                                                         <tr>
                                                             {/* colSpan bằng số lượng cột của bảng cha */}
-                                                            <td colSpan="4" className="p-0 bg-gray-50 border-l-4 border-indigo-500">
+                                                            <td colSpan="4" className="p-0 border-l-4 border-indigo-500 bg-gray-50">
                                                                 <div className="px-4 py-4">
                                                                     {/* Loading State cho chi tiết */}
                                                                     {isLoadingDetails && (
-                                                                        <div className="text-center text-sm text-gray-500 py-3 flex items-center justify-center gap-2">
+                                                                        <div className="flex items-center justify-center gap-2 py-3 text-sm text-center text-gray-500">
                                                                             <FaSpinner className="animate-spin" /> Đang tải danh sách tài sản cụ thể...
                                                                         </div>
                                                                     )}
                                                                     {/* Error State cho chi tiết */}
                                                                     {errorDetails && !isLoadingDetails && (
-                                                                        <div className="text-center text-sm text-red-600 py-3 font-medium bg-red-50 p-3 rounded border border-red-200 flex items-center justify-center gap-2">
+                                                                        <div className="flex items-center justify-center gap-2 p-3 py-3 text-sm font-medium text-center text-red-600 border border-red-200 rounded bg-red-50">
                                                                             <FaExclamationTriangle /> {errorDetails}
-                                                                            <button onClick={() => toggleDetails(tb.id)} className='ml-2 text-blue-600 hover:underline text-xs'>(Thử lại)</button>
+                                                                            <button onClick={() => toggleDetails(tb.id)} className='ml-2 text-xs text-blue-600 hover:underline'>(Thử lại)</button>
                                                                         </div>
                                                                     )}
                                                                     {/* Nội dung chi tiết (Bảng TTTB) */}
                                                                     {!isLoadingDetails && !errorDetails && (
                                                                         <>
                                                                             {specificAssets.length === 0 ? (
-                                                                                <p className="text-sm text-center text-gray-500 py-3 italic">
+                                                                                <p className="py-3 text-sm italic text-center text-gray-500">
                                                                                     Không có tài sản cụ thể nào thuộc loại "{tb.tenThietBi}". Bạn có thể xóa loại này.
                                                                                 </p>
                                                                             ) : (
                                                                                 <div className="space-y-3">
-                                                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                                                                                    <h4 className="mb-2 text-sm font-semibold text-gray-700">
                                                                                         Danh sách tài sản cụ thể ({specificAssets.length}):
                                                                                     </h4>
                                                                                     {/* Bảng con hiển thị TTTB */}
-                                                                                    <div className="overflow-x-auto rounded border border-gray-200 bg-white shadow-sm">
+                                                                                    <div className="overflow-x-auto bg-white border border-gray-200 rounded shadow-sm">
                                                                                         <table className="min-w-full divide-y divide-gray-100">
                                                                                             <thead className="bg-gray-100">
                                                                                                 <tr>
                                                                                                     {/* Các cột của bảng chi tiết */}
-                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Định Danh</th>
-                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng Thái</th>
-                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tình Trạng</th>
-                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phòng</th>
-                                                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày Nhập</th>
-                                                                                                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Chi tiết</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Mã Định Danh</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Trạng Thái</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Tình Trạng</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Phòng</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Ngày Nhập</th>
+                                                                                                    <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Chi tiết</th>
                                                                                                 </tr>
                                                                                             </thead>
                                                                                             <tbody className="divide-y divide-gray-100">
@@ -569,7 +567,7 @@ function ThietBi() {
                                                                                     </div>
                                                                                     {/* Phân trang cho bảng chi tiết */}
                                                                                     {totalPagesDetails > 1 && (
-                                                                                        <div className="mt-3 flex justify-end">
+                                                                                        <div className="flex justify-end mt-3">
                                                                                             <Pagination
                                                                                                 currentPage={currentPageDetails}
                                                                                                 totalPages={totalPagesDetails}
@@ -595,7 +593,7 @@ function ThietBi() {
                             </div>
                             {/* === Pagination === */}
                             {totalPagesMain > 1 && (
-                                <div className="px-4 py-3 flex items-center justify-center border-t border-gray-200 bg-white sm:px-6 rounded-b-lg">
+                                <div className="flex items-center justify-center px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg sm:px-6">
                                     <Pagination
                                         currentPage={currentPageMain}
                                         totalPages={totalPagesMain}
