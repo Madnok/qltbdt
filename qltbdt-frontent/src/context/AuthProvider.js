@@ -9,6 +9,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const hasRole = (role) => { 
+    return user && user.role === role;
+  };
+
+
   // Gọi API để lấy user khi app load
   useEffect(() => {
     refreshUser();
@@ -48,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, refreshUser, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, refreshUser, loading, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

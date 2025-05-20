@@ -47,8 +47,17 @@ export const SocketProvider = ({ children }) => {
             newSocket.on('status_changed', (data) => {
                 if (data?.newStatus === 'off') {
                     toast.error(data?.message || 'Tài khoản của bạn đã bị khóa!', { duration: 6000, icon: '🔒' });
-                    setTimeout(() => logout(), 1500);
+                    setTimeout(() => logout(), 1000);
                 }
+            });
+            newSocket.on('user_deleted', (data) => {
+                toast.error(data.message || 'Tài khoản của bạn đã bị xóa.', {
+                    autoClose: false, // Không tự động đóng toast
+                    closeOnClick: false,
+                    draggable: false,
+                    onClose: () => logout()
+                });
+                logout();
             });
             newSocket.on('task_cancelled', (data) => {
                 const taskId = data.baoHongId || data.lichBaoDuongId;
@@ -183,6 +192,7 @@ export const SocketProvider = ({ children }) => {
                 newSocket.off('disconnect');
                 newSocket.off('connect_error');
                 newSocket.off('status_changed');
+                newSocket.off('user_deleted')
                 newSocket.off('task_started');
                 newSocket.off('task_cancelled');
                 newSocket.off('new_baohong_created');

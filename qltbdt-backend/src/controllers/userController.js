@@ -74,7 +74,7 @@ exports.getUserById = async (req, res) => {
 // Thêm mới người dùng
 exports.createUser = async (req, res) => {
     try {
-        const { username, password, hoTen, ngaySinh = null, gioiTinh = "Khác", sDT, email, role, tinhTrang = "on"} = req.body;
+        const { username, password, hoTen, ngaySinh = null, gioiTinh = "Khác", sDT, email, role, tinhTrang = "on" } = req.body;
 
         if (!username || !password || !hoTen || !email) {
             return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin bắt buộc" });
@@ -141,12 +141,12 @@ exports.updateUser = async (req, res) => {
             [hoTen, email, formattedNgaySinh, gioiTinh, sDT || null, id] // <<< Thêm sDT
         );
 
-         if (result.affectedRows === 0) {
+        if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Không tìm thấy người dùng." });
         }
 
         // Lấy lại thông tin user đã cập nhật để trả về (không bao gồm password)
-         const [updatedUser] = await pool.query("SELECT id, username, hoTen, ngaySinh, gioiTinh, sDT, email, hinhAnh, role, tinhTrang FROM users WHERE id = ?", [id]);
+        const [updatedUser] = await pool.query("SELECT id, username, hoTen, ngaySinh, gioiTinh, sDT, email, hinhAnh, role, tinhTrang FROM users WHERE id = ?", [id]);
 
         res.json({ message: "Cập nhật thông tin thành công", user: updatedUser[0] });
     } catch (error) {
@@ -167,8 +167,8 @@ exports.updatePassword = async (req, res) => {
     if (newPassword !== confirmPassword) {
         return res.status(400).json({ message: "Mật khẩu mới không khớp." });
     }
-     if (newPassword.length < 6) {
-         return res.status(400).json({ message: "Mật khẩu mới phải ít nhất 6 ký tự." });
+    if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Mật khẩu mới phải ít nhất 6 ký tự." });
     }
 
 
@@ -203,14 +203,22 @@ exports.updatePassword = async (req, res) => {
 // Xóa người dùng
 exports.deleteUser = async (req, res) => {
     const { id } = req.params;
+    const userIdToDelete = parseInt(id);
+
+    if (userIdToDelete === 1) {
+        return res.status(403).json({ message: 'Không thể xóa tài khoản Quản trị viên gốc.' });
+    }
+
     try {
-        const [result] = await pool.query("DELETE FROM users WHERE id = ?", [id]);
+        emitToUser(userIdToDelete, 'user_deleted', { message: 'Tài khoản của bạn đã bị xóa bởi quản trị viên.' });
+
+        const [result] = await pool.query("DELETE FROM users WHERE id = ?", [userIdToDelete]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Không tìm thấy người dùng để xóa" });
         }
 
-        res.json({ message: `Xóa người dùng ID ${id} thành công!` });
+        res.json({ message: `Xóa người dùng ID ${userIdToDelete} thành công!` });
     } catch (error) {
         res.status(500).json({ error: "Lỗi xóa người dùng" });
     }
@@ -266,7 +274,7 @@ exports.updateUserStatus = async (req, res) => {
 
         res.json({ message: "Cập nhật tình trạng thành công!", tinhTrang: status }); // Trả về trạng thái mới
     } catch (error) {
-         console.error('Lỗi cập nhật trạng thái người dùng:', error);
-         res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái' });
+        console.error('Lỗi cập nhật trạng thái người dùng:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái' });
     }
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaPlus,
-    FaTrash, FaSpinner, FaExclamationTriangle, FaCheckCircle, FaEdit,
+    FaTrash, FaSpinner, FaExclamationTriangle, FaCheckCircle,/* FaEdit,*/
     FaTimesCircle, FaClock, FaWrench, FaTrashAlt, FaInfoCircle, FaHistory
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -484,7 +484,7 @@ function ThietBi() {
                                                             {hasRole('admin') && (
                                                                 <>
                                                                     {/* Nút Xóa (có điều kiện) */}
-                                                                    <button className="p-2 text-blue-500 rounded hover:text-blue-700 hover:bg-blue-100" title={`Sửa loại ${tb.tenThietBi}`}><FaEdit /></button>
+                                                                    {/* <button className="p-2 text-blue-500 rounded hover:text-blue-700 hover:bg-blue-100" title={`Sửa loại ${tb.tenThietBi}`}><FaEdit /></button> */}
                                                                     <button
                                                                         onClick={() => handleDelete(tb.id, tb.tenThietBi)}
                                                                         className={`p-2 rounded transition duration-150 ease-in-out ${canDelete ? 'text-red-500 hover:text-red-700 hover:bg-red-100' : 'text-gray-400 cursor-not-allowed'}`}
