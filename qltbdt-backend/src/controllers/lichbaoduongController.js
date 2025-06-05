@@ -800,10 +800,10 @@ exports.deleteLichBaoDuong = async (req, res) => {
         const assignedUserId = lichRows[0].nhanvien_id;
 
         // --- Chỉ cho phép xóa khi trạng thái là 'Chờ xử lý' ---
-        const deletableStatuses = ['Chờ xử lý', 'Hủy'];
+        const deletableStatuses = ['Chờ xử lý', 'Hủy', 'Hoàn thành'];
         if (!deletableStatuses.includes(currentStatus)) {
             await connection.rollback();
-            throw new Error(`Không thể xóa lịch bảo dưỡng ở trạng thái '${currentStatus}'. Chỉ xóa được khi 'Chờ xử lý' hoặc 'Hủy'.`, 400);
+            throw new Error(`Không thể xóa lịch bảo dưỡng ở trạng thái '${currentStatus}'. Chỉ xóa được khi 'Chờ xử lý', 'Hủy' hoặc 'Hoàn thành.`, 400);
         }
         // -----------------------------------------------------
 
@@ -834,10 +834,6 @@ exports.deleteLichBaoDuong = async (req, res) => {
         } catch (socketError) {
             console.error(`[deleteLichBaoDuong ID ${lichId}] Lỗi khi gửi socket:`, socketError);
         }
-        // -----------------------------------
-
-        // --- GỬI RESPONSE THÀNH CÔNG ---
-        res.status(200).json({ message: "Xóa lịch bảo dưỡng thành công!", id: lichId });
         // -----------------------------
 
     } catch (error) {

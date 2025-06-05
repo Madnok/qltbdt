@@ -321,7 +321,7 @@ const BaoHong = () => {
                         </div>
                         {/* Phòng */}
                         <div>
-                            <label className="block text-xs">Số Phòng</label>
+                            <label className="block text-xs">Phòng</label>
                             <select name="soPhong" value={formData.soPhong} onChange={handleChange} className="w-full px-3 py-2 mt-1 border rounded-md border-input focus:ring-2 focus:ring-ring" disabled={!formData.tang}>
                                 <option value="">Chọn</option>
                                 {mergedData.filter(item => item.coSo === formData.coSo && item.toa === formData.toa && item.tang === parseInt(formData.tang)).map(item => <option key={item.id} value={item.soPhong}>{item.soPhong}</option>)}
@@ -332,7 +332,7 @@ const BaoHong = () => {
                     {/* Loại Thiệt Hại */}
                     <div>
                         <label className="block mb-1 text-sm font-medium text-card-foreground">
-                            Loại Thiệt Hại <span className="text-red-500">*</span>
+                            Loại Hư Hại <span className="text-red-500">*</span>
                         </label>
                         <select value={damageForm.damageType} onChange={handleDamageTypeChange} className="w-full px-3 py-2 border rounded-md border-input focus:ring-2 focus:ring-ring">
                             <option value="">Chọn Loại</option>
@@ -343,7 +343,7 @@ const BaoHong = () => {
                     {/* Mức Độ Hỏng Hóc */}
                     <div>
                         <label className="block mb-1 text-sm font-medium text-card-foreground">
-                            Mức Độ Hỏng Hóc <span className="text-red-500">*</span>
+                            Mức Độ Hư Hại <span className="text-red-500">*</span>
                         </label>
                         <div className="flex flex-wrap gap-4">
                             {["Nhẹ", "Vừa", "Nặng"].map(level => (

@@ -13,6 +13,7 @@ import Pagination from "../layout/Pagination";
 import { FaSort, FaSortUp, FaSortDown, FaSearch, FaChevronUp, FaChevronDown, FaSpinner, FaEdit, FaSave, FaTimesCircle, FaTimes } from "react-icons/fa";
 import { BsTrash, BsSearch } from "react-icons/bs";
 import { AiOutlineClear } from "react-icons/ai";
+import { useAuth } from '../../context/AuthProvider';
 import { maxTangTheoToa, getTinhTrangLabel, renderTrangThaiHoatDong } from "../../utils/constants";
 import eventBus from '../../utils/eventBus';
 
@@ -24,6 +25,7 @@ const PhongDetailModal = ({ record: initialRecord, onClose, refreshTable }) => {
     const [expandedRows, setExpandedRows] = useState([]);
     const queryClient = useQueryClient();
     const currentPhongId = initialRecord?.id;
+    const { hasRole } = useAuth();
 
     // --- Fetch dữ liệu chi tiết phòng ---
     const { data: phongDetailData, isLoading: isLoadingPhong, isError: isErrorPhong, error: errorPhong } = useQuery({
@@ -256,17 +258,60 @@ const PhongDetailModal = ({ record: initialRecord, onClose, refreshTable }) => {
                 <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-white border-b">
                     <h2 className="text-xl font-semibold">Chi Tiết Phòng: {editData?.phong || `${editData?.toa || '?'}${editData?.tang || '?'}.${editData?.soPhong || '?'}` || 'Đang tải...'}</h2>
                     <div className="flex items-center space-x-2">
-                        {/* Các nút ở Header */}
-                        <button onClick={handleDelete} disabled={deletePhongMutation.isPending || updatePhongMutation.isPending} title="Xóa phòng" className="p-2 text-gray-600 rounded-full hover:bg-red-100 hover:text-red-600 disabled:opacity-50"><BsTrash size={18} /></button>
-                        <button onClick={toggleEdit} disabled={deletePhongMutation.isPending || updatePhongMutation.isPending} title={isEditing ? "Hủy sửa" : "Sửa phòng"} className={`p-2 rounded-full ${isEditing ? 'hover:bg-gray-200 text-gray-600' : 'hover:bg-yellow-100 hover:text-yellow-600'} disabled:opacity-50`}>
-                            {isEditing ? <FaTimesCircle className="text-lg text-red-500" /> : <FaEdit className="text-lg text-yellow-600" />}
-                        </button>
-                        {isEditing && (
-                            <button onClick={handleSave} disabled={updatePhongMutation.isPending || deletePhongMutation.isPending} title="Lưu thay đổi" className="p-2 text-white bg-green-500 rounded-full hover:bg-green-600 disabled:opacity-50">
-                                {updatePhongMutation.isPending ? <FaSpinner className="text-lg animate-spin" /> : <FaSave className="text-lg" />}
-                            </button>
+                        {/* Chỉ admin mới thấy các nút sau */}
+                        {hasRole('admin') && (
+                            <>
+                                {/* Nút Xóa */}
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deletePhongMutation.isPending || updatePhongMutation.isPending}
+                                    title="Xóa phòng"
+                                    className="p-2 text-gray-600 rounded-full hover:bg-red-100 hover:text-red-600 disabled:opacity-50"
+                                >
+                                    <BsTrash size={18} />
+                                </button>
+
+                                {/* Nút Sửa */}
+                                <button
+                                    onClick={toggleEdit}
+                                    disabled={deletePhongMutation.isPending || updatePhongMutation.isPending}
+                                    title={isEditing ? "Hủy sửa" : "Sửa phòng"}
+                                    className={`p-2 rounded-full ${isEditing ? 'hover:bg-gray-200 text-gray-600' : 'hover:bg-yellow-100 hover:text-yellow-600'} disabled:opacity-50`}
+                                >
+                                    {isEditing ? (
+                                        <FaTimesCircle className="text-lg text-red-500" />
+                                    ) : (
+                                        <FaEdit className="text-lg text-yellow-600" />
+                                    )}
+                                </button>
+
+                                {/* Nút Lưu - chỉ hiển thị khi đang sửa */}
+                                {isEditing && (
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={updatePhongMutation.isPending || deletePhongMutation.isPending}
+                                        title="Lưu thay đổi"
+                                        className="p-2 text-white bg-green-500 rounded-full hover:bg-green-600 disabled:opacity-50"
+                                    >
+                                        {updatePhongMutation.isPending ? (
+                                            <FaSpinner className="text-lg animate-spin" />
+                                        ) : (
+                                            <FaSave className="text-lg" />
+                                        )}
+                                    </button>
+                                )}
+                            </>
                         )}
-                        <button onClick={onClose} disabled={deletePhongMutation.isPending || updatePhongMutation.isPending} title="Đóng" className="p-2 text-gray-600 rounded-full hover:bg-gray-200 disabled:opacity-50"><FaTimes className="text-xl" /></button>
+
+                        {/* Nút Đóng - luôn hiển thị cho tất cả user */}
+                        <button
+                            onClick={onClose}
+                            disabled={deletePhongMutation.isPending || updatePhongMutation.isPending}
+                            title="Đóng"
+                            className="p-2 text-gray-600 rounded-full hover:bg-gray-200 disabled:opacity-50"
+                        >
+                            <FaTimes className="text-xl" />
+                        </button>
                     </div>
                 </div>
 
@@ -359,7 +404,9 @@ const PhongDetailModal = ({ record: initialRecord, onClose, refreshTable }) => {
                                                                             <th className="w-4/12 px-2 py-1 text-left border">Tên Loại Thiết Bị</th>
                                                                             <th className="w-2/12 px-2 py-1 text-center border">Trạng Thái</th>
                                                                             <th className="w-2/12 px-2 py-1 text-center border">Tình Trạng</th>
-                                                                            <th className="w-1/12 px-2 py-1 text-center border">Gỡ</th>
+                                                                            {hasRole('admin') && (
+                                                                                <th className="w-1/12 px-2 py-1 text-center border">Gỡ</th>
+                                                                            )}
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
@@ -370,16 +417,18 @@ const PhongDetailModal = ({ record: initialRecord, onClose, refreshTable }) => {
                                                                                 <td className="px-2 py-1 text-xs border-t border-l">{tb.tenLoaiThietBi}</td>
                                                                                 <td className="px-2 py-1 text-xs text-center border-t border-l">{getTinhTrangLabel(tb.tinhTrang)}</td>
                                                                                 <td className="px-2 py-1 text-xs text-center border-t border-l">{renderTrangThaiHoatDong(tb.trangThaiHoatDong)}</td>
-                                                                                <td className="px-2 py-1 text-xs text-center border-t border-l border-r">
-                                                                                    <button
-                                                                                        onClick={() => handleDeleteThietBi(tb.thongtinthietbi_id || tb.id)}
-                                                                                        disabled={removeThietBiMutation.isPending && removeThietBiMutation.variables?.thongtinthietbi_id === (tb.thongtinthietbi_id || tb.id)}
-                                                                                        className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                                        title="Gỡ thiết bị khỏi phòng"
-                                                                                    >
-                                                                                        {removeThietBiMutation.isPending && removeThietBiMutation.variables?.thongtinthietbi_id === (tb.thongtinthietbi_id || tb.id) ? <FaSpinner className="animate-spin" /> : <BsTrash />}
-                                                                                    </button>
-                                                                                </td>
+                                                                                {hasRole('admin') && (
+                                                                                    <td className="px-2 py-1 text-xs text-center border-t border-l border-r">
+                                                                                        <button
+                                                                                            onClick={() => handleDeleteThietBi(tb.thongtinthietbi_id || tb.id)}
+                                                                                            disabled={removeThietBiMutation.isPending && removeThietBiMutation.variables?.thongtinthietbi_id === (tb.thongtinthietbi_id || tb.id)}
+                                                                                            className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                                            title="Gỡ thiết bị khỏi phòng"
+                                                                                        >
+                                                                                            {removeThietBiMutation.isPending && removeThietBiMutation.variables?.thongtinthietbi_id === (tb.thongtinthietbi_id || tb.id) ? <FaSpinner className="animate-spin" /> : <BsTrash />}
+                                                                                        </button>
+                                                                                    </td>
+                                                                                )}
                                                                             </tr>
                                                                         ))}
                                                                     </tbody>

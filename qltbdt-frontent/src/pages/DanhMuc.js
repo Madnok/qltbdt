@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useRefresh, useRightPanel } from "../utils/helpers";
+import { useAuth } from "../context/AuthProvider";
 import { categories, addForms, categoryLabels } from "../utils/constants";
 import Phong from "../components/DanhMuc/Phong";
 import TheLoai from "../components/DanhMuc/TheLoai";
@@ -13,6 +14,7 @@ const DanhMuc = () => {
     const { refresh, handleRefresh } = useRefresh();
     const { activeRightPanel, handleOpenRightPanel, handleCloseRightPanel } = useRightPanel();
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const { hasRole } = useAuth();
 
     // Object ánh xạ key danh mục đến component
     const componentsMap = {
@@ -67,8 +69,8 @@ const DanhMuc = () => {
                     </h2>
 
                     <div className="flex items-center space-x-2">
-                        {/* Nút Thêm - Chỉ hiển thị nếu là Phòng */}
-                        {selectedCategory === "Phong" && (
+                        {/* Nút Thêm - Chỉ hiển thị nếu là Phòng và là admin */}
+                        {selectedCategory === "Phong" && hasRole('admin') && (
                             <button
                                 onClick={() => handleOpenRightPanel(addForms[selectedCategory])}
                                 className="flex items-center px-4 py-2 text-white bg-gray-900 rounded hover:bg-gray-500"

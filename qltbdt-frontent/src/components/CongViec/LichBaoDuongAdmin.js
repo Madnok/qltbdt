@@ -39,30 +39,30 @@ const RoomMonthDetailModal = ({ isOpen, onClose, roomData, selectedMonthYear, on
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết lịch bảo dưỡng ${tenPhong} - Tháng ${formattedMonthYear}`}>
             <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
-                <h4 className="font-semibold text-base mb-2">Danh sách công việc ({tasksThisMonth.length}):</h4>
+                <h4 className="mb-2 text-base font-semibold">Danh sách công việc ({tasksThisMonth.length}):</h4>
                 {tasksThisMonth.length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200 text-xs border">
+                    <table className="min-w-full text-xs border divide-y divide-gray-200">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-2 py-1 text-left font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-500 uppercase tracking-wider">Thiết bị</th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-500 uppercase tracking-wider">MĐD</th>
-                                <th className="px-2 py-1 text-center font-medium text-gray-500 uppercase tracking-wider">Ngày BD</th>
-                                <th className="px-2 py-1 text-center font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                <th className="px-2 py-1 text-center font-medium text-gray-500 uppercase tracking-wider">Nhân viên</th>
-                                <th className="px-2 py-1 text-center font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-left text-gray-500 uppercase">STT</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-left text-gray-500 uppercase">Thiết bị</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-left text-gray-500 uppercase">MĐD</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-center text-gray-500 uppercase">Ngày BD</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-center text-gray-500 uppercase">Trạng thái</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-center text-gray-500 uppercase">Nhân viên</th>
+                                <th className="px-2 py-1 font-medium tracking-wider text-center text-gray-500 uppercase">Hành động</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {tasksThisMonth.map((item, index) => (
                                 <tr key={item.id}>
-                                    <td className="px-2 py-1 whitespace-nowrap text-gray-500">{index + 1}</td>
-                                    <td className="px-2 py-1 whitespace-nowrap font-medium text-gray-900">{item.tenThietBi || `TB ID ${item.thongtinthietbi_id}`}</td>
-                                    <td className="px-2 py-1 whitespace-nowrap text-gray-500">{item.thongtinthietbi_id}</td>
-                                    <td className="px-2 py-1 whitespace-nowrap text-center text-gray-500">{moment(item.ngay_baotri).format("DD/MM")}</td>
-                                    <td className="px-2 py-1 whitespace-nowrap text-center"><StatusBadge status={item.trang_thai} /></td>
-                                    <td className="px-2 py-1 whitespace-nowrap text-center text-gray-500">{item.tenNhanVienPhuTrach || 'Chưa gán'}</td>
-                                    <td className="px-2 py-1 whitespace-nowrap text-center">
+                                    <td className="px-2 py-1 text-gray-500 whitespace-nowrap">{index + 1}</td>
+                                    <td className="px-2 py-1 font-medium text-gray-900 whitespace-nowrap">{item.tenThietBi || `TB ID ${item.thongtinthietbi_id}`}</td>
+                                    <td className="px-2 py-1 text-gray-500 whitespace-nowrap">{item.thongtinthietbi_id}</td>
+                                    <td className="px-2 py-1 text-center text-gray-500 whitespace-nowrap">{moment(item.ngay_baotri).format("DD/MM")}</td>
+                                    <td className="px-2 py-1 text-center whitespace-nowrap"><StatusBadge status={item.trang_thai} /></td>
+                                    <td className="px-2 py-1 text-center text-gray-500 whitespace-nowrap">{item.tenNhanVienPhuTrach || 'Chưa gán'}</td>
+                                    <td className="px-2 py-1 text-center whitespace-nowrap">
                                         {/* Nút Xem Log */}
                                         <button
                                             onClick={() => onOpenLog(item.id, item.thongtinthietbi_id, item.tenThietBi, item.tenPhong)}
@@ -124,8 +124,8 @@ const RoomMonthDetailModal = ({ isOpen, onClose, roomData, selectedMonthYear, on
                     <p className="italic text-gray-500">Không có công việc nào trong tháng này.</p>
                 )}
             </div>
-            <div className="mt-5 pt-3 border-t text-right">
-                <button onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"> Đóng </button>
+            <div className="pt-3 mt-5 text-right border-t">
+                <button onClick={onClose} className="px-4 py-2 text-gray-800 bg-gray-300 rounded hover:bg-gray-400"> Đóng </button>
             </div>
         </Modal>
     );
@@ -261,7 +261,6 @@ const LichBaoDuongAdmin = () => {
             queryClient.invalidateQueries({ queryKey: ['lichBaoDuongList'] });
             setIsCreateModalOpen(false);
             setSelectedPhong(null); setSelectedThietBis([]); setSelectedDate(null); setSelectedNhanVien(null); setMoTa('');
-            toast.success("Tạo lịch bảo dưỡng thành công!");
         },
         onError: (error) => { console.error("Lỗi mutation tạo lịch:", error); /* Toast đã xử lý */ }
     });
@@ -497,29 +496,29 @@ const LichBaoDuongAdmin = () => {
         [suggestedNhanVien]
     );
     return (
-        <div className="p-4 flex flex-col h-full">
-            <h3 className="text-xl font-semibold mb-4 shrink-0">Bảo Dưỡng Định Kỳ</h3>
+        <div className="flex flex-col h-full p-4">
+            <h3 className="mb-4 text-xl font-semibold shrink-0">Bảo Dưỡng Định Kỳ</h3>
 
             {/* Hàng nút hành động và Bộ lọc */}
-            <div className="mb-4 flex flex-wrap gap-2 items-center justify-between shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 shrink-0">
                 <div className="flex space-x-2">
                     {/* Khôi phục nút Tạo Lịch Mới */}
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center text-sm"
                     >
-                        <FaPlus className="mr-1 h-4 w-4" /> Tạo Lịch Đơn
+                        <FaPlus className="w-4 h-4 mr-1" /> Tạo Lịch Đơn
                     </button>
                     <button
                         onClick={() => setIsBulkCreateModalOpen(true)}
                         className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 flex items-center text-sm"
                     >
-                        <FaLayerGroup className="mr-1 h-4 w-4" /> Tạo Hàng Loạt
+                        <FaLayerGroup className="w-4 h-4 mr-1" /> Tạo Hàng Loạt
                     </button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center border rounded-md px-2 py-1 bg-white">
-                        <FaCalendarAlt className="text-gray-500 mr-2" />
+                    <div className="flex items-center px-2 py-1 bg-white border rounded-md">
+                        <FaCalendarAlt className="mr-2 text-gray-500" />
                         <input
                             type="month"
                             value={selectedMonthYear}
@@ -527,8 +526,8 @@ const LichBaoDuongAdmin = () => {
                             className="text-sm border-none focus:ring-0 p-0.5"
                         />
                     </div>
-                    <div className="flex items-center border rounded-md px-2 py-1 bg-white">
-                        <FaFilter className="text-gray-500 mr-2" />
+                    <div className="flex items-center px-2 py-1 bg-white border rounded-md">
+                        <FaFilter className="mr-2 text-gray-500" />
                         <select
                             name="filterStatus"
                             value={filterStatus}
@@ -608,7 +607,7 @@ const LichBaoDuongAdmin = () => {
             {/* Pagination */}
             <div className="mt-4 shrink-0">
                 {totalPages > 1 && (<Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handleClientPageChange} />)}
-                <span className="text-sm text-gray-600 ml-4">Hiển thị {currentGroupedRows.length} phòng có lịch trong tháng / Tổng {filteredAndGroupedList.length} phòng</span>
+                <span className="ml-4 text-sm text-gray-600">Hiển thị {currentGroupedRows.length} phòng có lịch trong tháng / Tổng {filteredAndGroupedList.length} phòng</span>
             </div>
 
             {/* Modal Tạo Lịch Mới Đơn Lẻ */}
@@ -626,7 +625,7 @@ const LichBaoDuongAdmin = () => {
                     )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Ngày Bảo Dưỡng <span className="text-red-500">*</span></label>
-                        <input type="date" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={selectedDate || ''} onChange={(e) => setSelectedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                        <input type="date" required className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={selectedDate || ''} onChange={(e) => setSelectedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
                     </div>
                     {selectedPhong && selectedDate && (
                         <div>
@@ -636,11 +635,11 @@ const LichBaoDuongAdmin = () => {
                     )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Mô Tả (Tùy chọn)</label>
-                        <textarea rows="3" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={moTa} onChange={(e) => setMoTa(e.target.value)} placeholder="Nhập mô tả công việc..."></textarea>
+                        <textarea rows="3" className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={moTa} onChange={(e) => setMoTa(e.target.value)} placeholder="Nhập mô tả công việc..."></textarea>
                     </div>
-                    <div className="flex justify-end space-x-2 pt-4">
+                    <div className="flex justify-end pt-4 space-x-2">
                         <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Hủy</button>
-                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" disabled={createMutation.isLoading}>
+                        <button type="submit" className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600" disabled={createMutation.isLoading}>
                             {createMutation.isLoading ? 'Đang tạo...' : 'Tạo Lịch'}
                         </button>
                     </div>
